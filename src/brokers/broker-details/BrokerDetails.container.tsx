@@ -18,7 +18,8 @@ import {
   JolokiaTestPanel,
 } from './components/JolokiaDevComponents';
 import { OverviewContainer } from './components/Overview/Overview.container';
-import { PodsContainer } from './components/broker-pods/PodsList.container';
+import { PodsContainer } from '@app/brokers/broker-details/components/broker-pods/PodsList.container';
+import { ResourcesContainer } from './components/Resources/Resources.container';
 import { useParams } from 'react-router-dom-v5-compat';
 import { JolokiaAuthentication } from '@app/jolokia/components/JolokiaAuthentication';
 import { useGetBrokerCR } from '@app/k8s/customHooks';
@@ -77,6 +78,11 @@ const AuthenticatedPageContent: FC<AuthenticatedPageContentPropType> = ({
         ) : (
           <Spinner size="md" />
         ),
+    },
+    {
+      href: 'resources',
+      name: t('Resources'),
+      component: ResourcesContainer,
     },
   ];
 
