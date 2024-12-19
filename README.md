@@ -90,6 +90,22 @@ Navigate to the operatorHub on the console and search for `Cert-manager`.
 
 ### Running the plugin
 
+#### Download the secrets so that the bridge can authenticate the user with the api server backend
+
+1. For HTTP
+
+```
+cd bridge-auth-http
+./setup.sh
+```
+
+2. For HTTPS
+
+```
+cd bridge-auth-https
+./setup.sh
+```
+
 #### start the jolokia api-server
 
 In one terminal start the jolokia-api-server, [follow the

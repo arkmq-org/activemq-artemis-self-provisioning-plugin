@@ -27,14 +27,14 @@ type AddressesProps = {
 
 const Addresses: FC<AddressesProps> = ({ isBrokerPod }) => {
   const { t } = useTranslation();
-  const { token: authToken } = useContext(AuthContext);
+  const authContext = useContext(AuthContext);
   const {
     data: addressData,
     isSuccess,
     isLoading,
     error: loadError,
   } = useJolokiaServiceGetAddresses({
-    jolokiaSessionId: authToken,
+    targetEndpoint: authContext.targetEndpoint,
   });
 
   const columns: TableColumn<Address>[] = [

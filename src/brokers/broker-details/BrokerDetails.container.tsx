@@ -1,4 +1,4 @@
-import { FC, useContext } from 'react';
+import { FC } from 'react';
 import {
   Tabs,
   Tab,
@@ -7,7 +7,6 @@ import {
   PageSection,
   PageSectionVariants,
   Alert,
-  Spinner,
 } from '@patternfly/react-core';
 import { useTranslation } from '@app/i18n/i18n';
 import { ClientsContainer } from './components/Clients/Clients.container';
@@ -28,12 +27,7 @@ import {
 } from 'react-router-dom-v5-compat';
 import { JolokiaAuthentication } from '@app/jolokia/components/JolokiaAuthentication';
 import { useGetBrokerCR } from '@app/k8s/customHooks';
-import { AuthContext } from '@app/jolokia/context';
 import { BrokerCR } from '@app/k8s/types';
-import {
-  GreenCheckCircleIcon,
-  RedExclamationCircleIcon,
-} from '@openshift-console/dynamic-plugin-sdk';
 
 type AuthenticatedPageContentPropType = {
   brokerCr: BrokerCR;
@@ -58,11 +52,6 @@ const AuthenticatedPageContent: FC<AuthenticatedPageContentPropType> = ({
     searchParams.set('tab', eventKey.toString());
     navigate({ search: searchParams.toString() });
   };
-  const {
-    isSuccess: isSuccessToken,
-    isLoading: isLoadingToken,
-    isError: isErrorToken,
-  } = useContext(AuthContext);
   return (
     <PageSection
       variant={PageSectionVariants.light}
@@ -100,22 +89,7 @@ const AuthenticatedPageContent: FC<AuthenticatedPageContentPropType> = ({
         {process.env.NODE_ENV === 'development' && (
           <Tab
             eventKey={'jolokiaTestPanel'}
-            title={
-              <TabTitleText>
-                {t('check-jolokia ')}
-                {isLoadingToken && (
-                  <Spinner size="sm" aria-label={t('connecting to jolokia')} />
-                )}
-                {isSuccessToken && (
-                  <GreenCheckCircleIcon title={t('Jolokia connected')} />
-                )}
-                {isErrorToken && (
-                  <RedExclamationCircleIcon
-                    title={t('Jolokia connection failed')}
-                  />
-                )}
-              </TabTitleText>
-            }
+            title={<TabTitleText>{t('check-jolokia ')}</TabTitleText>}
           >
             <JolokiaTestPanel />
             <br />
@@ -124,22 +98,7 @@ const AuthenticatedPageContent: FC<AuthenticatedPageContentPropType> = ({
         {process.env.NODE_ENV === 'development' && (
           <Tab
             eventKey={'jolokia-details'}
-            title={
-              <TabTitleText>
-                {t('jolokia-details')}
-                {isLoadingToken && (
-                  <Spinner size="sm" aria-label={t('connecting to jolokia')} />
-                )}
-                {isSuccessToken && (
-                  <GreenCheckCircleIcon title={t('Jolokia connected')} />
-                )}
-                {isErrorToken && (
-                  <RedExclamationCircleIcon
-                    title={t('Jolokia connection failed')}
-                  />
-                )}
-              </TabTitleText>
-            }
+            title={<TabTitleText>{t('jolokia-details')}</TabTitleText>}
           >
             <Tabs defaultActiveKey={0}>
               <Tab

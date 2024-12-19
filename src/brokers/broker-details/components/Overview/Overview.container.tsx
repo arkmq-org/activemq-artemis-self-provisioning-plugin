@@ -19,7 +19,7 @@ import {
   Spinner,
   Title,
 } from '@patternfly/react-core';
-import { FC, useContext, useState } from 'react';
+import { FC, useState } from 'react';
 import {
   getIssuerForAcceptor,
   getIssuerIngressHostForAcceptor,
@@ -32,7 +32,6 @@ import {
   SecretResource,
 } from '@app/k8s/types';
 import { Metrics } from './Metrics/Metrics';
-import { AuthContext } from '@app/jolokia/context';
 import { useTranslation } from '@app/i18n/i18n';
 
 const useGetIssuerCa = (
@@ -109,9 +108,8 @@ const HelpConnectAcceptor: FC<HelperConnectAcceptorProps> = ({
   acceptor,
 }) => {
   const { t } = useTranslation();
-  const { podOrdinal } = useContext(AuthContext);
   const secret = useGetTlsSecret(cr, acceptor);
-  const ingressHost = getIssuerIngressHostForAcceptor(cr, acceptor, podOrdinal);
+  const ingressHost = getIssuerIngressHostForAcceptor(cr, acceptor, 0);
   const [copied, setCopied] = useState(false);
 
   const clipboardCopyFunc = (text: string) => {
