@@ -31,6 +31,7 @@ import {
 } from '@app/k8s/types';
 import { Metrics } from './Metrics/Metrics';
 import { useTranslation } from '@app/i18n/i18n';
+import { ConditionsContainer } from '@app/brokers/broker-details/components/Overview/Conditions/Conditions.container';
 
 const useGetIssuerCa = (
   cr: BrokerCR,
@@ -243,6 +244,7 @@ export const OverviewContainer: FC<OverviewContainerProps> = ({
         size={cr.spec?.deploymentPlan?.size}
       />
       <ConnectivityHelper cr={cr} />
+      <ConditionsContainer cr={cr} />
     </>
   );
 };
