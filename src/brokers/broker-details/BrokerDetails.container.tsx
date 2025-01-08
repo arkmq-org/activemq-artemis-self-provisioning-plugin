@@ -20,6 +20,7 @@ import {
 } from './components/JolokiaDevComponents';
 import { OverviewContainer } from './components/Overview/Overview.container';
 import { PodsContainer } from '@app/brokers/broker-details/components/broker-pods/PodsList.container';
+import { ResourcesContainer } from './components/Resources/Resources.container';
 import {
   useLocation,
   useNavigate,
@@ -86,6 +87,13 @@ const AuthenticatedPageContent: FC<AuthenticatedPageContentPropType> = ({
         <Tab eventKey={'pods'} title={<TabTitleText>{t('Pods')}</TabTitleText>}>
           <PodsContainer />
         </Tab>
+        <Tab
+          eventKey={'resources'}
+          title={<TabTitleText>{t('Resources')}</TabTitleText>}
+        >
+          <ResourcesContainer />
+        </Tab>
+
         {process.env.NODE_ENV === 'development' && (
           <Tab
             eventKey={'jolokiaTestPanel'}
