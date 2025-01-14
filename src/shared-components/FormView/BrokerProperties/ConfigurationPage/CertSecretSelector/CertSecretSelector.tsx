@@ -1,8 +1,10 @@
 import { FC, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ArtemisReducerOperations,
   BrokerCreationFormDispatch,
   BrokerCreationFormState,
+} from '@app/reducers/reducer';
+import {
+  ArtemisReducerOperations712,
   getAcceptor,
   getCertManagerResourceTemplateFromAcceptor,
   getConfigSecret,
@@ -173,7 +175,7 @@ export const CertSecretSelector: FC<CertSecretSelectorProps> = ({
   const clearSelection = () => {
     if (configType === ConfigType.acceptors) {
       dispatch({
-        operation: ArtemisReducerOperations.setAcceptorSecret,
+        operation: ArtemisReducerOperations712.setAcceptorSecret,
         payload: {
           secret: undefined,
           name: configName,
@@ -183,7 +185,7 @@ export const CertSecretSelector: FC<CertSecretSelectorProps> = ({
     }
     if (configType === ConfigType.connectors) {
       dispatch({
-        operation: ArtemisReducerOperations.setConnectorSecret,
+        operation: ArtemisReducerOperations712.setConnectorSecret,
         payload: {
           secret: undefined,
           name: configName,
@@ -193,7 +195,7 @@ export const CertSecretSelector: FC<CertSecretSelectorProps> = ({
     }
     if (configType === ConfigType.console) {
       dispatch({
-        operation: ArtemisReducerOperations.setConsoleSecret,
+        operation: ArtemisReducerOperations712.setConsoleSecret,
         payload: {
           secret: undefined,
           name: configName,
@@ -214,7 +216,7 @@ export const CertSecretSelector: FC<CertSecretSelectorProps> = ({
     } else {
       if (configType === ConfigType.acceptors) {
         dispatch({
-          operation: ArtemisReducerOperations.setAcceptorSecret,
+          operation: ArtemisReducerOperations712.setAcceptorSecret,
           payload: {
             secret: value,
             name: configName,
@@ -224,7 +226,7 @@ export const CertSecretSelector: FC<CertSecretSelectorProps> = ({
       }
       if (configType === ConfigType.connectors) {
         dispatch({
-          operation: ArtemisReducerOperations.setConnectorSecret,
+          operation: ArtemisReducerOperations712.setConnectorSecret,
           payload: {
             secret: value,
             name: configName,
@@ -234,7 +236,7 @@ export const CertSecretSelector: FC<CertSecretSelectorProps> = ({
       }
       if (configType === ConfigType.console) {
         dispatch({
-          operation: ArtemisReducerOperations.setConsoleSecret,
+          operation: ArtemisReducerOperations712.setConsoleSecret,
           payload: {
             secret: value,
             name: configName,
@@ -498,7 +500,7 @@ export const CertSecretSelector: FC<CertSecretSelectorProps> = ({
           setCaGenFromTlsSecret('');
           if (configType === ConfigType.acceptors) {
             dispatch({
-              operation: ArtemisReducerOperations.setAcceptorSecret,
+              operation: ArtemisReducerOperations712.setAcceptorSecret,
               payload: {
                 secret: caSecName,
                 name: configName,
@@ -508,7 +510,7 @@ export const CertSecretSelector: FC<CertSecretSelectorProps> = ({
           }
           if (configType === ConfigType.connectors) {
             dispatch({
-              operation: ArtemisReducerOperations.setConnectorSecret,
+              operation: ArtemisReducerOperations712.setConnectorSecret,
               payload: {
                 secret: caSecName,
                 name: configName,
@@ -518,7 +520,7 @@ export const CertSecretSelector: FC<CertSecretSelectorProps> = ({
           }
           if (configType === ConfigType.console) {
             dispatch({
-              operation: ArtemisReducerOperations.setConsoleSecret,
+              operation: ArtemisReducerOperations712.setConsoleSecret,
               payload: {
                 secret: caSecName,
                 name: configName,

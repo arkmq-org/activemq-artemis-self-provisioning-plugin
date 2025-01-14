@@ -1,7 +1,9 @@
 import {
-  ArtemisReducerOperations,
   BrokerCreationFormDispatch,
   BrokerCreationFormState,
+} from '@app/reducers/reducer';
+import {
+  ArtemisReducerOperations712,
   ExposeMode,
 } from '@app/reducers/7.12/reducer';
 
@@ -63,21 +65,21 @@ export const ConsoleConfigPage: FC<ConsoleConfigProps> = ({ brokerId }) => {
 
   const handleSSLEnabled = (value: boolean) => {
     dispatch({
-      operation: ArtemisReducerOperations.setConsoleSSLEnabled,
+      operation: ArtemisReducerOperations712.setConsoleSSLEnabled,
       payload: value,
     });
   };
 
   const setConsoleExpose = (value: boolean) => {
     dispatch({
-      operation: ArtemisReducerOperations.setConsoleExpose,
+      operation: ArtemisReducerOperations712.setConsoleExpose,
       payload: value,
     });
   };
 
   const setConsoleExposeMode = (value: ExposeMode) => {
     dispatch({
-      operation: ArtemisReducerOperations.setConsoleExposeMode,
+      operation: ArtemisReducerOperations712.setConsoleExposeMode,
       payload: value,
     });
   };
@@ -93,7 +95,7 @@ export const ConsoleConfigPage: FC<ConsoleConfigProps> = ({ brokerId }) => {
     setConsoleExpose(exposeConsole);
     setConsoleExposeMode(exposeMode);
     dispatch({
-      operation: ArtemisReducerOperations.setConsoleCredentials,
+      operation: ArtemisReducerOperations712.setConsoleCredentials,
       payload: { adminUser: 'admin', adminPassword: 'admin' },
     });
   }

@@ -21,9 +21,11 @@ import { CSSProperties, FC, useContext, useState } from 'react';
 import { useTranslation } from '@app/i18n/i18n';
 import { Acceptor } from '@app/k8s/types';
 import {
-  ArtemisReducerOperations,
   BrokerCreationFormDispatch,
   BrokerCreationFormState,
+} from '@app/reducers/reducer';
+import {
+  ArtemisReducerOperations712,
   getCertManagerResourceTemplateFromAcceptor,
 } from '@app/reducers/7.12/reducer';
 import { SelectIssuerDrawer } from '../SelectIssuerDrawer/SelectIssuerDrawer';
@@ -68,7 +70,7 @@ const AddPresetModal: FC<AddIssuerAnnotationModalProps> = ({
       return;
     }
     dispatch({
-      operation: ArtemisReducerOperations.activatePEMGenerationForAcceptor,
+      operation: ArtemisReducerOperations712.activatePEMGenerationForAcceptor,
       payload: {
         acceptor: selectedAcceptor,
         issuer: selectedIssuer,

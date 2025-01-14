@@ -192,7 +192,7 @@
   "SSL Enabled for console": "SSL Enabled for console",
   "CR Name": "CR Name",
   "Replicas": "Replicas",
-  "Broker Properties": "Broker Properties",
+  "Broker Version": "Broker Version",
   "Per broker config": "Per broker config",
   " in namespace ": " in namespace ",
   "Save and proceed": "Save and proceed",

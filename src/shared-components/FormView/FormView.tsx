@@ -11,19 +11,19 @@ import {
   NumberInput,
   Switch,
   TextInput,
-  InputGroupItem,
 } from '@patternfly/react-core';
 import { FC, useContext, useState } from 'react';
-import {
-  ArtemisReducerOperations,
-  BrokerCreationFormDispatch,
-  BrokerCreationFormState,
-} from '@app/reducers/7.12/reducer';
+import { ArtemisReducerOperations712 as ArtemisReducerOperations712 } from '@app/reducers/7.12/reducer';
 import {
   BrokerProperties,
   BrokerPropertiesList,
 } from './BrokerProperties/BrokerProperties';
 import { useTranslation } from '@app/i18n/i18n';
+import {
+  ArtemisReducerGlobalOperations,
+  BrokerCreationFormDispatch,
+  BrokerCreationFormState,
+} from '@app/reducers/reducer';
 
 export const FormView: FC = () => {
   const { t } = useTranslation();
@@ -34,7 +34,7 @@ export const FormView: FC = () => {
 
   const handleNameChange = (name: string) => {
     dispatch({
-      operation: ArtemisReducerOperations.setBrokerName,
+      operation: ArtemisReducerOperations712.setBrokerName,
       payload: name,
     });
   };
@@ -47,16 +47,17 @@ export const FormView: FC = () => {
   ) => {
     setIsPerBrokerConfig(checked);
   };
-  const [selectedVersion, setSelectedVersion] = useState('7.12');
 
-  const onChangeVersion = (value: string) => {
-    setSelectedVersion(value);
+  const onChangeVersion = (value: '7.12' | '7.13') => {
+    dispatch({
+      operation: ArtemisReducerGlobalOperations.setBrokerVersion,
+      payload: value,
+    });
   };
 
   const options = [
-    { value: 'please choose', label: 'Select a version', disabled: true },
     { value: '7.12', label: 'AMQ 7.12', disabled: false },
-    { value: '8.0', label: 'AMQ 8.0', disabled: true },
+    { value: '7.13', label: 'AMQ 7.13', disabled: false },
   ];
 
   const crName = formState.cr.metadata.name;
@@ -92,18 +93,18 @@ export const FormView: FC = () => {
                 max={1024}
                 onMinus={() =>
                   dispatch({
-                    operation: ArtemisReducerOperations.decrementReplicas,
+                    operation: ArtemisReducerOperations712.decrementReplicas,
                   })
                 }
                 onChange={(event) =>
                   dispatch({
-                    operation: ArtemisReducerOperations.setReplicasNumber,
+                    operation: ArtemisReducerOperations712.setReplicasNumber,
                     payload: Number((event.target as HTMLInputElement).value),
                   })
                 }
                 onPlus={() =>
                   dispatch({
-                    operation: ArtemisReducerOperations.incrementReplicas,
+                    operation: ArtemisReducerOperations712.incrementReplicas,
                   })
                 }
                 inputName="input"
@@ -112,27 +113,25 @@ export const FormView: FC = () => {
                 plusBtnAriaLabel="plus"
               />
             </FormGroup>
-            <FormGroup label={t('Broker Properties')}>
+            <FormGroup label={t('Broker Version')}>
               <InputGroup>
                 <InputGroupText id="broker-version" className=".pf-u-w-initial">
                   {t('Version:')}
                 </InputGroupText>
-                <InputGroupItem>
-                  <FormSelect
-                    value={selectedVersion}
-                    onChange={(_event, value: string) => onChangeVersion(value)}
-                    aria-label="FormSelect Input"
-                  >
-                    {options.map((option, index) => (
-                      <FormSelectOption
-                        isDisabled={option.disabled}
-                        key={index}
-                        value={option.value}
-                        label={option.label}
-                      />
-                    ))}
-                  </FormSelect>
-                </InputGroupItem>
+                <FormSelect
+                  value={formState.brokerVersion}
+                  onChange={(_event, value: any) => onChangeVersion(value)}
+                  aria-label="FormSelect Input"
+                >
+                  {options.map((option, index) => (
+                    <FormSelectOption
+                      isDisabled={option.disabled}
+                      key={index}
+                      value={option.value}
+                      label={option.label}
+                    />
+                  ))}
+                </FormSelect>
               </InputGroup>
             </FormGroup>
             <FormGroup label={t('Per broker config')}>

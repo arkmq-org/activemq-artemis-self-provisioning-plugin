@@ -12,11 +12,11 @@ import {
   ModalVariant,
 } from '@patternfly/react-core';
 import {
-  ArtemisReducerOperations,
+  ArtemisReducerGlobalOperations,
   BrokerCreationFormDispatch,
   BrokerCreationFormState,
   EditorType,
-} from '../../reducers/7.12/reducer';
+} from '@app/reducers/reducer';
 import { FormView } from '../../shared-components/FormView/FormView';
 import { EditorToggle } from './components/EditorToggle/EditorToggle';
 import { Loading } from '../../shared-components/Loading/Loading';
@@ -57,7 +57,7 @@ export const AddBroker: FC<AddBrokerPropTypes> = ({
       setPendingActionQuittingYAMLView('switch');
     } else {
       dispatch({
-        operation: ArtemisReducerOperations.setEditorType,
+        operation: ArtemisReducerGlobalOperations.setEditorType,
         payload: EditorType.YAML,
       });
     }
@@ -69,7 +69,7 @@ export const AddBroker: FC<AddBrokerPropTypes> = ({
     if (pendingActionQuittingYAMLView === 'switch') {
       setWantsToQuitYamlView(false);
       dispatch({
-        operation: ArtemisReducerOperations.setEditorType,
+        operation: ArtemisReducerGlobalOperations.setEditorType,
         payload: EditorType.BROKER,
       });
     }

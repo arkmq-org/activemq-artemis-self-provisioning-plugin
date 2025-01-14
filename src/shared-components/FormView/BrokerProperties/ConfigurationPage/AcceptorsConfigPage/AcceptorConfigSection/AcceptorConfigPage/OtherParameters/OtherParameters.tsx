@@ -1,7 +1,9 @@
 import {
-  ArtemisReducerOperations,
   BrokerCreationFormDispatch,
   BrokerCreationFormState,
+} from '@app/reducers/reducer';
+import {
+  ArtemisReducerOperations712,
   getConfigOtherParams,
 } from '@app/reducers/7.12/reducer';
 import { FC, useContext, useState } from 'react';
@@ -42,7 +44,7 @@ const Param: FC<ParamProps> = ({
     }
     if (configType === ConfigType.acceptors) {
       dispatch({
-        operation: ArtemisReducerOperations.setAcceptorOtherParams,
+        operation: ArtemisReducerOperations712.setAcceptorOtherParams,
         payload: {
           name: configName,
           otherParams: params,
@@ -51,7 +53,7 @@ const Param: FC<ParamProps> = ({
     }
     if (configType === ConfigType.connectors) {
       dispatch({
-        operation: ArtemisReducerOperations.setConnectorOtherParams,
+        operation: ArtemisReducerOperations712.setConnectorOtherParams,
         payload: {
           name: configName,
           otherParams: params,
@@ -121,7 +123,7 @@ export const OtherParameters: FC<OtherParametersProps> = ({
     params.set(key, value);
     if (configType === ConfigType.acceptors) {
       dispatch({
-        operation: ArtemisReducerOperations.setAcceptorOtherParams,
+        operation: ArtemisReducerOperations712.setAcceptorOtherParams,
         payload: {
           name: configName,
           otherParams: params,
@@ -130,7 +132,7 @@ export const OtherParameters: FC<OtherParametersProps> = ({
     }
     if (configType === ConfigType.connectors) {
       dispatch({
-        operation: ArtemisReducerOperations.setConnectorOtherParams,
+        operation: ArtemisReducerOperations712.setConnectorOtherParams,
         payload: {
           name: configName,
           otherParams: params,

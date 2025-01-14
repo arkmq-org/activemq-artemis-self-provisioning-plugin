@@ -14,10 +14,10 @@ import {
 } from '@patternfly/react-core';
 import { Loading } from '@app/shared-components/Loading/Loading';
 import {
-  ArtemisReducerOperations,
+  ArtemisReducerGlobalOperations,
   BrokerCreationFormDispatch,
   BrokerCreationFormState,
-} from '../../reducers/7.12/reducer';
+} from '@app/reducers/reducer';
 import YAML, { YAMLParseError } from 'yaml';
 import './YamlEditorView.css';
 import { ResourceYAMLEditor } from '@openshift-console/dynamic-plugin-sdk';
@@ -60,7 +60,7 @@ export const YamlEditorView: FC<YamlEditorViewPropTypes> = ({
   const updateModel = (content: string) => {
     try {
       dispatch({
-        operation: ArtemisReducerOperations.setModel,
+        operation: ArtemisReducerGlobalOperations.setModel,
         payload: { model: YAML.parse(content), isSetByUser: true },
       });
       setYamlParserError(undefined);
@@ -184,7 +184,8 @@ export const YamlEditorView: FC<YamlEditorViewPropTypes> = ({
             setCurrentYaml(newContent);
             if (stringedFormState !== newContent) {
               dispatch({
-                operation: ArtemisReducerOperations.setYamlHasUnsavedChanges,
+                operation:
+                  ArtemisReducerGlobalOperations.setYamlHasUnsavedChanges,
               });
             }
           }}

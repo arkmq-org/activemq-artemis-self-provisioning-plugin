@@ -5,25 +5,25 @@ import { AddBroker } from './AddBroker.component';
 import { AMQBrokerModel } from '@app/k8s/models';
 import { BrokerCR } from '@app/k8s/types';
 import {
-  BrokerCreationFormState,
   BrokerCreationFormDispatch,
-  newArtemisCRState,
+  BrokerCreationFormState,
   artemisCrReducer,
-  ArtemisReducerOperations,
-} from '@app/reducers/7.12/reducer';
-import { AddBrokerResourceValues } from '@app/reducers/7.12/import-types';
+  newArtemisCR,
+} from '@app/reducers/reducer';
+import { ArtemisReducerOperations712 } from '@app/reducers/7.12/reducer';
+import { FormState712 } from '@app/reducers/7.12/import-types';
 import { useNavigate, useParams } from 'react-router-dom-v5-compat';
 import { useGetIngressDomain } from '@app/k8s/customHooks';
 
 export interface AddBrokerProps {
-  initialValues: AddBrokerResourceValues;
+  initialValues: FormState712;
 }
 
 export const AddBrokerPage: FC = () => {
   const navigate = useNavigate();
   const { ns: namespace } = useParams<{ ns?: string }>();
 
-  const initialValues = newArtemisCRState(namespace);
+  const initialValues = newArtemisCR(namespace);
 
   //states
   const [brokerModel, dispatch] = useReducer(artemisCrReducer, initialValues);
@@ -62,7 +62,7 @@ export const AddBrokerPage: FC = () => {
   const [prevNamespace, setPrevNamespace] = useState(namespace);
   if (prevNamespace !== namespace) {
     dispatch({
-      operation: ArtemisReducerOperations.setNamespace,
+      operation: ArtemisReducerOperations712.setNamespace,
       payload: namespace,
     });
     setPrevNamespace(namespace);
@@ -72,7 +72,7 @@ export const AddBrokerPage: FC = () => {
   const [isDomainSet, setIsDomainSet] = useState(false);
   if (!isLoading && !isDomainSet) {
     dispatch({
-      operation: ArtemisReducerOperations.setIngressDomain,
+      operation: ArtemisReducerOperations712.setIngressDomain,
       payload: {
         ingressUrl: clusterDomain,
         isSetByUser: false,

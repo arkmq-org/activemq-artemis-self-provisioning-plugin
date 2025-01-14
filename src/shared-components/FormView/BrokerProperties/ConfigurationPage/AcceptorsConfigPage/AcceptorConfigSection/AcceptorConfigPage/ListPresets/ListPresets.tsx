@@ -7,9 +7,11 @@ import { FC, useContext } from 'react';
 import { useTranslation } from '@app/i18n/i18n';
 import { Acceptor } from '@app/k8s/types';
 import {
-  ArtemisReducerOperations,
   BrokerCreationFormDispatch,
   BrokerCreationFormState,
+} from '@app/reducers/reducer';
+import {
+  ArtemisReducerOperations712,
   getAcceptorFromCertManagerResourceTemplate,
   getCertManagerResourceTemplateFromAcceptor,
 } from '@app/reducers/7.12/reducer';
@@ -45,7 +47,7 @@ const CertManagerPreset: FC<ResourceTemplateProps> = ({ resourceTemplate }) => {
               action={() =>
                 dispatch({
                   operation:
-                    ArtemisReducerOperations.deletePEMGenerationForAcceptor,
+                    ArtemisReducerOperations712.deletePEMGenerationForAcceptor,
                   payload: acceptor.name,
                 })
               }
@@ -61,7 +63,7 @@ const CertManagerPreset: FC<ResourceTemplateProps> = ({ resourceTemplate }) => {
           }
           setSelectedIssuer={(issuer: string) => {
             dispatch({
-              operation: ArtemisReducerOperations.updateAnnotationIssuer,
+              operation: ArtemisReducerOperations712.updateAnnotationIssuer,
               payload: {
                 acceptorName: acceptor.name,
                 newIssuer: issuer,
@@ -70,7 +72,7 @@ const CertManagerPreset: FC<ResourceTemplateProps> = ({ resourceTemplate }) => {
           }}
           clearIssuer={() => {
             dispatch({
-              operation: ArtemisReducerOperations.updateAnnotationIssuer,
+              operation: ArtemisReducerOperations712.updateAnnotationIssuer,
               payload: {
                 acceptorName: acceptor.name,
                 newIssuer: '',

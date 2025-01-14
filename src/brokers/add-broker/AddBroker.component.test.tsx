@@ -3,8 +3,8 @@ import {
   BrokerCreationFormDispatch,
   BrokerCreationFormState,
   artemisCrReducer,
-  newArtemisCRState,
-} from '../../reducers/7.12/reducer';
+  newArtemisCR,
+} from '@app/reducers/reducer';
 import { fireEvent, render, screen } from '../../test-utils';
 import { AddBroker } from './AddBroker.component';
 import { useAccessReview } from '@openshift-console/dynamic-plugin-sdk';
@@ -22,7 +22,7 @@ const SimplifiedCreaterBrokerPage: FC = () => {
   const onCancel = () => {
     return 0;
   };
-  const initialValues = newArtemisCRState('default');
+  const initialValues = newArtemisCR('default');
   const [brokerModel, dispatch] = useReducer(artemisCrReducer, initialValues);
   return (
     <BrokerCreationFormState.Provider value={brokerModel}>
@@ -43,7 +43,7 @@ const SimplifiedUpdateBrokerPage: FC = () => {
   const reloadExisting = () => {
     return 0;
   };
-  const initialValues = newArtemisCRState('default');
+  const initialValues = newArtemisCR('default');
   const [brokerModel, dispatch] = useReducer(artemisCrReducer, initialValues);
   return (
     <BrokerCreationFormState.Provider value={brokerModel}>

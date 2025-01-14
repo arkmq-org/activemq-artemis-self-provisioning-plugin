@@ -7,12 +7,13 @@ import { AMQBrokerModel } from '@app/k8s/models';
 import { BrokerCR } from '@app/k8s/types';
 import { useGetIngressDomain } from '@app/k8s/customHooks';
 import {
-  ArtemisReducerOperations,
+  ArtemisReducerGlobalOperations,
   BrokerCreationFormDispatch,
   BrokerCreationFormState,
   artemisCrReducer,
-  getArtemisCRState,
-} from '@app/reducers/7.12/reducer';
+  newArtemisCR,
+} from '@app/reducers/reducer';
+import { ArtemisReducerOperations712 } from '@app/reducers/7.12/reducer';
 import { useNavigate, useParams } from 'react-router-dom-v5-compat';
 
 export const UpdateBrokerPage: FC = () => {
@@ -22,9 +23,10 @@ export const UpdateBrokerPage: FC = () => {
   //states
   const [loadingBrokerCR, setLoading] = useState<boolean>(false);
 
-  const crState = getArtemisCRState(name, namespace);
-
-  const [brokerModel, dispatch] = useReducer(artemisCrReducer, crState);
+  const [brokerModel, dispatch] = useReducer(
+    artemisCrReducer,
+    newArtemisCR(namespace),
+  );
 
   const [hasBrokerUpdated, setHasBrokerUpdated] = useState(false);
   const [alert, setAlert] = useState('');
@@ -59,7 +61,7 @@ export const UpdateBrokerPage: FC = () => {
     k8sGet({ model: AMQBrokerModel, name, ns: namespace })
       .then((broker: BrokerCR) => {
         dispatch({
-          operation: ArtemisReducerOperations.setModel,
+          operation: ArtemisReducerGlobalOperations.setModel,
           payload: { model: broker, isSetByUser: false },
         });
       })
@@ -80,7 +82,7 @@ export const UpdateBrokerPage: FC = () => {
   const [isDomainSet, setIsDomainSet] = useState(false);
   if (!loadingBrokerCR && !isLoadingClusterDomain && !isDomainSet) {
     dispatch({
-      operation: ArtemisReducerOperations.setIngressDomain,
+      operation: ArtemisReducerOperations712.setIngressDomain,
       payload: {
         ingressUrl: clusterDomain,
         isSetByUser: false,
@@ -91,7 +93,7 @@ export const UpdateBrokerPage: FC = () => {
 
   if (loadingBrokerCR && !alert) return <Loading />;
 
-  if (!brokerModel.cr.spec?.deploymentPlan) {
+  if (!brokerModel.cr?.spec?.deploymentPlan) {
     return <Loading />;
   }
 

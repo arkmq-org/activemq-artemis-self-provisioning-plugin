@@ -1,9 +1,11 @@
 import { FC, useContext } from 'react';
 import { ConfigType } from '../../ConfigurationPage';
 import {
-  ArtemisReducerOperations,
   BrokerCreationFormDispatch,
   BrokerCreationFormState,
+} from '@app/reducers/reducer';
+import {
+  ArtemisReducerOperations712,
   getAcceptor,
 } from '@app/reducers/7.12/reducer';
 import {
@@ -28,13 +30,13 @@ export const AcceptorConfigSection: FC<AcceptorConfigSectionProps> = ({
   const onDelete = () => {
     if (configType === ConfigType.acceptors) {
       dispatch({
-        operation: ArtemisReducerOperations.deleteAcceptor,
+        operation: ArtemisReducerOperations712.deleteAcceptor,
         payload: configName,
       });
     }
     if (configType === ConfigType.connectors) {
       dispatch({
-        operation: ArtemisReducerOperations.deleteConnector,
+        operation: ArtemisReducerOperations712.deleteConnector,
         payload: configName,
       });
     }

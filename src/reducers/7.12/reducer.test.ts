@@ -1,10 +1,9 @@
 import { SelectOptionObject } from '@patternfly/react-core/deprecated';
 import {
-  ArtemisReducerOperations,
-  EditorType,
+  ArtemisReducerOperations712,
   ExposeMode,
-  artemisCrReducer,
-  newArtemisCRState,
+  reducer712,
+  newBroker712CR,
 } from './reducer';
 
 describe('test the creation broker reducer', () => {
@@ -16,9 +15,9 @@ describe('test the creation broker reducer', () => {
     };
   };
   it('test addAcceptor', () => {
-    const initialState = newArtemisCRState('namespace');
-    const newState = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addAcceptor,
+    const initialState = newBroker712CR('namespace');
+    const newState = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addAcceptor,
     });
     expect(newState.cr.spec.acceptors).toHaveLength(1);
     expect(newState.cr.spec.acceptors[0].name).toBe('acceptors0');
@@ -31,9 +30,9 @@ describe('test the creation broker reducer', () => {
   });
 
   it('test addConnector', () => {
-    const initialState = newArtemisCRState('namespace');
-    const newState = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addConnector,
+    const initialState = newBroker712CR('namespace');
+    const newState = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addConnector,
     });
     expect(newState.cr.spec.connectors).toHaveLength(1);
     expect(newState.cr.spec.connectors[0].name).toBe('connectors0');
@@ -46,54 +45,54 @@ describe('test the creation broker reducer', () => {
   });
 
   it('test replicas decrementReplicas', () => {
-    const initialState = newArtemisCRState('namespace');
-    const newState = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.decrementReplicas,
+    const initialState = newBroker712CR('namespace');
+    const newState = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.decrementReplicas,
     });
     // default size is 1 decrementing should result of a size of 0
     expect(newState.cr.spec.deploymentPlan.size).toBe(0);
     // set the number of replicas to 10 before decrementing so that the total
     // number should be 9
-    const newState2 = artemisCrReducer(
-      artemisCrReducer(newState, {
-        operation: ArtemisReducerOperations.setReplicasNumber,
+    const newState2 = reducer712(
+      reducer712(newState, {
+        operation: ArtemisReducerOperations712.setReplicasNumber,
         payload: 10,
       }),
       {
-        operation: ArtemisReducerOperations.decrementReplicas,
+        operation: ArtemisReducerOperations712.decrementReplicas,
       },
     );
     expect(newState2.cr.spec.deploymentPlan.size).toBe(9);
   });
 
   it('tests that the deployment replicas value cannot be decremented below 0', () => {
-    const initialState = newArtemisCRState('namespace');
-    const newState = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.decrementReplicas,
+    const initialState = newBroker712CR('namespace');
+    const newState = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.decrementReplicas,
     });
     // default size is 1 decrementing should result of a size of 0
     expect(newState.cr.spec.deploymentPlan.size).toBe(0);
     // Set the number of replicas to -1 and verify that the deployment replicas value cannot be decremented below 0.
     // The number should be set to 0.
-    const newState2 = artemisCrReducer(
-      artemisCrReducer(newState, {
-        operation: ArtemisReducerOperations.setReplicasNumber,
+    const newState2 = reducer712(
+      reducer712(newState, {
+        operation: ArtemisReducerOperations712.setReplicasNumber,
         payload: -1,
       }),
       {
-        operation: ArtemisReducerOperations.decrementReplicas,
+        operation: ArtemisReducerOperations712.decrementReplicas,
       },
     );
     expect(newState2.cr.spec.deploymentPlan.size).toBe(0);
   });
 
   it('test deleteAcceptor', () => {
-    const initialState = newArtemisCRState('namespace');
-    const stateWith1Acceptor = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addAcceptor,
+    const initialState = newBroker712CR('namespace');
+    const stateWith1Acceptor = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addAcceptor,
     });
-    const newState2 = artemisCrReducer(stateWith1Acceptor, {
-      operation: ArtemisReducerOperations.deleteAcceptor,
+    const newState2 = reducer712(stateWith1Acceptor, {
+      operation: ArtemisReducerOperations712.deleteAcceptor,
       payload: 'acceptors0',
     });
     expect(newState2.cr.spec.acceptors).toHaveLength(0);
@@ -103,12 +102,12 @@ describe('test the creation broker reducer', () => {
   });
 
   it('test deleteConnector', () => {
-    const initialState = newArtemisCRState('namespace');
-    const stateWith1Connector = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addConnector,
+    const initialState = newBroker712CR('namespace');
+    const stateWith1Connector = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addConnector,
     });
-    const newState2 = artemisCrReducer(stateWith1Connector, {
-      operation: ArtemisReducerOperations.deleteConnector,
+    const newState2 = reducer712(stateWith1Connector, {
+      operation: ArtemisReducerOperations712.deleteConnector,
       payload: 'connectors0',
     });
     expect(newState2.cr.spec.connectors).toHaveLength(0);
@@ -118,41 +117,41 @@ describe('test the creation broker reducer', () => {
   });
 
   it('test incrementReplicas', () => {
-    const initialState = newArtemisCRState('namespace');
-    const newState = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.incrementReplicas,
+    const initialState = newBroker712CR('namespace');
+    const newState = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.incrementReplicas,
     });
     // default size is 1 decrementing should result of a size of 1
     expect(newState.cr.spec.deploymentPlan.size).toBe(2);
   });
 
   it('test incrementReplicas', () => {
-    const initialState = newArtemisCRState('namespace');
-    const newState = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.incrementReplicas,
+    const initialState = newBroker712CR('namespace');
+    const newState = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.incrementReplicas,
     });
     // default size is 1 decrementing should result of a size of 1
     expect(newState.cr.spec.deploymentPlan.size).toBe(2);
   });
 
   it('test setAcceptorBindToAllInterfaces', () => {
-    const initialState = newArtemisCRState('namespace');
-    const stateWith1Acceptor = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addAcceptor,
+    const initialState = newBroker712CR('namespace');
+    const stateWith1Acceptor = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addAcceptor,
     });
     expect(stateWith1Acceptor.cr.spec.acceptors[0].bindToAllInterfaces).toBe(
       undefined,
     );
-    const newState2 = artemisCrReducer(stateWith1Acceptor, {
-      operation: ArtemisReducerOperations.setAcceptorBindToAllInterfaces,
+    const newState2 = reducer712(stateWith1Acceptor, {
+      operation: ArtemisReducerOperations712.setAcceptorBindToAllInterfaces,
       payload: {
         name: 'acceptors0',
         bindToAllInterfaces: true,
       },
     });
     expect(newState2.cr.spec.acceptors[0].bindToAllInterfaces).toBe(true);
-    const newState3 = artemisCrReducer(stateWith1Acceptor, {
-      operation: ArtemisReducerOperations.setAcceptorBindToAllInterfaces,
+    const newState3 = reducer712(stateWith1Acceptor, {
+      operation: ArtemisReducerOperations712.setAcceptorBindToAllInterfaces,
       payload: {
         name: 'acceptors0',
         bindToAllInterfaces: false,
@@ -162,12 +161,12 @@ describe('test the creation broker reducer', () => {
   });
 
   it('test setAcceptorName', () => {
-    const initialState = newArtemisCRState('namespace');
-    const stateWith1Acceptor = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addAcceptor,
+    const initialState = newBroker712CR('namespace');
+    const stateWith1Acceptor = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addAcceptor,
     });
-    const newState2 = artemisCrReducer(stateWith1Acceptor, {
-      operation: ArtemisReducerOperations.setAcceptorName,
+    const newState2 = reducer712(stateWith1Acceptor, {
+      operation: ArtemisReducerOperations712.setAcceptorName,
       payload: {
         oldName: 'acceptors0',
         newName: 'superName',
@@ -180,15 +179,15 @@ describe('test the creation broker reducer', () => {
   });
 
   it('test renaming an acceptor to an existing name to have no effect', () => {
-    const initialState = newArtemisCRState('namespace');
-    const stateWith1Acceptor = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addAcceptor,
+    const initialState = newBroker712CR('namespace');
+    const stateWith1Acceptor = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addAcceptor,
     });
-    const stateWith2Acceptor = artemisCrReducer(stateWith1Acceptor, {
-      operation: ArtemisReducerOperations.addAcceptor,
+    const stateWith2Acceptor = reducer712(stateWith1Acceptor, {
+      operation: ArtemisReducerOperations712.addAcceptor,
     });
-    const newState3 = artemisCrReducer(stateWith2Acceptor, {
-      operation: ArtemisReducerOperations.setAcceptorName,
+    const newState3 = reducer712(stateWith2Acceptor, {
+      operation: ArtemisReducerOperations712.setAcceptorName,
       payload: {
         oldName: 'acceptors1',
         newName: 'acceptors0',
@@ -199,12 +198,12 @@ describe('test the creation broker reducer', () => {
   });
 
   it('test setAcceptorOtherParams', () => {
-    const initialState = newArtemisCRState('namespace');
-    const stateWith1Acceptor = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addAcceptor,
+    const initialState = newBroker712CR('namespace');
+    const stateWith1Acceptor = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addAcceptor,
     });
-    const newState2 = artemisCrReducer(stateWith1Acceptor, {
-      operation: ArtemisReducerOperations.setAcceptorOtherParams,
+    const newState2 = reducer712(stateWith1Acceptor, {
+      operation: ArtemisReducerOperations712.setAcceptorOtherParams,
       payload: {
         name: 'acceptors0',
         otherParams: new Map<string, string>([
@@ -219,8 +218,8 @@ describe('test the creation broker reducer', () => {
     expect(newState2.cr.spec.brokerProperties).toContain(
       'acceptorConfigurations.acceptors0.params.bKey=bValue',
     );
-    const newState3 = artemisCrReducer(newState2, {
-      operation: ArtemisReducerOperations.setAcceptorOtherParams,
+    const newState3 = reducer712(newState2, {
+      operation: ArtemisReducerOperations712.setAcceptorOtherParams,
       payload: {
         name: 'acceptors0',
         otherParams: new Map<string, string>([['aKey', 'aValue']]),
@@ -235,34 +234,34 @@ describe('test the creation broker reducer', () => {
   });
 
   it('should assigns unique ports to each new acceptor added', () => {
-    const initialState = newArtemisCRState('namespace');
+    const initialState = newBroker712CR('namespace');
 
     // Add the first acceptor
-    let newState = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addAcceptor,
+    let newState = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addAcceptor,
     });
     expect(newState.cr.spec.acceptors[0].port).toBe(5555);
 
     // Add a second acceptor
-    newState = artemisCrReducer(newState, {
-      operation: ArtemisReducerOperations.addAcceptor,
+    newState = reducer712(newState, {
+      operation: ArtemisReducerOperations712.addAcceptor,
     });
     expect(newState.cr.spec.acceptors[1].port).toBe(5556);
 
     // Add a third acceptor
-    newState = artemisCrReducer(newState, {
-      operation: ArtemisReducerOperations.addAcceptor,
+    newState = reducer712(newState, {
+      operation: ArtemisReducerOperations712.addAcceptor,
     });
     expect(newState.cr.spec.acceptors[2].port).toBe(5557);
   });
 
   it('test setAcceptorPort', () => {
-    const initialState = newArtemisCRState('namespace');
-    const stateWith1Acceptor = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addAcceptor,
+    const initialState = newBroker712CR('namespace');
+    const stateWith1Acceptor = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addAcceptor,
     });
-    const newState2 = artemisCrReducer(stateWith1Acceptor, {
-      operation: ArtemisReducerOperations.setAcceptorPort,
+    const newState2 = reducer712(stateWith1Acceptor, {
+      operation: ArtemisReducerOperations712.setAcceptorPort,
       payload: {
         name: 'acceptors0',
         port: 6666,
@@ -272,12 +271,12 @@ describe('test the creation broker reducer', () => {
   });
 
   it('should increments next acceptor port based on manually set port value', () => {
-    const initialState = newArtemisCRState('namespace');
-    const stateWith1Acceptor = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addAcceptor,
+    const initialState = newBroker712CR('namespace');
+    const stateWith1Acceptor = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addAcceptor,
     });
-    let newState2 = artemisCrReducer(stateWith1Acceptor, {
-      operation: ArtemisReducerOperations.setAcceptorPort,
+    let newState2 = reducer712(stateWith1Acceptor, {
+      operation: ArtemisReducerOperations712.setAcceptorPort,
       payload: {
         name: 'acceptors0',
         port: 6666,
@@ -285,19 +284,19 @@ describe('test the creation broker reducer', () => {
     });
     expect(newState2.cr.spec.acceptors[0].port).toBe(6666);
 
-    newState2 = artemisCrReducer(newState2, {
-      operation: ArtemisReducerOperations.addAcceptor,
+    newState2 = reducer712(newState2, {
+      operation: ArtemisReducerOperations712.addAcceptor,
     });
     expect(newState2.cr.spec.acceptors[1].port).toBe(6667);
   });
 
   it('test setAcceptorProtocols', () => {
-    const initialState = newArtemisCRState('namespace');
-    const stateWith1Acceptor = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addAcceptor,
+    const initialState = newBroker712CR('namespace');
+    const stateWith1Acceptor = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addAcceptor,
     });
-    const newState2 = artemisCrReducer(stateWith1Acceptor, {
-      operation: ArtemisReducerOperations.setAcceptorProtocols,
+    const newState2 = reducer712(stateWith1Acceptor, {
+      operation: ArtemisReducerOperations712.setAcceptorProtocols,
       payload: {
         configName: 'acceptors0',
         protocols: 'ALL,SOMETHING',
@@ -307,12 +306,12 @@ describe('test the creation broker reducer', () => {
   });
 
   it('test setAcceptorSSLEnabled', () => {
-    const initialState = newArtemisCRState('namespace');
-    const stateWith1Acceptor = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addAcceptor,
+    const initialState = newBroker712CR('namespace');
+    const stateWith1Acceptor = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addAcceptor,
     });
-    const newState2 = artemisCrReducer(stateWith1Acceptor, {
-      operation: ArtemisReducerOperations.setAcceptorSSLEnabled,
+    const newState2 = reducer712(stateWith1Acceptor, {
+      operation: ArtemisReducerOperations712.setAcceptorSSLEnabled,
       payload: {
         name: 'acceptors0',
         sslEnabled: true,
@@ -322,12 +321,12 @@ describe('test the creation broker reducer', () => {
   });
 
   it('test setAcceptorSecret', () => {
-    const initialState = newArtemisCRState('namespace');
-    const stateWith1Acceptor = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addAcceptor,
+    const initialState = newBroker712CR('namespace');
+    const stateWith1Acceptor = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addAcceptor,
     });
-    const newState2 = artemisCrReducer(stateWith1Acceptor, {
-      operation: ArtemisReducerOperations.setAcceptorSecret,
+    const newState2 = reducer712(stateWith1Acceptor, {
+      operation: ArtemisReducerOperations712.setAcceptorSecret,
       payload: {
         name: 'acceptors0',
         isCa: false,
@@ -335,8 +334,8 @@ describe('test the creation broker reducer', () => {
       },
     });
     expect(newState2.cr.spec.acceptors[0].sslSecret).toBe('toto');
-    const newState3 = artemisCrReducer(newState2, {
-      operation: ArtemisReducerOperations.setAcceptorSecret,
+    const newState3 = reducer712(newState2, {
+      operation: ArtemisReducerOperations712.setAcceptorSecret,
       payload: {
         name: 'acceptors0',
         isCa: true,
@@ -347,9 +346,9 @@ describe('test the creation broker reducer', () => {
   });
 
   it('test setBrokerName', () => {
-    const initialState = newArtemisCRState('namespace');
-    const newState = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.setBrokerName,
+    const initialState = newBroker712CR('namespace');
+    const newState = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.setBrokerName,
       payload: 'newName',
     });
     expect(newState.cr.metadata.name).toBe('newName');
@@ -357,23 +356,23 @@ describe('test the creation broker reducer', () => {
 
   // enchaine avec le lwoercase
   it('test setConnectorBindToAllInterfaces', () => {
-    const initialState = newArtemisCRState('namespace');
-    const stateWith1Connector = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addConnector,
+    const initialState = newBroker712CR('namespace');
+    const stateWith1Connector = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addConnector,
     });
     expect(stateWith1Connector.cr.spec.connectors[0].bindToAllInterfaces).toBe(
       undefined,
     );
-    const newState2 = artemisCrReducer(stateWith1Connector, {
-      operation: ArtemisReducerOperations.setConnectorBindToAllInterfaces,
+    const newState2 = reducer712(stateWith1Connector, {
+      operation: ArtemisReducerOperations712.setConnectorBindToAllInterfaces,
       payload: {
         name: 'connectors0',
         bindToAllInterfaces: true,
       },
     });
     expect(newState2.cr.spec.connectors[0].bindToAllInterfaces).toBe(true);
-    const newState3 = artemisCrReducer(stateWith1Connector, {
-      operation: ArtemisReducerOperations.setConnectorBindToAllInterfaces,
+    const newState3 = reducer712(stateWith1Connector, {
+      operation: ArtemisReducerOperations712.setConnectorBindToAllInterfaces,
       payload: {
         name: 'connectors0',
         bindToAllInterfaces: false,
@@ -383,12 +382,12 @@ describe('test the creation broker reducer', () => {
   });
 
   it('test setConnectorHost', () => {
-    const initialState = newArtemisCRState('namespace');
-    const stateWith1Connector = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addConnector,
+    const initialState = newBroker712CR('namespace');
+    const stateWith1Connector = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addConnector,
     });
-    const newState2 = artemisCrReducer(stateWith1Connector, {
-      operation: ArtemisReducerOperations.setConnectorHost,
+    const newState2 = reducer712(stateWith1Connector, {
+      operation: ArtemisReducerOperations712.setConnectorHost,
       payload: {
         connectorName: 'connectors0',
         host: 'superHost',
@@ -398,12 +397,12 @@ describe('test the creation broker reducer', () => {
   });
 
   it('test setConnectorName', () => {
-    const initialState = newArtemisCRState('namespace');
-    const stateWith1Connector = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addConnector,
+    const initialState = newBroker712CR('namespace');
+    const stateWith1Connector = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addConnector,
     });
-    const newState2 = artemisCrReducer(stateWith1Connector, {
-      operation: ArtemisReducerOperations.setConnectorName,
+    const newState2 = reducer712(stateWith1Connector, {
+      operation: ArtemisReducerOperations712.setConnectorName,
       payload: {
         oldName: 'connectors0',
         newName: 'superName',
@@ -416,15 +415,15 @@ describe('test the creation broker reducer', () => {
   });
 
   it('test renaming an connector to an existing name to have no effect', () => {
-    const initialState = newArtemisCRState('namespace');
-    const stateWith1Connector = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addConnector,
+    const initialState = newBroker712CR('namespace');
+    const stateWith1Connector = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addConnector,
     });
-    const stateWith2Connector = artemisCrReducer(stateWith1Connector, {
-      operation: ArtemisReducerOperations.addConnector,
+    const stateWith2Connector = reducer712(stateWith1Connector, {
+      operation: ArtemisReducerOperations712.addConnector,
     });
-    const newState3 = artemisCrReducer(stateWith2Connector, {
-      operation: ArtemisReducerOperations.setConnectorName,
+    const newState3 = reducer712(stateWith2Connector, {
+      operation: ArtemisReducerOperations712.setConnectorName,
       payload: {
         oldName: 'connectors1',
         newName: 'connectors0',
@@ -435,12 +434,12 @@ describe('test the creation broker reducer', () => {
   });
 
   it('test setConnectorOtherParams', () => {
-    const initialState = newArtemisCRState('namespace');
-    const stateWith1Connector = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addConnector,
+    const initialState = newBroker712CR('namespace');
+    const stateWith1Connector = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addConnector,
     });
-    const newState2 = artemisCrReducer(stateWith1Connector, {
-      operation: ArtemisReducerOperations.setConnectorOtherParams,
+    const newState2 = reducer712(stateWith1Connector, {
+      operation: ArtemisReducerOperations712.setConnectorOtherParams,
       payload: {
         name: 'connectors0',
         otherParams: new Map<string, string>([
@@ -455,8 +454,8 @@ describe('test the creation broker reducer', () => {
     expect(newState2.cr.spec.brokerProperties).toContain(
       'connectorConfigurations.connectors0.params.bKey=bValue',
     );
-    const newState3 = artemisCrReducer(newState2, {
-      operation: ArtemisReducerOperations.setConnectorOtherParams,
+    const newState3 = reducer712(newState2, {
+      operation: ArtemisReducerOperations712.setConnectorOtherParams,
       payload: {
         name: 'connectors0',
         otherParams: new Map<string, string>([['aKey', 'aValue']]),
@@ -471,34 +470,34 @@ describe('test the creation broker reducer', () => {
   });
 
   it('should assigns unique ports to each new connector added', () => {
-    const initialState = newArtemisCRState('namespace');
+    const initialState = newBroker712CR('namespace');
 
     // Add the first connector
-    let newState = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addConnector,
+    let newState = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addConnector,
     });
     expect(newState.cr.spec.connectors[0].port).toBe(5555);
 
     // Add a second connector
-    newState = artemisCrReducer(newState, {
-      operation: ArtemisReducerOperations.addConnector,
+    newState = reducer712(newState, {
+      operation: ArtemisReducerOperations712.addConnector,
     });
     expect(newState.cr.spec.connectors[1].port).toBe(5556);
 
     // Add a third connector
-    newState = artemisCrReducer(newState, {
-      operation: ArtemisReducerOperations.addConnector,
+    newState = reducer712(newState, {
+      operation: ArtemisReducerOperations712.addConnector,
     });
     expect(newState.cr.spec.connectors[2].port).toBe(5557);
   });
 
   it('test setConnectorPort', () => {
-    const initialState = newArtemisCRState('namespace');
-    const stateWith1Connector = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addConnector,
+    const initialState = newBroker712CR('namespace');
+    const stateWith1Connector = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addConnector,
     });
-    const newState2 = artemisCrReducer(stateWith1Connector, {
-      operation: ArtemisReducerOperations.setConnectorPort,
+    const newState2 = reducer712(stateWith1Connector, {
+      operation: ArtemisReducerOperations712.setConnectorPort,
       payload: {
         name: 'connectors0',
         port: 6666,
@@ -508,12 +507,12 @@ describe('test the creation broker reducer', () => {
   });
 
   it('should increments next connector port based on manually set port value', () => {
-    const initialState = newArtemisCRState('namespace');
-    const stateWith1Connector = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addConnector,
+    const initialState = newBroker712CR('namespace');
+    const stateWith1Connector = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addConnector,
     });
-    let newState2 = artemisCrReducer(stateWith1Connector, {
-      operation: ArtemisReducerOperations.setConnectorPort,
+    let newState2 = reducer712(stateWith1Connector, {
+      operation: ArtemisReducerOperations712.setConnectorPort,
       payload: {
         name: 'connectors0',
         port: 6666,
@@ -521,29 +520,29 @@ describe('test the creation broker reducer', () => {
     });
     expect(newState2.cr.spec.connectors[0].port).toBe(6666);
 
-    newState2 = artemisCrReducer(newState2, {
-      operation: ArtemisReducerOperations.addConnector,
+    newState2 = reducer712(newState2, {
+      operation: ArtemisReducerOperations712.addConnector,
     });
     expect(newState2.cr.spec.connectors[1].port).toBe(6667);
   });
 
   it('test unique port allocation by combining both new added acceptors/connectors and verify correct port incrementation after manual port modification', () => {
-    const initialState = newArtemisCRState('namespace');
+    const initialState = newBroker712CR('namespace');
     //Add first acceptor
-    let newStateWithAcceptor = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addAcceptor,
+    let newStateWithAcceptor = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addAcceptor,
     });
     expect(newStateWithAcceptor.cr.spec.acceptors[0].port).toBe(5555);
 
     //Add second acceptor
-    newStateWithAcceptor = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addAcceptor,
+    newStateWithAcceptor = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addAcceptor,
     });
     expect(newStateWithAcceptor.cr.spec.acceptors[1].port).toBe(5556);
 
     // Manually change the port of the second acceptor to 5557
-    newStateWithAcceptor = artemisCrReducer(newStateWithAcceptor, {
-      operation: ArtemisReducerOperations.setAcceptorPort,
+    newStateWithAcceptor = reducer712(newStateWithAcceptor, {
+      operation: ArtemisReducerOperations712.setAcceptorPort,
       payload: {
         name: 'acceptors1',
         port: 5557,
@@ -552,26 +551,26 @@ describe('test the creation broker reducer', () => {
     expect(newStateWithAcceptor.cr.spec.acceptors[1].port).toBe(5557);
 
     //Add third acceptor
-    newStateWithAcceptor = artemisCrReducer(newStateWithAcceptor, {
-      operation: ArtemisReducerOperations.addAcceptor,
+    newStateWithAcceptor = reducer712(newStateWithAcceptor, {
+      operation: ArtemisReducerOperations712.addAcceptor,
     });
     expect(newStateWithAcceptor.cr.spec.acceptors[2].port).toBe(5558);
 
     //Add first connector
-    let newStateWithConnector = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addConnector,
+    let newStateWithConnector = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addConnector,
     });
     expect(newStateWithConnector.cr.spec.connectors[0].port).toBe(5555);
 
     //Add second connector
-    newStateWithConnector = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addConnector,
+    newStateWithConnector = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addConnector,
     });
     expect(newStateWithConnector.cr.spec.connectors[1].port).toBe(5556);
 
     // Manually change the port of the second connector to 5557
-    newStateWithConnector = artemisCrReducer(newStateWithConnector, {
-      operation: ArtemisReducerOperations.setConnectorPort,
+    newStateWithConnector = reducer712(newStateWithConnector, {
+      operation: ArtemisReducerOperations712.setConnectorPort,
       payload: {
         name: 'connectors1',
         port: 5557,
@@ -580,19 +579,19 @@ describe('test the creation broker reducer', () => {
     expect(newStateWithConnector.cr.spec.connectors[1].port).toBe(5557);
 
     //Add third connector
-    newStateWithConnector = artemisCrReducer(newStateWithConnector, {
-      operation: ArtemisReducerOperations.addConnector,
+    newStateWithConnector = reducer712(newStateWithConnector, {
+      operation: ArtemisReducerOperations712.addConnector,
     });
     expect(newStateWithConnector.cr.spec.connectors[2].port).toBe(5558);
   });
 
   it('test setConnectorProtocols', () => {
-    const initialState = newArtemisCRState('namespace');
-    const stateWith1Connector = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addConnector,
+    const initialState = newBroker712CR('namespace');
+    const stateWith1Connector = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addConnector,
     });
-    const newState2 = artemisCrReducer(stateWith1Connector, {
-      operation: ArtemisReducerOperations.setConnectorProtocols,
+    const newState2 = reducer712(stateWith1Connector, {
+      operation: ArtemisReducerOperations712.setConnectorProtocols,
       payload: {
         configName: 'connectors0',
         protocols: 'ALL,SOMETHING',
@@ -602,12 +601,12 @@ describe('test the creation broker reducer', () => {
   });
 
   it('test setConnectorSSLEnabled', () => {
-    const initialState = newArtemisCRState('namespace');
-    const stateWith1Connector = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addConnector,
+    const initialState = newBroker712CR('namespace');
+    const stateWith1Connector = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addConnector,
     });
-    const newState2 = artemisCrReducer(stateWith1Connector, {
-      operation: ArtemisReducerOperations.setConnectorSSLEnabled,
+    const newState2 = reducer712(stateWith1Connector, {
+      operation: ArtemisReducerOperations712.setConnectorSSLEnabled,
       payload: {
         name: 'connectors0',
         sslEnabled: true,
@@ -617,12 +616,12 @@ describe('test the creation broker reducer', () => {
   });
 
   it('test setConnectorSecret', () => {
-    const initialState = newArtemisCRState('namespace');
-    const stateWith1Connector = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addConnector,
+    const initialState = newBroker712CR('namespace');
+    const stateWith1Connector = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addConnector,
     });
-    const newState2 = artemisCrReducer(stateWith1Connector, {
-      operation: ArtemisReducerOperations.setConnectorSecret,
+    const newState2 = reducer712(stateWith1Connector, {
+      operation: ArtemisReducerOperations712.setConnectorSecret,
       payload: {
         name: 'connectors0',
         isCa: false,
@@ -630,8 +629,8 @@ describe('test the creation broker reducer', () => {
       },
     });
     expect(newState2.cr.spec.connectors[0].sslSecret).toBe('toto');
-    const newState3 = artemisCrReducer(newState2, {
-      operation: ArtemisReducerOperations.setConnectorSecret,
+    const newState3 = reducer712(newState2, {
+      operation: ArtemisReducerOperations712.setConnectorSecret,
       payload: {
         name: 'connectors0',
         isCa: true,
@@ -642,9 +641,9 @@ describe('test the creation broker reducer', () => {
   });
 
   it('test setConsoleCredentials', () => {
-    const initialState = newArtemisCRState('namespace');
-    const newState = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.setConsoleCredentials,
+    const initialState = newBroker712CR('namespace');
+    const newState = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.setConsoleCredentials,
       payload: {
         adminUser: 'some',
         adminPassword: 'thing',
@@ -655,36 +654,36 @@ describe('test the creation broker reducer', () => {
   });
 
   it('test setConsoleExpose', () => {
-    const initialState = newArtemisCRState('namespace');
-    const newState = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.setConsoleExpose,
+    const initialState = newBroker712CR('namespace');
+    const newState = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.setConsoleExpose,
       payload: true,
     });
     expect(newState.cr.spec.console.expose).toBe(true);
   });
 
   it('test setConsoleExposeMode', () => {
-    const initialState = newArtemisCRState('namespace');
-    const newState = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.setConsoleExposeMode,
+    const initialState = newBroker712CR('namespace');
+    const newState = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.setConsoleExposeMode,
       payload: ExposeMode.ingress,
     });
     expect(newState.cr.spec.console.exposeMode).toBe(ExposeMode.ingress);
   });
 
   it('test setConsoleSSLEnabled', () => {
-    const initialState = newArtemisCRState('namespace');
-    const newState = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.setConsoleSSLEnabled,
+    const initialState = newBroker712CR('namespace');
+    const newState = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.setConsoleSSLEnabled,
       payload: true,
     });
     expect(newState.cr.spec.console.sslEnabled).toBe(true);
   });
 
   it('test setConsoleSecret', () => {
-    const initialState = newArtemisCRState('namespace');
-    const newState = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.setConsoleSecret,
+    const initialState = newBroker712CR('namespace');
+    const newState = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.setConsoleSecret,
       payload: {
         name: 'console',
         isCa: true,
@@ -694,40 +693,31 @@ describe('test the creation broker reducer', () => {
     expect(newState.cr.spec.console.trustSecret).toBe('toto');
   });
 
-  it('test setEditorType', () => {
-    const initialState = newArtemisCRState('namespace');
-    const newState = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.setEditorType,
-      payload: EditorType.BROKER,
-    });
-    expect(newState.editorType).toBe(EditorType.BROKER);
-  });
-
   it('test setNamespace', () => {
-    const initialState = newArtemisCRState('namespace');
-    const newState = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.setNamespace,
+    const initialState = newBroker712CR('namespace');
+    const newState = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.setNamespace,
       payload: 'newNamespace',
     });
     expect(newState.cr.metadata.namespace).toBe('newNamespace');
   });
 
   it('test replicas setReplicasNumber', () => {
-    const initialState = newArtemisCRState('namespace');
-    const newState = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.setReplicasNumber,
+    const initialState = newBroker712CR('namespace');
+    const newState = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.setReplicasNumber,
       payload: 10,
     });
     expect(newState.cr.spec.deploymentPlan.size).toBe(10);
   });
 
   it('test updateAcceptorFactoryClass', () => {
-    const initialState = newArtemisCRState('namespace');
-    const stateWith1Acceptor = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addAcceptor,
+    const initialState = newBroker712CR('namespace');
+    const stateWith1Acceptor = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addAcceptor,
     });
-    const newState2 = artemisCrReducer(stateWith1Acceptor, {
-      operation: ArtemisReducerOperations.updateAcceptorFactoryClass,
+    const newState2 = reducer712(stateWith1Acceptor, {
+      operation: ArtemisReducerOperations712.updateAcceptorFactoryClass,
       payload: {
         name: 'acceptors0',
         class: 'invm',
@@ -736,8 +726,8 @@ describe('test the creation broker reducer', () => {
     expect(newState2.cr.spec.brokerProperties).toContain(
       'acceptorConfigurations.acceptors0.factoryClassName=org.apache.activemq.artemis.core.remoting.impl.invm.InVMAcceptorFactory',
     );
-    const newState3 = artemisCrReducer(newState2, {
-      operation: ArtemisReducerOperations.updateAcceptorFactoryClass,
+    const newState3 = reducer712(newState2, {
+      operation: ArtemisReducerOperations712.updateAcceptorFactoryClass,
       payload: {
         name: 'acceptors0',
         class: 'netty',
@@ -749,12 +739,12 @@ describe('test the creation broker reducer', () => {
   });
 
   it('test updateConnectorFactoryClass', () => {
-    const initialState = newArtemisCRState('namespace');
-    const stateWith1Acceptor = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addConnector,
+    const initialState = newBroker712CR('namespace');
+    const stateWith1Acceptor = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addConnector,
     });
-    const newState2 = artemisCrReducer(stateWith1Acceptor, {
-      operation: ArtemisReducerOperations.updateConnectorFactoryClass,
+    const newState2 = reducer712(stateWith1Acceptor, {
+      operation: ArtemisReducerOperations712.updateConnectorFactoryClass,
       payload: {
         name: 'connectors0',
         class: 'invm',
@@ -763,8 +753,8 @@ describe('test the creation broker reducer', () => {
     expect(newState2.cr.spec.brokerProperties).toContain(
       'connectorConfigurations.connectors0.factoryClassName=org.apache.activemq.artemis.core.remoting.impl.invm.InVMAcceptorFactory',
     );
-    const newState3 = artemisCrReducer(newState2, {
-      operation: ArtemisReducerOperations.updateConnectorFactoryClass,
+    const newState3 = reducer712(newState2, {
+      operation: ArtemisReducerOperations712.updateConnectorFactoryClass,
       payload: {
         name: 'connectors0',
         class: 'netty',
@@ -776,16 +766,16 @@ describe('test the creation broker reducer', () => {
   });
 
   it('test activatePEMGenerationForAcceptor', () => {
-    const initialState = newArtemisCRState('namespace');
-    const stateWith1Acceptor = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addAcceptor,
+    const initialState = newBroker712CR('namespace');
+    const stateWith1Acceptor = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addAcceptor,
     });
-    const stateWithIngressDomain = artemisCrReducer(stateWith1Acceptor, {
-      operation: ArtemisReducerOperations.setIngressDomain,
+    const stateWithIngressDomain = reducer712(stateWith1Acceptor, {
+      operation: ArtemisReducerOperations712.setIngressDomain,
       payload: 'apps-crc.testing',
     });
-    const stateWithPEM = artemisCrReducer(stateWithIngressDomain, {
-      operation: ArtemisReducerOperations.activatePEMGenerationForAcceptor,
+    const stateWithPEM = reducer712(stateWithIngressDomain, {
+      operation: ArtemisReducerOperations712.activatePEMGenerationForAcceptor,
       payload: {
         acceptor: 'acceptors0',
         issuer: 'someIssuer',
@@ -821,8 +811,8 @@ describe('test the creation broker reducer', () => {
         'apps-crc.testing',
     );
     // update broker name
-    const updatedBrokerName = artemisCrReducer(stateWithPEM, {
-      operation: ArtemisReducerOperations.setBrokerName,
+    const updatedBrokerName = reducer712(stateWithPEM, {
+      operation: ArtemisReducerOperations712.setBrokerName,
       payload: 'bro',
     });
     expect(updatedBrokerName.cr.spec.acceptors[0].sslSecret).toBe(
@@ -848,8 +838,8 @@ describe('test the creation broker reducer', () => {
         'apps-crc.testing',
     );
     // update broker name
-    const updatedNamespace = artemisCrReducer(updatedBrokerName, {
-      operation: ArtemisReducerOperations.setNamespace,
+    const updatedNamespace = reducer712(updatedBrokerName, {
+      operation: ArtemisReducerOperations712.setNamespace,
       payload: 'space',
     });
     expect(updatedNamespace.cr.spec.resourceTemplates).toHaveLength(1);
@@ -866,8 +856,8 @@ describe('test the creation broker reducer', () => {
         'apps-crc.testing',
     );
     // update broker name
-    const updatedDomain = artemisCrReducer(updatedNamespace, {
-      operation: ArtemisReducerOperations.setIngressDomain,
+    const updatedDomain = reducer712(updatedNamespace, {
+      operation: ArtemisReducerOperations712.setIngressDomain,
       payload: 'tttt.com',
     });
     expect(updatedDomain.cr.spec.resourceTemplates).toHaveLength(1);
@@ -877,8 +867,8 @@ describe('test the creation broker reducer', () => {
       'ing.' + 'acceptors0' + '.' + 'bro' + '-0.' + 'space' + '.' + 'tttt.com',
     );
     // update Acceptor name
-    const updatedAcceptorName = artemisCrReducer(updatedDomain, {
-      operation: ArtemisReducerOperations.setAcceptorName,
+    const updatedAcceptorName = reducer712(updatedDomain, {
+      operation: ArtemisReducerOperations712.setAcceptorName,
       payload: {
         oldName: 'acceptors0',
         newName: 'bob',
@@ -908,16 +898,16 @@ describe('test the creation broker reducer', () => {
   });
 
   it('test changing number of replicas while in the PEM preset gives the correct number of hosts', () => {
-    const initialState = newArtemisCRState('namespace');
-    const stateWith1Acceptor = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addAcceptor,
+    const initialState = newBroker712CR('namespace');
+    const stateWith1Acceptor = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addAcceptor,
     });
-    const stateWithIngressDomain = artemisCrReducer(stateWith1Acceptor, {
-      operation: ArtemisReducerOperations.setIngressDomain,
+    const stateWithIngressDomain = reducer712(stateWith1Acceptor, {
+      operation: ArtemisReducerOperations712.setIngressDomain,
       payload: 'apps-crc.testing',
     });
-    const stateWithPEM = artemisCrReducer(stateWithIngressDomain, {
-      operation: ArtemisReducerOperations.activatePEMGenerationForAcceptor,
+    const stateWithPEM = reducer712(stateWithIngressDomain, {
+      operation: ArtemisReducerOperations712.activatePEMGenerationForAcceptor,
       payload: {
         acceptor: 'acceptors0',
         issuer: 'someIssuer',
@@ -952,8 +942,8 @@ describe('test the creation broker reducer', () => {
         '.' +
         'apps-crc.testing',
     );
-    const stateWith2Replicas = artemisCrReducer(stateWithPEM, {
-      operation: ArtemisReducerOperations.incrementReplicas,
+    const stateWith2Replicas = reducer712(stateWithPEM, {
+      operation: ArtemisReducerOperations712.incrementReplicas,
     });
     expect(
       stateWith2Replicas.cr.spec.resourceTemplates[0].patch.spec.tls[0]
@@ -986,8 +976,8 @@ describe('test the creation broker reducer', () => {
     ).toHaveLength(2);
 
     const newNumber = 10;
-    const stateWith10Replicas = artemisCrReducer(stateWith2Replicas, {
-      operation: ArtemisReducerOperations.setReplicasNumber,
+    const stateWith10Replicas = reducer712(stateWith2Replicas, {
+      operation: ArtemisReducerOperations712.setReplicasNumber,
       payload: newNumber,
     });
     expect(
@@ -1010,8 +1000,8 @@ describe('test the creation broker reducer', () => {
           'apps-crc.testing',
       );
     }
-    const stateWith9Replicas = artemisCrReducer(stateWith10Replicas, {
-      operation: ArtemisReducerOperations.decrementReplicas,
+    const stateWith9Replicas = reducer712(stateWith10Replicas, {
+      operation: ArtemisReducerOperations712.decrementReplicas,
     });
     expect(
       stateWith9Replicas.cr.spec.resourceTemplates[0].patch.spec.tls[0].hosts,
@@ -1036,19 +1026,19 @@ describe('test the creation broker reducer', () => {
   });
 
   it('test deletePEMGenerationForAcceptor', () => {
-    const initialState = newArtemisCRState('namespace');
-    const stateWith1Acceptor = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addAcceptor,
+    const initialState = newBroker712CR('namespace');
+    const stateWith1Acceptor = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addAcceptor,
     });
-    const stateWithPEM = artemisCrReducer(stateWith1Acceptor, {
-      operation: ArtemisReducerOperations.activatePEMGenerationForAcceptor,
+    const stateWithPEM = reducer712(stateWith1Acceptor, {
+      operation: ArtemisReducerOperations712.activatePEMGenerationForAcceptor,
       payload: {
         acceptor: 'acceptors0',
         issuer: 'someIssuer',
       },
     });
-    const stateWithDeletedPEM = artemisCrReducer(stateWithPEM, {
-      operation: ArtemisReducerOperations.deletePEMGenerationForAcceptor,
+    const stateWithDeletedPEM = reducer712(stateWithPEM, {
+      operation: ArtemisReducerOperations712.deletePEMGenerationForAcceptor,
       payload: 'acceptors0',
     });
     expect(stateWithDeletedPEM.cr.spec.acceptors[0].sslEnabled).toBe(undefined);
@@ -1057,12 +1047,12 @@ describe('test the creation broker reducer', () => {
   });
 
   it('test setAcceptorExposeMode,', () => {
-    const initialState = newArtemisCRState('namespace');
-    const stateWith1Acceptor = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addAcceptor,
+    const initialState = newBroker712CR('namespace');
+    const stateWith1Acceptor = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addAcceptor,
     });
-    const stateExposeModeIngress = artemisCrReducer(stateWith1Acceptor, {
-      operation: ArtemisReducerOperations.setAcceptorExposeMode,
+    const stateExposeModeIngress = reducer712(stateWith1Acceptor, {
+      operation: ArtemisReducerOperations712.setAcceptorExposeMode,
       payload: {
         name: 'acceptors0',
         exposeMode: ExposeMode.ingress,
@@ -1074,12 +1064,12 @@ describe('test the creation broker reducer', () => {
   });
 
   it('test setAcceptorIngressHost,', () => {
-    const initialState = newArtemisCRState('namespace');
-    const stateWith1Acceptor = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addAcceptor,
+    const initialState = newBroker712CR('namespace');
+    const stateWith1Acceptor = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addAcceptor,
     });
-    const stateExposeModeIngress = artemisCrReducer(stateWith1Acceptor, {
-      operation: ArtemisReducerOperations.setAcceptorIngressHost,
+    const stateExposeModeIngress = reducer712(stateWith1Acceptor, {
+      operation: ArtemisReducerOperations712.setAcceptorIngressHost,
       payload: {
         name: 'acceptors0',
         ingressHost: 'tuytutu',
@@ -1091,53 +1081,17 @@ describe('test the creation broker reducer', () => {
   });
 
   it('test setIsAcceptorExposed,', () => {
-    const initialState = newArtemisCRState('namespace');
-    const stateWith1Acceptor = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.addAcceptor,
+    const initialState = newBroker712CR('namespace');
+    const stateWith1Acceptor = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.addAcceptor,
     });
-    const stateExposeModeIngress = artemisCrReducer(stateWith1Acceptor, {
-      operation: ArtemisReducerOperations.setIsAcceptorExposed,
+    const stateExposeModeIngress = reducer712(stateWith1Acceptor, {
+      operation: ArtemisReducerOperations712.setIsAcceptorExposed,
       payload: {
         name: 'acceptors0',
         isExposed: true,
       },
     });
     expect(stateExposeModeIngress.cr.spec.acceptors[0].expose).toBe(true);
-  });
-  it('test setYamlHasUnsavedChanges,', () => {
-    const initialState = newArtemisCRState('namespace');
-    const updatedState = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.setYamlHasUnsavedChanges,
-    });
-    expect(updatedState.yamlHasUnsavedChanges).toBe(true);
-    expect(updatedState.hasChanges).toBe(false);
-  });
-  it('test machine controlled model update resets the changed flags,', () => {
-    const initialState = newArtemisCRState('namespace');
-    const updatedState = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.setModel,
-      payload: {
-        model: initialState.cr,
-        isSetByUser: false,
-      },
-    });
-    expect(updatedState.yamlHasUnsavedChanges).toBe(false);
-    expect(updatedState.hasChanges).toBe(false);
-  });
-  it('test user controlled model update updates the flags correctly', () => {
-    const initialState = newArtemisCRState('namespace');
-    let updatedState = artemisCrReducer(initialState, {
-      operation: ArtemisReducerOperations.setYamlHasUnsavedChanges,
-    });
-    expect(updatedState.hasChanges).toBe(false);
-    updatedState = artemisCrReducer(updatedState, {
-      operation: ArtemisReducerOperations.setModel,
-      payload: {
-        model: initialState.cr,
-        isSetByUser: true,
-      },
-    });
-    expect(updatedState.yamlHasUnsavedChanges).toBe(false);
-    expect(updatedState.hasChanges).toBe(true);
   });
 });

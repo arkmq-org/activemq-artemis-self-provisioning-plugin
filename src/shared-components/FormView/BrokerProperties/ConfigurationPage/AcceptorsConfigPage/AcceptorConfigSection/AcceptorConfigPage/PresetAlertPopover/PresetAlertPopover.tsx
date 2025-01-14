@@ -1,7 +1,7 @@
 import { FC, useContext } from 'react';
 import { ConfigType } from '../../../../ConfigurationPage';
+import { BrokerCreationFormState } from '@app/reducers/reducer';
 import {
-  BrokerCreationFormState,
   getAcceptor,
   getCertManagerResourceTemplateFromAcceptor,
 } from '@app/reducers/7.12/reducer';

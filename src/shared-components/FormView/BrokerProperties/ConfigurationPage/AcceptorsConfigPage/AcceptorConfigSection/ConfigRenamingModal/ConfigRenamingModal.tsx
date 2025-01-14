@@ -7,9 +7,11 @@ import {
 } from '@patternfly/react-core';
 import { FC, useContext, useState } from 'react';
 import {
-  ArtemisReducerOperations,
   BrokerCreationFormDispatch,
   BrokerCreationFormState,
+} from '@app/reducers/reducer';
+import {
+  ArtemisReducerOperations712,
   listConfigs,
 } from '../../../../../../../reducers/7.12/reducer';
 import { useTranslation } from '../../../../../../../i18n/i18n';
@@ -33,7 +35,7 @@ export const ConfigRenamingModal: FC<ConfigRenamingModalProps> = ({
   const handleNewName = () => {
     if (configType === ConfigType.acceptors) {
       dispatch({
-        operation: ArtemisReducerOperations.setAcceptorName,
+        operation: ArtemisReducerOperations712.setAcceptorName,
         payload: {
           oldName: initName,
           newName: newName,
@@ -42,7 +44,7 @@ export const ConfigRenamingModal: FC<ConfigRenamingModalProps> = ({
     }
     if (configType === ConfigType.connectors) {
       dispatch({
-        operation: ArtemisReducerOperations.setConnectorName,
+        operation: ArtemisReducerOperations712.setConnectorName,
         payload: {
           oldName: initName,
           newName: newName,

@@ -1,7 +1,7 @@
 import { BrokerCR } from '@app/k8s/types';
-import { EditorType } from './reducer';
+import { BaseFormState, EditorType } from '../reducer';
 
-export interface AddBrokerResourceValues {
+export interface FormState712 extends BaseFormState {
   shouldShowYAMLMessage?: boolean;
   editorType?: EditorType;
   yamlHasUnsavedChanges?: boolean;

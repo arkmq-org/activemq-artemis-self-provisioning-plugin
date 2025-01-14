@@ -1,5 +1,5 @@
 import { useTranslation } from '@app/i18n/i18n';
-import { BrokerCreationFormState } from '@app/reducers/7.12/reducer';
+import { BrokerCreationFormState } from '@app/reducers/reducer';
 import { CertIssuerModel, CertModel } from '@app/k8s/models';
 import { IssuerResource } from '@app/k8s/types';
 import {

@@ -1,55 +1,15 @@
-import { AddBrokerResourceValues as FormState } from './import-types';
+import { FormState712 as FormState712 } from './import-types';
 import { BrokerCR, Acceptor, ResourceTemplate } from '@app/k8s/types';
-import { createContext } from 'react';
 import { SelectOptionObject } from '@patternfly/react-core/deprecated';
 import { ConfigType } from '@app/shared-components/FormView/BrokerProperties/ConfigurationPage/ConfigurationPage';
-
-export enum EditorType {
-  BROKER = 'broker',
-  YAML = 'yaml',
-}
+import { EditorType } from '../reducer';
 
 export enum ExposeMode {
   route = 'route',
   ingress = 'ingress',
 }
 
-export const BrokerCreationFormState = createContext<FormState>({});
-export const BrokerCreationFormDispatch =
-  createContext<React.Dispatch<ArtemisReducerActions>>(null);
-
-const artemisCRStateMap = new Map<string, FormState>();
-
-const initialCr = (namespace: string, name: string): BrokerCR => {
-  return {
-    apiVersion: 'broker.amq.io/v1beta1',
-    kind: 'ActiveMQArtemis',
-    metadata: {
-      name: name,
-      namespace: namespace,
-    },
-    spec: {},
-  };
-};
-
-export const getArtemisCRState = (name: string, ns: string): FormState => {
-  const key = name + ns;
-  let formState = artemisCRStateMap.get(key);
-  if (!formState) {
-    formState = {
-      yamlHasUnsavedChanges: false,
-      hasChanges: false,
-    };
-    formState.shouldShowYAMLMessage = true;
-    formState.editorType = EditorType.BROKER;
-    artemisCRStateMap.set(key, formState);
-  }
-  formState.cr = initialCr(ns, name);
-
-  return formState;
-};
-
-export const newArtemisCRState = (namespace: string): FormState => {
+export const newBroker712CR = (namespace: string): FormState712 => {
   const initialCr: BrokerCR = {
     apiVersion: 'broker.amq.io/v1beta1',
     kind: 'ActiveMQArtemis',
@@ -73,38 +33,24 @@ export const newArtemisCRState = (namespace: string): FormState => {
   };
 
   return {
-    shouldShowYAMLMessage: true,
     editorType: EditorType.BROKER,
     cr: initialCr,
     hasChanges: false,
     yamlHasUnsavedChanges: false,
+    brokerVersion: '7.12',
   };
-};
-
-export const convertYamlToForm = (yamlBroker: BrokerCR) => {
-  const { metadata } = yamlBroker;
-
-  const newFormData = {
-    ...yamlBroker,
-    metadata: {
-      ...metadata,
-      name: metadata.name,
-    },
-    spec: yamlBroker.spec,
-  };
-
-  return newFormData;
 };
 
 // Reducer
 
-export enum ArtemisReducerOperations {
+// Operations for 7.12 start at number 1000
+export enum ArtemisReducerOperations712 {
   /**
    * Adds an issuer as an annotation to make the cert-manager operator generate
    * the PEM certificates at runtime. Will trigger cascading effects on the CR.
    * to unset call deleteCertManagerAnnotationIssuer
    */
-  activatePEMGenerationForAcceptor,
+  activatePEMGenerationForAcceptor = 1000,
   /** adds a new acceptor to the cr */
   addAcceptor,
   /** adds a or connector to the cr */
@@ -168,8 +114,6 @@ export enum ArtemisReducerOperations {
   setConsoleSSLEnabled,
   /** Renames an acceptor or a connector */
   setConsoleSecret,
-  /** set the editor to use in the UX*/
-  setEditorType,
   /**
    * set the ingress domain (used for cert manager annotations) usually the
    * domain name of the cluster
@@ -177,17 +121,10 @@ export enum ArtemisReducerOperations {
   setIngressDomain,
   /** Is this acceptor exposed */
   setIsAcceptorExposed,
-  /** updates the whole model */
-  setModel,
   /** update the namespace of the CR */
   setNamespace,
   /** update the total number of replicas */
   setReplicasNumber,
-  /**
-   * Tells that the yaml editor has unsaved changes, when the setModel is
-   * invoked, the flag is reset to false.
-   */
-  setYamlHasUnsavedChanges,
   /** Updates the configuration's factory Class */
   updateAcceptorFactoryClass,
   /** Update the issuer of an annotation */
@@ -196,12 +133,12 @@ export enum ArtemisReducerOperations {
   updateConnectorFactoryClass,
 }
 
-type ArtemisReducerActionBase = {
+export type ArtemisReducerActionBase = {
   /** which transformation to apply onto the state */
-  operation: ArtemisReducerOperations;
+  operation: ArtemisReducerOperations712;
 };
 
-type ArtemisReducerActions =
+export type ArtemisReducerActions712 =
   | ActivatePEMGenerationForAcceptorAction
   | AddAcceptorAction
   | AddConnectorAction
@@ -233,22 +170,16 @@ type ArtemisReducerActions =
   | SetConsoleExposeModeAction
   | SetConsoleSSLEnabled
   | SetConsoleSecretAction
-  | SetEditorTypeAction
   | SetIngressDomainAction
   | SetIsAcceptorExposedAction
-  | SetModelAction
   | SetNamespaceAction
   | SetReplicasNumberAction
-  | SetYamlHasUnsavedChanges
   | UpdateAcceptorFactoryClassAction
   | UpdateAnnotationIssuerAction
   | UpdateConnectorFactoryClassAction;
 
-interface SetYamlHasUnsavedChanges extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.setYamlHasUnsavedChanges;
-}
 interface UpdateAnnotationIssuerAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.updateAnnotationIssuer;
+  operation: ArtemisReducerOperations712.updateAnnotationIssuer;
   payload: {
     /** the acceptor name is needed to recover the corresponding annotation */
     acceptorName: string;
@@ -258,7 +189,7 @@ interface UpdateAnnotationIssuerAction extends ArtemisReducerActionBase {
 }
 
 interface SetAcceptorIngressHostAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.setAcceptorIngressHost;
+  operation: ArtemisReducerOperations712.setAcceptorIngressHost;
   payload: {
     /** the acceptor name */
     name: string;
@@ -268,7 +199,7 @@ interface SetAcceptorIngressHostAction extends ArtemisReducerActionBase {
 }
 
 interface SetAcceptorExposeModeAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.setAcceptorExposeMode;
+  operation: ArtemisReducerOperations712.setAcceptorExposeMode;
   payload: {
     /** the acceptor name */
     name: string;
@@ -278,7 +209,7 @@ interface SetAcceptorExposeModeAction extends ArtemisReducerActionBase {
 }
 
 interface SetIsAcceptorExposedAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.setIsAcceptorExposed;
+  operation: ArtemisReducerOperations712.setIsAcceptorExposed;
   payload: {
     /** the acceptor name */
     name: string;
@@ -289,7 +220,7 @@ interface SetIsAcceptorExposedAction extends ArtemisReducerActionBase {
 
 interface ActivatePEMGenerationForAcceptorAction
   extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.activatePEMGenerationForAcceptor;
+  operation: ArtemisReducerOperations712.activatePEMGenerationForAcceptor;
   payload: {
     /** the name of the acceptor */
     acceptor: string;
@@ -300,47 +231,47 @@ interface ActivatePEMGenerationForAcceptorAction
 
 interface DeletePEMGenerationForAcceptorAction
   extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.deletePEMGenerationForAcceptor;
+  operation: ArtemisReducerOperations712.deletePEMGenerationForAcceptor;
   /** the acceptor name */
   payload: string;
 }
 
 interface AddAcceptorAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.addAcceptor;
+  operation: ArtemisReducerOperations712.addAcceptor;
 }
 
 interface AddConnectorAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.addConnector;
+  operation: ArtemisReducerOperations712.addConnector;
 }
 
 interface DecrementReplicasAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.decrementReplicas;
+  operation: ArtemisReducerOperations712.decrementReplicas;
 }
 
 interface DeleteAcceptorAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.deleteAcceptor;
+  operation: ArtemisReducerOperations712.deleteAcceptor;
   /** the name of the acceptor */
   payload: string;
 }
 
 interface DeleteConnectorAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.deleteConnector;
+  operation: ArtemisReducerOperations712.deleteConnector;
   /** the name of the acceptor */
   payload: string;
 }
 
 interface IncrementReplicasAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.incrementReplicas;
+  operation: ArtemisReducerOperations712.incrementReplicas;
 }
 
 interface SetBrokerNameAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.setBrokerName;
+  operation: ArtemisReducerOperations712.setBrokerName;
   /** the name of the broker */
   payload: string;
 }
 
 interface SetConsoleCredentialsAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.setConsoleCredentials;
+  operation: ArtemisReducerOperations712.setConsoleCredentials;
   /** the new credentials */
   payload: {
     /** the username to login to the console */
@@ -351,32 +282,26 @@ interface SetConsoleCredentialsAction extends ArtemisReducerActionBase {
 }
 
 interface SetConsoleExposeAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.setConsoleExpose;
+  operation: ArtemisReducerOperations712.setConsoleExpose;
   /** is the console exposed */
   payload: boolean;
 }
 
 interface SetConsoleExposeModeAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.setConsoleExposeMode;
+  operation: ArtemisReducerOperations712.setConsoleExposeMode;
   /** how is the console exposed */
   payload: ExposeMode;
 }
 
 interface SetConsoleSSLEnabled extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.setConsoleSSLEnabled;
+  operation: ArtemisReducerOperations712.setConsoleSSLEnabled;
   /** is ssl enabled for the console */
   payload: boolean;
 }
 
-interface SetEditorTypeAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.setEditorType;
-  /* What editor the user wants to use */
-  payload: EditorType;
-}
-
 interface SetAcceptorBindToAllInterfacesAction
   extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.setAcceptorBindToAllInterfaces;
+  operation: ArtemisReducerOperations712.setAcceptorBindToAllInterfaces;
   payload: {
     /** name of the element to update */
     name: string;
@@ -387,7 +312,7 @@ interface SetAcceptorBindToAllInterfacesAction
 
 interface SetConnectorBindToAllInterfacesAction
   extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.setConnectorBindToAllInterfaces;
+  operation: ArtemisReducerOperations712.setConnectorBindToAllInterfaces;
   payload: {
     /** name of the element to update */
     name: string;
@@ -397,7 +322,7 @@ interface SetConnectorBindToAllInterfacesAction
 }
 
 interface UpdateAcceptorFactoryClassAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.updateAcceptorFactoryClass;
+  operation: ArtemisReducerOperations712.updateAcceptorFactoryClass;
   payload: {
     /** the name of the element */
     name: string;
@@ -407,7 +332,7 @@ interface UpdateAcceptorFactoryClassAction extends ArtemisReducerActionBase {
 }
 
 interface UpdateConnectorFactoryClassAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.updateConnectorFactoryClass;
+  operation: ArtemisReducerOperations712.updateConnectorFactoryClass;
   payload: {
     /** the name of the element */
     name: string;
@@ -416,18 +341,8 @@ interface UpdateConnectorFactoryClassAction extends ArtemisReducerActionBase {
   };
 }
 
-interface SetModelAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.setModel;
-  payload: {
-    model: BrokerCR;
-    /** setting this to true means that form state will get considered as
-     * modified, setting to false reset that status.*/
-    isSetByUser?: boolean;
-  };
-}
-
 interface SetConnectorHostAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.setConnectorHost;
+  operation: ArtemisReducerOperations712.setConnectorHost;
   payload: {
     /** the name of the configuration */
     connectorName: string;
@@ -437,7 +352,7 @@ interface SetConnectorHostAction extends ArtemisReducerActionBase {
 }
 
 interface SetAcceptorNameAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.setAcceptorName;
+  operation: ArtemisReducerOperations712.setAcceptorName;
   payload: {
     /** the name of the element */
     oldName: string;
@@ -447,7 +362,7 @@ interface SetAcceptorNameAction extends ArtemisReducerActionBase {
 }
 
 interface SetConnectorNameAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.setConnectorName;
+  operation: ArtemisReducerOperations712.setConnectorName;
   payload: {
     /** the name of the element */
     oldName: string;
@@ -457,7 +372,7 @@ interface SetConnectorNameAction extends ArtemisReducerActionBase {
 }
 
 interface SetAcceptorOtherParamsAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.setAcceptorOtherParams;
+  operation: ArtemisReducerOperations712.setAcceptorOtherParams;
   payload: {
     /** the name of the configuration */
     name: string;
@@ -467,7 +382,7 @@ interface SetAcceptorOtherParamsAction extends ArtemisReducerActionBase {
 }
 
 interface SetConnectorOtherParamsAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.setConnectorOtherParams;
+  operation: ArtemisReducerOperations712.setConnectorOtherParams;
   payload: {
     /** the name of the configuration */
     name: string;
@@ -477,7 +392,7 @@ interface SetConnectorOtherParamsAction extends ArtemisReducerActionBase {
 }
 
 interface SetAcceptorPortAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.setAcceptorPort;
+  operation: ArtemisReducerOperations712.setAcceptorPort;
   payload: {
     /** the name of the configuration */
     name: string;
@@ -487,7 +402,7 @@ interface SetAcceptorPortAction extends ArtemisReducerActionBase {
 }
 
 interface SetConnectorPortAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.setConnectorPort;
+  operation: ArtemisReducerOperations712.setConnectorPort;
   payload: {
     /** the name of the configuration */
     name: string;
@@ -497,7 +412,7 @@ interface SetConnectorPortAction extends ArtemisReducerActionBase {
 }
 
 interface SetAcceptorProtocolsAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.setAcceptorProtocols;
+  operation: ArtemisReducerOperations712.setAcceptorProtocols;
   payload: {
     /** the name of the configuration */
     configName: string;
@@ -507,7 +422,7 @@ interface SetAcceptorProtocolsAction extends ArtemisReducerActionBase {
 }
 
 interface SetConnectorProtocolsAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.setConnectorProtocols;
+  operation: ArtemisReducerOperations712.setConnectorProtocols;
   payload: {
     /** the name of the configuration */
     configName: string;
@@ -517,7 +432,7 @@ interface SetConnectorProtocolsAction extends ArtemisReducerActionBase {
 }
 
 interface SetAcceptorSSLEnabledAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.setAcceptorSSLEnabled;
+  operation: ArtemisReducerOperations712.setAcceptorSSLEnabled;
   payload: {
     /** the name of the element */
     name: string;
@@ -527,7 +442,7 @@ interface SetAcceptorSSLEnabledAction extends ArtemisReducerActionBase {
 }
 
 interface SetConnectorSSLEnabledAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.setConnectorSSLEnabled;
+  operation: ArtemisReducerOperations712.setConnectorSSLEnabled;
   payload: {
     /** the name of the element */
     name: string;
@@ -537,7 +452,7 @@ interface SetConnectorSSLEnabledAction extends ArtemisReducerActionBase {
 }
 
 interface SetAcceptorSecretAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.setAcceptorSecret;
+  operation: ArtemisReducerOperations712.setAcceptorSecret;
   payload: {
     /** the name of the configuration */
     name: string;
@@ -549,7 +464,7 @@ interface SetAcceptorSecretAction extends ArtemisReducerActionBase {
 }
 
 interface SetConnectorSecretAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.setConnectorSecret;
+  operation: ArtemisReducerOperations712.setConnectorSecret;
   payload: {
     /** the name of the configuration */
     name: string;
@@ -561,7 +476,7 @@ interface SetConnectorSecretAction extends ArtemisReducerActionBase {
 }
 
 interface SetConsoleSecretAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.setConsoleSecret;
+  operation: ArtemisReducerOperations712.setConsoleSecret;
   payload: {
     /** the name of the configuration */
     name: string;
@@ -573,19 +488,19 @@ interface SetConsoleSecretAction extends ArtemisReducerActionBase {
 }
 
 interface SetNamespaceAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.setNamespace;
+  operation: ArtemisReducerOperations712.setNamespace;
   /** the new namespace for the CR */
   payload: string;
 }
 
 interface SetReplicasNumberAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.setReplicasNumber;
+  operation: ArtemisReducerOperations712.setReplicasNumber;
   /** the total number of replicas */
   payload: number;
 }
 
 interface SetIngressDomainAction extends ArtemisReducerActionBase {
-  operation: ArtemisReducerOperations.setIngressDomain;
+  operation: ArtemisReducerOperations712.setIngressDomain;
   /** the domain of the cluster. Only passing the string is equivalent as saying
    * that the value is set by the user. Otherwise this value can be customized.
    * Setting isSetByUser to false has for effect to state that the form doesn't
@@ -597,6 +512,7 @@ interface SetIngressDomainAction extends ArtemisReducerActionBase {
         isSetByUser?: boolean;
       };
 }
+
 /**
  *
  * The core of the reducer functionality. Switch case on the Action and apply
@@ -604,35 +520,25 @@ interface SetIngressDomainAction extends ArtemisReducerActionBase {
  * the modifications are applied
  *
  */
-export const artemisCrReducer: React.Reducer<
-  FormState,
-  ArtemisReducerActions
+export const reducer712: React.Reducer<
+  FormState712,
+  ArtemisReducerActions712
 > = (prevFormState, action) => {
   const formState = { ...prevFormState };
-  if (
-    action.operation !== ArtemisReducerOperations.setEditorType &&
-    action.operation !== ArtemisReducerOperations.setYamlHasUnsavedChanges
-  ) {
-    formState.hasChanges = true;
-  }
-
   // set the individual fields
   switch (action.operation) {
-    case ArtemisReducerOperations.setYamlHasUnsavedChanges:
-      formState.yamlHasUnsavedChanges = true;
-      break;
-    case ArtemisReducerOperations.updateAnnotationIssuer:
+    case ArtemisReducerOperations712.updateAnnotationIssuer:
       updateAnnotationIssuer(
         formState.cr,
         action.payload.acceptorName,
         action.payload.newIssuer,
       );
       break;
-    case ArtemisReducerOperations.setAcceptorIngressHost:
+    case ArtemisReducerOperations712.setAcceptorIngressHost:
       getAcceptor(formState.cr, action.payload.name).ingressHost =
         action.payload.ingressHost;
       break;
-    case ArtemisReducerOperations.setAcceptorExposeMode:
+    case ArtemisReducerOperations712.setAcceptorExposeMode:
       if (action.payload) {
         getAcceptor(formState.cr, action.payload.name).exposeMode =
           action.payload.exposeMode;
@@ -640,38 +546,32 @@ export const artemisCrReducer: React.Reducer<
         delete getAcceptor(formState.cr, action.payload.name).exposeMode;
       }
       break;
-    case ArtemisReducerOperations.setIsAcceptorExposed:
+    case ArtemisReducerOperations712.setIsAcceptorExposed:
       getAcceptor(formState.cr, action.payload.name).expose =
         action.payload.isExposed;
       break;
-    case ArtemisReducerOperations.setEditorType:
-      formState.editorType = action.payload;
-      if (formState.editorType === EditorType.BROKER) {
-        formState.yamlHasUnsavedChanges = false;
-      }
-      break;
-    case ArtemisReducerOperations.setNamespace:
+    case ArtemisReducerOperations712.setNamespace:
       updateNamespace(formState.cr, action.payload);
       break;
-    case ArtemisReducerOperations.setReplicasNumber:
+    case ArtemisReducerOperations712.setReplicasNumber:
       updateDeploymentSize(formState.cr, action.payload);
       break;
-    case ArtemisReducerOperations.incrementReplicas:
+    case ArtemisReducerOperations712.incrementReplicas:
       updateDeploymentSize(
         formState.cr,
         formState.cr.spec.deploymentPlan.size + 1,
       );
       break;
-    case ArtemisReducerOperations.decrementReplicas:
+    case ArtemisReducerOperations712.decrementReplicas:
       updateDeploymentSize(
         formState.cr,
         formState.cr.spec.deploymentPlan.size - 1,
       );
       break;
-    case ArtemisReducerOperations.setBrokerName:
+    case ArtemisReducerOperations712.setBrokerName:
       updateBrokerName(formState.cr, action.payload);
       break;
-    case ArtemisReducerOperations.activatePEMGenerationForAcceptor:
+    case ArtemisReducerOperations712.activatePEMGenerationForAcceptor:
       activatePEMGenerationForAcceptor(formState.cr, action.payload.acceptor);
       setIssuerForAcceptor(
         formState.cr,
@@ -679,24 +579,24 @@ export const artemisCrReducer: React.Reducer<
         action.payload.issuer,
       );
       break;
-    case ArtemisReducerOperations.deletePEMGenerationForAcceptor:
+    case ArtemisReducerOperations712.deletePEMGenerationForAcceptor:
       clearAcceptorCertManagerConfig(formState.cr, action.payload);
       break;
-    case ArtemisReducerOperations.addAcceptor:
+    case ArtemisReducerOperations712.addAcceptor:
       addConfig(formState.cr, ConfigType.acceptors);
       break;
-    case ArtemisReducerOperations.addConnector:
+    case ArtemisReducerOperations712.addConnector:
       addConfig(formState.cr, ConfigType.connectors);
       break;
-    case ArtemisReducerOperations.deleteAcceptor:
+    case ArtemisReducerOperations712.deleteAcceptor:
       // before deleting an acceptor, remove any linked annotations
       deleteCertManagerAnnotation(formState.cr, action.payload);
       deleteConfig(formState.cr, ConfigType.acceptors, action.payload);
       break;
-    case ArtemisReducerOperations.deleteConnector:
+    case ArtemisReducerOperations712.deleteConnector:
       deleteConfig(formState.cr, ConfigType.connectors, action.payload);
       break;
-    case ArtemisReducerOperations.setAcceptorName:
+    case ArtemisReducerOperations712.setAcceptorName:
       renameConfig(
         formState.cr,
         ConfigType.acceptors,
@@ -711,7 +611,7 @@ export const artemisCrReducer: React.Reducer<
         action.payload.newName,
       );
       break;
-    case ArtemisReducerOperations.setConnectorName:
+    case ArtemisReducerOperations712.setConnectorName:
       renameConfig(
         formState.cr,
         ConfigType.connectors,
@@ -719,7 +619,7 @@ export const artemisCrReducer: React.Reducer<
         action.payload.newName,
       );
       break;
-    case ArtemisReducerOperations.setAcceptorSecret:
+    case ArtemisReducerOperations712.setAcceptorSecret:
       // when the user sets the acceptor secret manually, remove any linked
       // annotations
       clearAcceptorCertManagerConfig(formState.cr, action.payload.name);
@@ -740,7 +640,7 @@ export const artemisCrReducer: React.Reducer<
         action.payload.isCa,
       );
       break;
-    case ArtemisReducerOperations.setConnectorSecret:
+    case ArtemisReducerOperations712.setConnectorSecret:
       updateConfigSecret(
         formState.cr,
         ConfigType.connectors,
@@ -749,7 +649,7 @@ export const artemisCrReducer: React.Reducer<
         action.payload.isCa,
       );
       break;
-    case ArtemisReducerOperations.setConsoleSecret:
+    case ArtemisReducerOperations712.setConsoleSecret:
       updateConfigSecret(
         formState.cr,
         ConfigType.console,
@@ -758,23 +658,23 @@ export const artemisCrReducer: React.Reducer<
         action.payload.isCa,
       );
       break;
-    case ArtemisReducerOperations.setConsoleSSLEnabled:
+    case ArtemisReducerOperations712.setConsoleSSLEnabled:
       formState.cr.spec.console.sslEnabled = action.payload;
       if (!action.payload) {
         delete formState.cr.spec.console.useClientAuth;
       }
       break;
-    case ArtemisReducerOperations.setConsoleExposeMode:
+    case ArtemisReducerOperations712.setConsoleExposeMode:
       formState.cr.spec.console.exposeMode = action.payload;
       break;
-    case ArtemisReducerOperations.setConsoleExpose:
+    case ArtemisReducerOperations712.setConsoleExpose:
       formState.cr.spec.console.expose = action.payload;
       break;
-    case ArtemisReducerOperations.setConsoleCredentials:
+    case ArtemisReducerOperations712.setConsoleCredentials:
       formState.cr.spec.console.adminUser = action.payload.adminUser;
       formState.cr.spec.console.adminPassword = action.payload.adminPassword;
       break;
-    case ArtemisReducerOperations.setAcceptorPort:
+    case ArtemisReducerOperations712.setAcceptorPort:
       updateConfigPort(
         formState.cr,
         ConfigType.acceptors,
@@ -782,7 +682,7 @@ export const artemisCrReducer: React.Reducer<
         action.payload.port,
       );
       break;
-    case ArtemisReducerOperations.setConnectorPort:
+    case ArtemisReducerOperations712.setConnectorPort:
       updateConfigPort(
         formState.cr,
         ConfigType.connectors,
@@ -790,14 +690,14 @@ export const artemisCrReducer: React.Reducer<
         action.payload.port,
       );
       break;
-    case ArtemisReducerOperations.setConnectorHost:
+    case ArtemisReducerOperations712.setConnectorHost:
       updateConnectorHost(
         formState.cr,
         action.payload.connectorName,
         action.payload.host,
       );
       break;
-    case ArtemisReducerOperations.setAcceptorBindToAllInterfaces:
+    case ArtemisReducerOperations712.setAcceptorBindToAllInterfaces:
       updateConfigBindToAllInterfaces(
         formState.cr,
         ConfigType.acceptors,
@@ -805,7 +705,7 @@ export const artemisCrReducer: React.Reducer<
         action.payload.bindToAllInterfaces,
       );
       break;
-    case ArtemisReducerOperations.setConnectorBindToAllInterfaces:
+    case ArtemisReducerOperations712.setConnectorBindToAllInterfaces:
       updateConfigBindToAllInterfaces(
         formState.cr,
         ConfigType.connectors,
@@ -813,7 +713,7 @@ export const artemisCrReducer: React.Reducer<
         action.payload.bindToAllInterfaces,
       );
       break;
-    case ArtemisReducerOperations.setAcceptorProtocols:
+    case ArtemisReducerOperations712.setAcceptorProtocols:
       updateConfigProtocols(
         formState.cr,
         ConfigType.acceptors,
@@ -821,7 +721,7 @@ export const artemisCrReducer: React.Reducer<
         action.payload.protocols,
       );
       break;
-    case ArtemisReducerOperations.setConnectorProtocols:
+    case ArtemisReducerOperations712.setConnectorProtocols:
       updateConfigProtocols(
         formState.cr,
         ConfigType.connectors,
@@ -829,7 +729,7 @@ export const artemisCrReducer: React.Reducer<
         action.payload.protocols,
       );
       break;
-    case ArtemisReducerOperations.setAcceptorOtherParams:
+    case ArtemisReducerOperations712.setAcceptorOtherParams:
       updateConfigOtherParams(
         formState.cr,
         ConfigType.acceptors,
@@ -837,7 +737,7 @@ export const artemisCrReducer: React.Reducer<
         action.payload.otherParams,
       );
       break;
-    case ArtemisReducerOperations.setConnectorOtherParams:
+    case ArtemisReducerOperations712.setConnectorOtherParams:
       updateConfigOtherParams(
         formState.cr,
         ConfigType.connectors,
@@ -845,7 +745,7 @@ export const artemisCrReducer: React.Reducer<
         action.payload.otherParams,
       );
       break;
-    case ArtemisReducerOperations.setAcceptorSSLEnabled:
+    case ArtemisReducerOperations712.setAcceptorSSLEnabled:
       updateConfigSSLEnabled(
         formState.cr,
         ConfigType.acceptors,
@@ -853,7 +753,7 @@ export const artemisCrReducer: React.Reducer<
         action.payload.sslEnabled,
       );
       break;
-    case ArtemisReducerOperations.setConnectorSSLEnabled:
+    case ArtemisReducerOperations712.setConnectorSSLEnabled:
       updateConfigSSLEnabled(
         formState.cr,
         ConfigType.connectors,
@@ -861,7 +761,7 @@ export const artemisCrReducer: React.Reducer<
         action.payload.sslEnabled,
       );
       break;
-    case ArtemisReducerOperations.updateAcceptorFactoryClass:
+    case ArtemisReducerOperations712.updateAcceptorFactoryClass:
       updateConfigFactoryClass(
         formState.cr,
         ConfigType.acceptors,
@@ -869,7 +769,7 @@ export const artemisCrReducer: React.Reducer<
         action.payload.class,
       );
       break;
-    case ArtemisReducerOperations.updateConnectorFactoryClass:
+    case ArtemisReducerOperations712.updateConnectorFactoryClass:
       updateConfigFactoryClass(
         formState.cr,
         ConfigType.connectors,
@@ -877,12 +777,7 @@ export const artemisCrReducer: React.Reducer<
         action.payload.class,
       );
       break;
-    case ArtemisReducerOperations.setModel:
-      setModel(formState, action.payload.model);
-      formState.yamlHasUnsavedChanges = false;
-      formState.hasChanges = action.payload.isSetByUser;
-      break;
-    case ArtemisReducerOperations.setIngressDomain:
+    case ArtemisReducerOperations712.setIngressDomain:
       if (typeof action.payload === 'string') {
         updateIngressDomain(formState.cr, action.payload);
       } else {
@@ -1674,10 +1569,6 @@ const updateConfigFactoryClass = (
       }
     }
   }
-};
-
-const setModel = (formState: FormState, model: BrokerCR): void => {
-  formState.cr = model;
 };
 
 // Getters

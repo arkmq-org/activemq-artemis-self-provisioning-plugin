@@ -1,7 +1,9 @@
 import {
-  ArtemisReducerOperations,
   BrokerCreationFormDispatch,
   BrokerCreationFormState,
+} from '@app/reducers/reducer';
+import {
+  ArtemisReducerOperations712,
   listConfigs,
 } from '@app/reducers/7.12/reducer';
 import { FC, useContext } from 'react';
@@ -37,12 +39,12 @@ export const AcceptorsConfigPage: FC<AcceptorsConfigProps> = ({ brokerId }) => {
   const addNewConfig = () => {
     if (configType === ConfigType.acceptors) {
       dispatch({
-        operation: ArtemisReducerOperations.addAcceptor,
+        operation: ArtemisReducerOperations712.addAcceptor,
       });
     }
     if (configType === ConfigType.connectors) {
       dispatch({
-        operation: ArtemisReducerOperations.addConnector,
+        operation: ArtemisReducerOperations712.addConnector,
       });
     }
   };

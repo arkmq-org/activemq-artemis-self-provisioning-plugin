@@ -10,9 +10,11 @@ import {
   TextInput,
 } from '@patternfly/react-core';
 import {
-  ArtemisReducerOperations,
   BrokerCreationFormDispatch,
   BrokerCreationFormState,
+} from '@app/reducers/reducer';
+import {
+  ArtemisReducerOperations712,
   ExposeMode,
   getAcceptor,
   getConfigBindToAllInterfaces,
@@ -58,7 +60,7 @@ export const AcceptorConfigPage: FC<AcceptorProps> = ({
   const onChangeClass = (value: string) => {
     if (configType === ConfigType.acceptors) {
       dispatch({
-        operation: ArtemisReducerOperations.updateAcceptorFactoryClass,
+        operation: ArtemisReducerOperations712.updateAcceptorFactoryClass,
         payload: {
           name: configName,
           class: value as 'invm' | 'netty',
@@ -67,7 +69,7 @@ export const AcceptorConfigPage: FC<AcceptorProps> = ({
     }
     if (configType === ConfigType.connectors) {
       dispatch({
-        operation: ArtemisReducerOperations.updateConnectorFactoryClass,
+        operation: ArtemisReducerOperations712.updateConnectorFactoryClass,
         payload: {
           name: configName,
           class: value as 'invm' | 'netty',
@@ -78,7 +80,7 @@ export const AcceptorConfigPage: FC<AcceptorProps> = ({
 
   const onHostChange = (host: string) => {
     dispatch({
-      operation: ArtemisReducerOperations.setConnectorHost,
+      operation: ArtemisReducerOperations712.setConnectorHost,
       payload: {
         connectorName: configName,
         host: host,
@@ -89,7 +91,7 @@ export const AcceptorConfigPage: FC<AcceptorProps> = ({
   const onPortChange = (port: string) => {
     if (configType === ConfigType.acceptors) {
       dispatch({
-        operation: ArtemisReducerOperations.setAcceptorPort,
+        operation: ArtemisReducerOperations712.setAcceptorPort,
         payload: {
           name: configName,
           port: Number(port),
@@ -98,7 +100,7 @@ export const AcceptorConfigPage: FC<AcceptorProps> = ({
     }
     if (configType === ConfigType.connectors) {
       dispatch({
-        operation: ArtemisReducerOperations.setConnectorPort,
+        operation: ArtemisReducerOperations712.setConnectorPort,
         payload: {
           name: configName,
           port: Number(port),
@@ -110,7 +112,7 @@ export const AcceptorConfigPage: FC<AcceptorProps> = ({
   const onProtocolsChange = (prot: string) => {
     if (configType === ConfigType.acceptors) {
       dispatch({
-        operation: ArtemisReducerOperations.setAcceptorProtocols,
+        operation: ArtemisReducerOperations712.setAcceptorProtocols,
         payload: {
           configName: configName,
           protocols: prot,
@@ -119,7 +121,7 @@ export const AcceptorConfigPage: FC<AcceptorProps> = ({
     }
     if (configType === ConfigType.connectors) {
       dispatch({
-        operation: ArtemisReducerOperations.setConnectorProtocols,
+        operation: ArtemisReducerOperations712.setConnectorProtocols,
         payload: {
           configName: configName,
           protocols: prot,
@@ -131,7 +133,7 @@ export const AcceptorConfigPage: FC<AcceptorProps> = ({
   const handleSSLEnabled = (value: boolean) => {
     if (configType === ConfigType.acceptors) {
       dispatch({
-        operation: ArtemisReducerOperations.setAcceptorSSLEnabled,
+        operation: ArtemisReducerOperations712.setAcceptorSSLEnabled,
         payload: {
           name: configName,
           sslEnabled: value,
@@ -140,7 +142,7 @@ export const AcceptorConfigPage: FC<AcceptorProps> = ({
     }
     if (configType === ConfigType.connectors) {
       dispatch({
-        operation: ArtemisReducerOperations.setConnectorSSLEnabled,
+        operation: ArtemisReducerOperations712.setConnectorSSLEnabled,
         payload: {
           name: configName,
           sslEnabled: value,
@@ -152,7 +154,7 @@ export const AcceptorConfigPage: FC<AcceptorProps> = ({
   const onBindToAllInterfacesChange = (checked: boolean) => {
     if (configType === ConfigType.acceptors) {
       dispatch({
-        operation: ArtemisReducerOperations.setAcceptorBindToAllInterfaces,
+        operation: ArtemisReducerOperations712.setAcceptorBindToAllInterfaces,
         payload: {
           name: configName,
           bindToAllInterfaces: checked,
@@ -161,7 +163,7 @@ export const AcceptorConfigPage: FC<AcceptorProps> = ({
     }
     if (configType === ConfigType.connectors) {
       dispatch({
-        operation: ArtemisReducerOperations.setConnectorBindToAllInterfaces,
+        operation: ArtemisReducerOperations712.setConnectorBindToAllInterfaces,
         payload: {
           name: configName,
           bindToAllInterfaces: checked,
@@ -248,7 +250,7 @@ export const AcceptorConfigPage: FC<AcceptorProps> = ({
                 id={'check-expose' + configType + configName}
                 onChange={(_event, v) =>
                   dispatch({
-                    operation: ArtemisReducerOperations.setIsAcceptorExposed,
+                    operation: ArtemisReducerOperations712.setIsAcceptorExposed,
                     payload: {
                       name: configName,
                       isExposed: v,
@@ -269,7 +271,7 @@ export const AcceptorConfigPage: FC<AcceptorProps> = ({
               }
               setSelectedExposeMode={(v) =>
                 dispatch({
-                  operation: ArtemisReducerOperations.setAcceptorExposeMode,
+                  operation: ArtemisReducerOperations712.setAcceptorExposeMode,
                   payload: {
                     name: configName,
                     exposeMode: v ? (v as ExposeMode) : undefined,
@@ -278,7 +280,7 @@ export const AcceptorConfigPage: FC<AcceptorProps> = ({
               }
               clearExposeMode={() =>
                 dispatch({
-                  operation: ArtemisReducerOperations.setAcceptorExposeMode,
+                  operation: ArtemisReducerOperations712.setAcceptorExposeMode,
                   payload: {
                     name: configName,
                     exposeMode: undefined,
@@ -350,7 +352,8 @@ export const AcceptorConfigPage: FC<AcceptorProps> = ({
                 }
                 onChange={(_event, v) =>
                   dispatch({
-                    operation: ArtemisReducerOperations.setAcceptorIngressHost,
+                    operation:
+                      ArtemisReducerOperations712.setAcceptorIngressHost,
                     payload: {
                       name: configName,
                       ingressHost: v,
