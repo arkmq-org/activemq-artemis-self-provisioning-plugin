@@ -5,7 +5,6 @@ import {
   TabTitleText,
   Title,
   Divider,
-  PageSection,
 } from '@patternfly/react-core';
 import { useTranslation } from '@app/i18n/i18n';
 import { ClientsContainer } from './components/Clients/Clients.container';
@@ -118,13 +117,11 @@ const AuthenticatedPageContent: FC<AuthenticatedPageContentPropType> = ({
 
   return (
     <>
-      <PageSection type="breadcrumb">
         <BrokerDetailsBreadcrumb name={name} namespace={namespace} />
         <Title headingLevel="h1" className="pf-u-ml-md">
           <ResourceIcon kind="broker.amq.io~v1beta1~ActiveMQArtemis" /> {name}
         </Title>
         <br />
-      </PageSection>
       <Divider inset={{ default: 'insetXs' }} />
       <HorizontalNav pages={pages} />
     </>

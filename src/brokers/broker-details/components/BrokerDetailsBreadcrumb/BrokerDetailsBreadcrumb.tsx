@@ -86,7 +86,7 @@ const BrokerDetailsBreadcrumb: FC<BrokerDetailsBreadcrumbProps> = ({
     <>
       <Level>
         <LevelItem>
-          <Breadcrumb className="pf-u-mb-md">
+          <Breadcrumb className="pf-u-ml-sm pf-u-mt-sm">
             <BreadcrumbItem>
               <Button variant="link" onClick={() => navigate(redirectPath)}>
                 {t('Brokers')}
