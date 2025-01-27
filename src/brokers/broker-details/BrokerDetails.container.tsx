@@ -4,8 +4,6 @@ import {
   Tab,
   TabTitleText,
   Title,
-  Spinner,
-  Alert,
   Divider,
   PageSection,
 } from '@patternfly/react-core';
@@ -31,20 +29,18 @@ import {
   ResourceIcon,
 } from '@openshift-console/dynamic-plugin-sdk';
 import { YamlContainer } from './components/yaml/Yaml.container';
+import { ErrorState } from '@app/shared-components/ErrorState/ErrorState';
+import { Loading } from '@app/shared-components/Loading/Loading';
 
 type AuthenticatedPageContentPropType = {
   brokerCr: BrokerCR;
   name: string;
   namespace: string;
-  loading: boolean;
-  error: string;
 };
 const AuthenticatedPageContent: FC<AuthenticatedPageContentPropType> = ({
   brokerCr,
   name,
   namespace,
-  loading: loadingBrokerCr,
-  error: errorBrokerCr,
 }) => {
   const { t } = useTranslation();
 
@@ -52,17 +48,9 @@ const AuthenticatedPageContent: FC<AuthenticatedPageContentPropType> = ({
     {
       href: '',
       name: t('Overview'),
-      component: () =>
-        !loadingBrokerCr ? (
-          <OverviewContainer
-            name={name}
-            namespace={namespace}
-            cr={brokerCr}
-            loading={loadingBrokerCr}
-          />
-        ) : (
-          <Spinner size="md" />
-        ),
+      component: () => (
+        <OverviewContainer name={name} namespace={namespace} cr={brokerCr} />
+      ),
     },
     {
       href: 'clients',
@@ -77,12 +65,7 @@ const AuthenticatedPageContent: FC<AuthenticatedPageContentPropType> = ({
     {
       href: 'yaml',
       name: t('YAML'),
-      component: () =>
-        !loadingBrokerCr ? (
-          <YamlContainer brokerCr={brokerCr} />
-        ) : (
-          <Spinner size="md" />
-        ),
+      component: () => <YamlContainer brokerCr={brokerCr} />,
     },
     {
       href: 'resources',
@@ -142,7 +125,6 @@ const AuthenticatedPageContent: FC<AuthenticatedPageContentPropType> = ({
         </Title>
         <br />
       </PageSection>
-      {errorBrokerCr && <Alert variant="danger" title={errorBrokerCr} />}
       <Divider inset={{ default: 'insetXs' }} />
       <HorizontalNav pages={pages} />
     </>
@@ -153,6 +135,15 @@ export const BrokerDetailsPage: FC = () => {
   const { ns: namespace, name } = useParams<{ ns?: string; name?: string }>();
 
   const { brokerCr, isLoading, error } = useGetBrokerCR(name, namespace);
+
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  if (error) {
+    return <ErrorState />;
+  }
+
   return (
     <>
       <JolokiaAuthentication brokerCR={brokerCr} podOrdinal={0}>
@@ -160,8 +151,6 @@ export const BrokerDetailsPage: FC = () => {
           brokerCr={brokerCr}
           name={name}
           namespace={namespace}
-          loading={isLoading}
-          error={error}
         />
       </JolokiaAuthentication>
     </>

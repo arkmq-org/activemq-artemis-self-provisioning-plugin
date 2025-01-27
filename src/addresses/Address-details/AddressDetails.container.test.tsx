@@ -113,5 +113,10 @@ describe('AddressDetailsPage', () => {
     );
     await waitForI18n(comp);
     expect(screen.getByText(errorMessage)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Could not get broker's CR. An error occurred while retrieving the broker's CR. Please try again later.",
+      ),
+    ).toBeInTheDocument();
   });
 });

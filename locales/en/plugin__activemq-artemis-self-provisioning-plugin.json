@@ -123,6 +123,8 @@
   "Delete instance ?": "Delete instance ?",
   "Delete": "Delete",
   "The <strong>{{name}}</strong> instance will be deleted. Applications will no longer have access in this instance.": "The <strong>{{name}}</strong> instance will be deleted. Applications will no longer have access in this instance.",
+  "Error fetching broker": "Error fetching broker",
+  "Could not get broker's CR. An error occurred while retrieving the broker's CR. Please try again later.": "Could not get broker's CR. An error occurred while retrieving the broker's CR. Please try again later.",
   "Acceptors": "Acceptors",
   "Connectors": "Connectors",
   "Console": "Console",

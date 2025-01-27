@@ -31,7 +31,6 @@ import {
   getIssuerForAcceptor,
   getIssuerIngressHostForAcceptor,
 } from '@app/reducers/7.12/reducer';
-import { Loading } from '@app/shared-components/Loading/Loading';
 import {
   Acceptor,
   IssuerResource,
@@ -309,17 +308,14 @@ export type OverviewContainerProps = {
   namespace: string;
   name: string;
   cr: BrokerCR;
-  loading: boolean;
 };
 
 export const OverviewContainer: FC<OverviewContainerProps> = ({
   namespace,
   name,
   cr,
-  loading,
 }) => {
   const { t } = useTranslation();
-  if (loading) return <Loading />;
 
   return (
     <PageSection type="tabs">

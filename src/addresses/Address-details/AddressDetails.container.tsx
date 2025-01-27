@@ -1,11 +1,13 @@
 import { FC } from 'react';
-import { Alert, Title } from '@patternfly/react-core';
+import { Title } from '@patternfly/react-core';
 import { useTranslation } from '@app/i18n/i18n';
 import { AddressDetails } from './AddressDetails.component';
 import { AddressDetailsBreadcrumb } from './AddressDetailsBreadcrumb/AddressDetailsBreadcrumb';
 import { useParams } from 'react-router-dom-v5-compat';
 import { JolokiaAuthentication } from '@app/jolokia/components/JolokiaAuthentication';
 import { useGetBrokerCR } from '@app/k8s/customHooks';
+import { Loading } from '@app/shared-components/Loading/Loading';
+import { ErrorState } from '@app/shared-components/ErrorState/ErrorState';
 
 export const AddressDetailsPage: FC = () => {
   const { t } = useTranslation();
@@ -22,12 +24,21 @@ export const AddressDetailsPage: FC = () => {
 
   const brokerName = podName?.match(/(.*)-ss-\d+/)?.[1] ?? '';
 
-  const { brokerCr: brokerDetails, error: error } = useGetBrokerCR(
-    brokerName,
-    namespace,
-  );
+  const {
+    brokerCr: brokerDetails,
+    isLoading,
+    error,
+  } = useGetBrokerCR(brokerName, namespace);
 
   const podOrdinal = parseInt(podName.replace(brokerName + '-ss-', ''));
+
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  if (error) {
+    return <ErrorState />;
+  }
 
   return (
     <JolokiaAuthentication brokerCR={brokerDetails} podOrdinal={podOrdinal}>
@@ -43,7 +54,6 @@ export const AddressDetailsPage: FC = () => {
             {t('Address')} {name}
           </Title>
         </div>
-        {error && <Alert variant="danger" title={error} />}
         <AddressDetails name={name} />
       </>
     </JolokiaAuthentication>
