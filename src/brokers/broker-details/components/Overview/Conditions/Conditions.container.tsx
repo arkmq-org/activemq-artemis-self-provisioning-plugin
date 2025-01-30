@@ -10,13 +10,14 @@ type ConditionsContainerProps = {
 
 export const ConditionsContainer: FC<ConditionsContainerProps> = ({ cr }) => {
   const { t } = useTranslation();
+  const conditions = cr.status?.conditions ?? [];
 
   return (
     <PageSection>
       <Title headingLevel="h2" className="pf-u-ml-md pf-u-mb-md">
         {t('Conditions')}
       </Title>
-      <ConditionsList conditions={cr.status?.conditions} />
+      <ConditionsList conditions={conditions} />
     </PageSection>
   );
 };
