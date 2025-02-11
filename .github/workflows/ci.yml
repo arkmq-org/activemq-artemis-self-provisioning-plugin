@@ -71,10 +71,6 @@ jobs:
         continue-on-error: true
         run: yarn codegen
 
-      - name: regenerate the api.md
-        continue-on-error: true
-        run: yarn build-api-doc && yarn pretty-quick
-
       - name: check there is no manual changes
         run: git diff && [ -z "$(git status --porcelain=v1 2>/dev/null)" ] && echo "✓ No manual changes." || echo "✗ Codegen manually changed, please refer to the api.md for the procedure to follow for programmatically generated endpoints." && [ -z "$(git status --porcelain=v1 2>/dev/null)" ]
 
