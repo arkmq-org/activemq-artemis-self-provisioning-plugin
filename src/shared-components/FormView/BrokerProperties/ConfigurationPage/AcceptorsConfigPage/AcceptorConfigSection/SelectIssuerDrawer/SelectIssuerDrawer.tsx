@@ -100,12 +100,16 @@ type SelectIssuerDrawerProps = {
   selectedIssuer: string;
   setSelectedIssuer: (issuerName: string) => void;
   clearIssuer: () => void;
+  disableCreation?: boolean;
+  isClusterIssuer?: boolean;
 };
 
 export const SelectIssuerDrawer: FC<SelectIssuerDrawerProps> = ({
   selectedIssuer,
   setSelectedIssuer,
   clearIssuer,
+  disableCreation,
+  isClusterIssuer,
 }) => {
   const { cr } = useContext(BrokerCreationFormState);
   const { t } = useTranslation();
@@ -113,10 +117,10 @@ export const SelectIssuerDrawer: FC<SelectIssuerDrawerProps> = ({
     groupVersionKind: {
       group: 'cert-manager.io',
       version: 'v1',
-      kind: 'Issuer',
+      kind: isClusterIssuer ? 'ClusterIssuer' : 'Issuer',
     },
     isList: true,
-    namespace: cr.metadata.namespace,
+    namespace: isClusterIssuer ? '' : cr.metadata.namespace,
   });
   const [isOpen, setIsOpen] = useState(false);
   const [alertIssuer, setAlertIssuer] = useState<Error>();
@@ -225,7 +229,11 @@ export const SelectIssuerDrawer: FC<SelectIssuerDrawerProps> = ({
               <InputGroupItem>
                 <Select
                   variant={SelectVariant.typeahead}
-                  typeAheadAriaLabel={t('Select an issuer')}
+                  typeAheadAriaLabel={
+                    isClusterIssuer
+                      ? t('Select a cluster issuer')
+                      : t('Select an issuer')
+                  }
                   onToggle={() => setIsOpen(!isOpen)}
                   onSelect={onSelect}
                   onClear={clearSelection}
@@ -233,20 +241,26 @@ export const SelectIssuerDrawer: FC<SelectIssuerDrawerProps> = ({
                   selections={selectedIssuer}
                   isOpen={isOpen}
                   aria-labelledby={titleId}
-                  placeholderText={t('Select an issuer')}
+                  placeholderText={
+                    isClusterIssuer
+                      ? t('Select a cluster issuer')
+                      : t('Select an issuer')
+                  }
                   menuAppendTo={() => document.body}
                 >
                   {options}
                 </Select>
               </InputGroupItem>
-              <InputGroupItem>
-                <Button
-                  variant={ButtonVariant.primary}
-                  onClick={() => setIsExpanded(true)}
-                >
-                  {t('Create a new chain of trust')}
-                </Button>
-              </InputGroupItem>
+              {!disableCreation && (
+                <InputGroupItem>
+                  <Button
+                    variant={ButtonVariant.primary}
+                    onClick={() => setIsExpanded(true)}
+                  >
+                    {t('Create a new chain of trust')}
+                  </Button>
+                </InputGroupItem>
+              )}
             </InputGroup>
           </DrawerContentBody>
         </DrawerContent>

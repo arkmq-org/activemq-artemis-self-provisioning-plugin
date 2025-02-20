@@ -1610,7 +1610,8 @@ export const getConfigSecret = (
         return newOptionObject(acceptor.sslSecret);
       }
     }
-  } else {
+  }
+  if (configType === ConfigType.console) {
     if (isCa) {
       if (brokerModel.spec.console.trustSecret) {
         return newOptionObject(brokerModel.spec.console.trustSecret);

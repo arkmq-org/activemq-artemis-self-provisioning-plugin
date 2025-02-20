@@ -1,3 +1,5 @@
+import { BrokerCR } from '@app/k8s/types';
+import { ExposeMode } from '@app/reducers/7.12/reducer';
 import {
   K8sResourceCommon,
   K8sResourceKind,
@@ -40,12 +42,35 @@ const getBrokerRoute = (
   return target;
 };
 
+const getBrokerIngress = (
+  ingresses: K8sResourceKind[],
+  broker: K8sResourceKind,
+  ordinal: number,
+): K8sResourceKind => {
+  let target: K8sResourceKind = null;
+  if (ingresses.length > 0) {
+    const filteredRoutes = ingresses.filter((route) =>
+      route.metadata.ownerReferences?.some(
+        (ref) =>
+          ref.name === broker.metadata.name && ref.kind === 'ActiveMQArtemis',
+      ),
+    );
+    filteredRoutes.forEach((r) => {
+      if (r.metadata.name.includes('wconsj-' + ordinal)) {
+        target = r;
+      }
+    });
+  }
+  return target;
+};
+
 /**
  * Prepare the parameters to request a new login to the api-server
  */
 export const useGetJolokiaLoginParameters = (
-  broker: K8sResourceKind,
+  broker: BrokerCR,
   brokerRoutes: K8sResourceKind[],
+  brokerIngresses: K8sResourceKind[],
   ordinal: number,
 ): BrokerConnectionData => {
   const requestBody: BrokerConnectionData = {
@@ -81,11 +106,11 @@ export const useGetJolokiaLoginParameters = (
       broker?.metadata?.namespace;
     requestBody.port = '8161';
   } else {
-    requestBody.hostname = getBrokerRoute(
-      brokerRoutes,
-      broker,
-      ordinal,
-    )?.spec.host;
+    requestBody.hostname =
+      broker.spec.console.exposeMode === ExposeMode.route
+        ? getBrokerRoute(brokerRoutes, broker, ordinal)?.spec.host
+        : getBrokerIngress(brokerIngresses, broker, ordinal)?.spec.rules[0]
+            .host;
     requestBody.port = broker?.spec['console'].sslEnabled ? '443' : '80';
   }
 
@@ -104,7 +129,7 @@ export type BrokerConnectionData = {
 };
 
 export const useGetEndpointData = (
-  broker: K8sResourceKind,
+  broker: BrokerCR,
   ordinal: number,
 ): BrokerConnectionData => {
   const { ns: namespace } = useParams<{ ns?: string; name?: string }>();
@@ -118,7 +143,17 @@ export const useGetEndpointData = (
     namespaced: true,
     namespace: namespace,
   });
-  return useGetJolokiaLoginParameters(broker, routes, ordinal);
+  const [ingresses] = useK8sWatchResource<K8sResourceKind[]>({
+    isList: true,
+    groupVersionKind: {
+      group: 'route.openshift.io',
+      kind: 'Ingress',
+      version: 'v1',
+    },
+    namespaced: true,
+    namespace: namespace,
+  });
+  return useGetJolokiaLoginParameters(broker, routes, ingresses, ordinal);
 };
 
 function getProxyUrl(): string {
