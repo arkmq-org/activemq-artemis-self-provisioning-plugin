@@ -10,6 +10,7 @@ import {
   FormFieldGroup,
   Modal,
   ModalVariant,
+  Tooltip,
 } from '@patternfly/react-core';
 import {
   ArtemisReducerGlobalOperations,
@@ -165,11 +166,7 @@ export const AddBroker: FC<AddBrokerPropTypes> = ({
         {t('Upon reloading, these modifications will be lost.')}
       </Modal>
       <Divider />
-      <EditorToggle
-        value={editorType}
-        onChange={onSelectEditorType}
-        isDisabled={navigationDisabled}
-      />
+      <EditorToggle value={editorType} onChange={onSelectEditorType} />
       <Divider />
       {editorType === EditorType.BROKER && <FormView />}
       {editorType === EditorType.YAML && (
@@ -182,20 +179,34 @@ export const AddBroker: FC<AddBrokerPropTypes> = ({
       <Form>
         <FormFieldGroup>
           <ActionGroup>
-            <Button
-              variant={ButtonVariant.primary}
-              onClick={() => {
-                if (formValues.editorType === EditorType.YAML) {
-                  setWantsToQuitYamlView(true);
-                  setPendingActionQuittingYAMLView('submit');
-                } else {
-                  onSubmitForFormView();
-                }
-              }}
-              isDisabled={navigationDisabled}
-            >
-              {isUpdatingExisting ? t('Apply') : t('Create')}
-            </Button>
+            {navigationDisabled ? (
+              <Tooltip
+                content={t(
+                  'Some mandatory fields are missing. Please fill them before proceeding.',
+                )}
+                trigger="mouseenter"
+              >
+                <span className="pf-u-pt-sm pf-u-pl-sm pf-u-pb-sm">
+                  <Button variant={ButtonVariant.primary} isDisabled>
+                    {isUpdatingExisting ? t('Apply') : t('Create')}
+                  </Button>
+                </span>
+              </Tooltip>
+            ) : (
+              <Button
+                variant={ButtonVariant.primary}
+                onClick={() => {
+                  if (formValues.editorType === EditorType.YAML) {
+                    setWantsToQuitYamlView(true);
+                    setPendingActionQuittingYAMLView('submit');
+                  } else {
+                    onSubmitForFormView();
+                  }
+                }}
+              >
+                {isUpdatingExisting ? t('Apply') : t('Create')}
+              </Button>
+            )}
             {isUpdatingExisting && (
               <Button
                 variant={ButtonVariant.secondary}

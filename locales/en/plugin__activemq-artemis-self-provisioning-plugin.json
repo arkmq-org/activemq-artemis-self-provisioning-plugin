@@ -26,6 +26,7 @@
   "the broker wont get created": "the broker wont get created",
   "Cancel": "Cancel",
   "Upon reloading, these modifications will be lost.": "Upon reloading, these modifications will be lost.",
+  "Some mandatory fields are missing. Please fill them before proceeding.": "Some mandatory fields are missing. Please fill them before proceeding.",
   "Apply": "Apply",
   "Create": "Create",
   "Reload": "Reload",
