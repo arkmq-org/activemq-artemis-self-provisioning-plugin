@@ -26,7 +26,7 @@ The Graphic User Interface (GUI) for the new workload type provides a number of 
      
 3. Click **Create Broker.**
 
-4. In the **CR Name** field, specify the name you want to give the broker.
+4. In the **CR Name** field, specify the name you want to give to the broker.
 
 5. Click **Create**.
 
@@ -46,7 +46,7 @@ Internal applications run on the same OpenShift cluster as the broker. Complete 
 
 1. In the **Brokers** page, click the **three** **dots** at the end of the row for the new broker you created and click **Edit** **Broker**.
 
-2. Click **Add an Acceptor**.
+2. Click **Add an acceptor**.
 
    The default port number of the first acceptor you create is 5555, which you will require to send messages to the acceptor later in this procedure. The port number is incremented by 1 in each subsequent acceptor you create. 
 
@@ -56,7 +56,7 @@ Internal applications run on the same OpenShift cluster as the broker. Complete 
 
    **oc get pods**
 
-   **oc rsh <podname>**
+   **oc rsh \<podname>**
 
 5. Test sending messages to the acceptor you created:
 
@@ -127,63 +127,77 @@ roleRef:
    admin=kube:admin, alice,ben
 
 3. Create the jaas configuration in the self-provisioning plugin UI.  
-   1. Click **Access control**
 
-   2. Enable **RBAC**.
+   1. In the **Brokers** page, click the **three** **dots** at the end of the row for the new broker you created and click **Edit** **Broker**.
 
-   
+   2. Click **Access control**
 
-   3. In the **Service Account** field, select a service account that has been assigned the **system:auth-delegator** role. The broker requires a service account with this role to review bearer tokens to determine the roles assigned to a user.
-
-   
-
-   4. Click **Create a new jaas config.**
+   3. Enable **RBAC**.
 
    
 
-   5. In the **jaas config name** field, specify a name to identify the JAAS configuration. A secret is created with the specified name to store the JAAS configuration.
+   4. In the **Service Account** field, select a service account that has been assigned the **system:auth-delegator** role. The broker requires a service account with this role to review bearer tokens to determine the roles assigned to a user.
 
    
 
-   6. In the **Admin username** field, specify a user that you want to add to the broker and assign to the broker admin role. By default, the user you specify is added to the admin and queue\_users roles on the broker. Initially, this is the only user that has permission to use the broker for messaging. 
+   5. Click **Create a new jaas config.**
+
+   
+
+   6. In the **jaas config name** field, specify a name to identify the JAAS configuration. A secret is created with the specified name to store the JAAS configuration.
+
+   
+
+   7. In the **Admin username** field, specify a user that you want to add to the broker and assign to the broker admin role. By default, the user you specify is added to the admin and queue\_users roles on the broker. Initially, this is the only user that has permission to use the broker for messaging. 
 
       If the user you specify is an OpenShift user on the cluster, the user is also assigned to the broker admin role, which grants the user permission to use token authentication to log into the broker. A user that is authenticated by using token authentication can use the self-provisioning plugin to configure and manage brokers.
 
    
 
-   7. Click **Create the jaas config**.
+   8. Click **Create the jaas config**.
+
+
+   9. Click **Apply**.
+
+
+   10. In the **Brokers** page, click the **three** **dots** at the end of the row for the new broker you created and click **Edit** **Broker**.
+
+
+   11. Click **Access control**.
+   
+
+   12. Click **edit**. 
 
    
 
-   8. Click the **edit** button. 
+   13. In the **Value** field for the **extra-roles.properties** key, click **Browse**  and browse to the file you created earlier that contains the broker roles.
 
    
 
-   9. In the **Value** field for the **extra-roles.properties** key, click the **Browse** button and browse to the file you created earlier that contains the broker roles.
+   14. In the **Value** field for the **extra-users.properties** key, click **Browse**  and browse to the file you created earlier that contains the broker users.
 
    
 
-   10. In the **Value** field for the **extra-users.properties** key, click the **Browse** button and browse to the file you created earlier that contains the broker users.
+   15. In the **Value** field for the **k8s-users-to-roles-mapping.properties** key, click **Browse** and browse to the file you created earlier that contains the Openshift users that you want to assign to the admin broker role.
 
    
 
-   11. In the **Value** field for the **k8s-users-to-roles-mapping.properties** key, click the **Browse** button and browse to the file you created earlier that contains the Openshift users that you want to assign to the admin broker role.
-
-   
-
-   12. Click **Save**. 
+   16. Click **Save**. 
 
 1. Update the permissions for the new roles in the **extra-roles.properties** file you added to the JAAS configuration:
 
    1. In the OpenShift console menu, click **Workloads-\>Brokers.** 
 
-   2. In the **Brokers** page, click **Edit Broker.** 
+   2. In the **Brokers** page, click the **three** **dots** at the end of the row for the new broker you created and click **Edit** **Broker**.
 
-   3. Click the **rebuild security roles.** All the roles specified in the **extra-roles.properties** file are added to the list of security roles configured on the broker.
+   3. Click **Access control**.
+   
 
-   4. Expand **Security roles** and update the permissions for the roles configured on the broker. By default, each role is granted all permissions, which is indicated by a value of **true** for each permission. If you want to remove a permission for a role, replace **true** with **false** and click **update**. 
+   4. Click the **rebuild security roles.** All the roles specified in the **extra-roles.properties** file are added to the list of security roles configured on the broker.
 
-   5. Click **Apply**.
+   5. Expand **Security roles** and update the permissions for the roles configured on the broker. By default, each role is granted all permissions, which is indicated by a value of **true** for each permission. If you want to remove a permission for a role, replace **true** with **false** and click **update**. 
+
+   6. Click **Apply**.
 
 NOTE: If you edit the JAAS configuration and add new roles, clicking **rebuild security roles** displays the new roles under **Security roles**. You can then customize the permissions assigned to the new roles. However, any customizations that you made to existing roles are overwritten. 
 
