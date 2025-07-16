@@ -666,6 +666,15 @@ describe('test the creation broker reducer', () => {
     const initialState = newBroker712CR('namespace');
     const newState = reducer712(initialState, {
       operation: ArtemisReducerOperations712.setConsoleExposeMode,
+      payload: ExposeMode.route,
+    });
+    expect(newState.cr.spec.console.exposeMode).toBe(ExposeMode.route);
+  });
+
+  it('test setConsoleExposeMode', () => {
+    const initialState = newBroker712CR('namespace');
+    const newState = reducer712(initialState, {
+      operation: ArtemisReducerOperations712.setConsoleExposeMode,
       payload: ExposeMode.ingress,
     });
     expect(newState.cr.spec.console.exposeMode).toBe(ExposeMode.ingress);

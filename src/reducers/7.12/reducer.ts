@@ -23,6 +23,7 @@ export const newBroker712CR = (namespace: string): FormState712 => {
       ingressDomain: '',
       console: {
         expose: true,
+        exposeMode: ExposeMode.route,
       },
       deploymentPlan: {
         image: 'placeholder',
