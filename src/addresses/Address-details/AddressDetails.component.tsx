@@ -1,6 +1,6 @@
 import { FC, useContext, useState } from 'react';
 import { Thead, Tr, Th, Tbody } from '@patternfly/react-table';
-import { Table } from '@patternfly/react-table/deprecated';
+import { Table } from '@patternfly/react-table';
 import {
   Spinner,
   Bullseye,
