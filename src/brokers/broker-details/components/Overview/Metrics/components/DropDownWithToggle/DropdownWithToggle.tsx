@@ -3,9 +3,11 @@ import { useState } from 'react';
 import {
   Dropdown,
   DropdownItem,
-  DropdownToggle,
-} from '@patternfly/react-core/deprecated';
-import type { DropdownProps } from '@patternfly/react-core/deprecated';
+  DropdownList,
+  MenuToggle,
+  MenuToggleElement,
+} from '@patternfly/react-core';
+import type { DropdownProps } from '@patternfly/react-core';
 
 export interface IDropdownWithToggleProps {
   id: string;
@@ -33,10 +35,10 @@ export const DropdownWithToggle: React.FC<IDropdownWithToggleProps> = ({
   name,
   isLabelAndValueNotSame,
 }) => {
-  const [isOpen, setIsOpen] = useState<boolean>();
+  const [isOpen, setIsOpen] = useState<boolean>(false);
 
-  const onToggle = (isOpen: boolean) => {
-    setIsOpen(isOpen);
+  const onToggleClick = () => {
+    setIsOpen(!isOpen);
   };
 
   const onSelect: DropdownProps['onSelect'] = (e) => {
@@ -51,17 +53,18 @@ export const DropdownWithToggle: React.FC<IDropdownWithToggleProps> = ({
   };
 
   const getItems = (options: IDropdownOption[]) => {
-    const items = options.map((option) => {
-      const { key, value, label } = option;
-
-      return (
-        <DropdownItem key={key} value={value}>
-          {label || value}
-        </DropdownItem>
-      );
-    });
-
-    return items;
+    return (
+      <DropdownList>
+        {options.map((option) => {
+          const { key, value, label } = option;
+          return (
+            <DropdownItem key={key} value={value}>
+              {label || value}
+            </DropdownItem>
+          );
+        })}
+      </DropdownList>
+    );
   };
 
   const getSelectedValue = () => {
@@ -72,24 +75,25 @@ export const DropdownWithToggle: React.FC<IDropdownWithToggleProps> = ({
     return value;
   };
 
-  const dropdownToggle = (
-    <DropdownToggle
-      id={toggleId}
-      onToggle={(_event, isOpen: boolean) => onToggle(isOpen)}
-      data-testid="dropdown-toggle"
-    >
-      {getSelectedValue()}
-    </DropdownToggle>
-  );
-
   return (
     <Dropdown
-      name={name}
       id={id}
-      onSelect={onSelect}
-      toggle={dropdownToggle}
       isOpen={isOpen}
-      dropdownItems={getItems(items)}
-    />
+      onSelect={onSelect}
+      toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
+        <MenuToggle
+          id={toggleId}
+          ref={toggleRef}
+          onClick={onToggleClick}
+          isExpanded={isOpen}
+          data-testid="dropdown-toggle"
+        >
+          {getSelectedValue()}
+        </MenuToggle>
+      )}
+      shouldFocusToggleOnSelect
+    >
+      {getItems(items)}
+    </Dropdown>
   );
 };
