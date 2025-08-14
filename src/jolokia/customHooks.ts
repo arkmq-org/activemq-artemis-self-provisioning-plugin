@@ -146,7 +146,7 @@ export const useGetEndpointData = (
   const [ingresses] = useK8sWatchResource<K8sResourceKind[]>({
     isList: true,
     groupVersionKind: {
-      group: 'route.openshift.io',
+      group: 'networking.k8s.io',
       kind: 'Ingress',
       version: 'v1',
     },
