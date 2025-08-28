@@ -30,6 +30,9 @@ FROM registry.access.redhat.com/ubi9/nginx-122:latest
 
 COPY --from=build-image /usr/src/app/dist /usr/share/nginx/html
 
+## Upgrade packages
+RUN microdnf update -y --setopt=install_weak_deps=0 && rm -rf /var/cache/yum
+
 USER 1001
 
 ENTRYPOINT ["nginx", "-g", "daemon off;"]
