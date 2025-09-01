@@ -11,6 +11,7 @@ import {
   InputGroupItem,
   FormFieldGroupExpandable,
   FormFieldGroupHeader,
+  SearchInput,
 } from '@patternfly/react-core';
 import { TrashIcon } from '@patternfly/react-icons';
 import { useTranslation } from '@app/i18n/i18n';
@@ -100,6 +101,9 @@ export const SecurityRoles: FC = () => {
   const { cr } = useContext(BrokerCreationFormState);
   const securityRoles = getSecurityRoles(cr);
   const dispatch = useContext(BrokerCreationFormDispatch);
+
+  const [filterValue, setFilterValue] = useState<string>('');
+
   const addNewSecurityRule = (key: string, value: string) => {
     const newSecurityRoles = new Map([...securityRoles, [key, value]]);
     dispatch({
@@ -122,9 +126,27 @@ export const SecurityRoles: FC = () => {
         />
       }
     >
-      {Array.from(securityRoles).map(([key, value]) => (
-        <SecurityRule key={key + value} name={key} value={value} />
-      ))}
+      <SearchInput
+        placeholder={t('Filter by security roles...')}
+        value={filterValue}
+        onChange={(_event, value) => setFilterValue(value)}
+        onClear={() => setFilterValue('')}
+      />
+
+      {Array.from(securityRoles)
+        .filter(([key]) => {
+          if (!filterValue) return true;
+
+          try {
+            const regex = new RegExp(filterValue, 'i');
+            return regex.test(key);
+          } catch {
+            return key.toLowerCase().includes(filterValue.toLowerCase());
+          }
+        })
+        .map(([key, value]) => (
+          <SecurityRule key={key + value} name={key} value={value} />
+        ))}
       <Button
         variant="link"
         onClick={() =>
