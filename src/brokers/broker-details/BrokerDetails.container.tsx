@@ -7,7 +7,6 @@ import {
   Divider,
 } from '@patternfly/react-core';
 import { useTranslation } from '@app/i18n/i18n';
-import { ClientsContainer } from './components/Clients/Clients.container';
 import { BrokerDetailsBreadcrumb } from './components/BrokerDetailsBreadcrumb/BrokerDetailsBreadcrumb';
 import {
   JolokiaAcceptorDetails,
@@ -48,11 +47,6 @@ const AuthenticatedPageContent: FC<AuthenticatedPageContentPropType> = ({
       href: '',
       name: t('Overview'),
       component: OverviewContainer,
-    },
-    {
-      href: 'clients',
-      name: t('Clients'),
-      component: ClientsContainer,
     },
     {
       href: 'pods',
