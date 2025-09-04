@@ -49,32 +49,6 @@
     }
   },
   {
-    "type": "console.tab/horizontalNav",
-    "properties": {
-      "page": {
-        "name": "Addresses",
-        "href": "addresses"
-      },
-      "model": {
-        "group": "core",
-        "version": "v1",
-        "kind": "Pod"
-      },
-      "component": { "$codeRef": "AddressesContainer.App" }
-    }
-  },
-  {
-    "type": "console.page/route",
-    "properties": {
-      "exact": true,
-      "path": [
-        "/k8s/ns/:ns/pods/:podName/addresses/address/:name",
-        "/k8s/all-namespaces/pods/:podName/addresses/address/:name"
-      ],
-      "component": { "$codeRef": "AddressDetailsContainer.App" }
-    }
-  },
-  {
     "type": "console.navigation/href",
     "properties": {
       "id": "brokers",

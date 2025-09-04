@@ -114,9 +114,7 @@
       "BrokersListContainer": "./brokers/view-brokers/BrokersList.container",
       "AddBrokerContainer": "./brokers/add-broker/AddBroker.container",
       "UpdateBrokerContainer": "./brokers/update-broker/UpdateBroker.container",
-      "BrokerDetailsContainer": "./brokers/broker-details/BrokerDetails.container",
-      "AddressesContainer": "./addresses/Addresses/Address.container",
-      "AddressDetailsContainer": "./addresses/Address-details/AddressDetails.container"
+      "BrokerDetailsContainer": "./brokers/broker-details/BrokerDetails.container"
     },
     "dependencies": {
       "@console/pluginAPI": "*"
