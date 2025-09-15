@@ -222,6 +222,7 @@
   "dns name": "dns name",
   "Cluster Issuer": "Cluster Issuer",
   "only support tls format secret from cert-manager": "only support tls format secret from cert-manager",
+  "The selected certificate is invalid or cannot be parsed. Please verify the certificate format and try again": "The selected certificate is invalid or cannot be parsed. Please verify the certificate format and try again",
   "Show cert details of": "Show cert details of",
   "Select a secret to see its details": "Select a secret to see its details",
   "Select a Trust bundle": "Select a Trust bundle",

@@ -1,4 +1,4 @@
-import { screen, render, fireEvent, act } from '@app/test-utils';
+import { screen, render, fireEvent, act, waitFor } from '@app/test-utils';
 import { CertSecretSelector } from './CertSecretSelector';
 import {
   BrokerCreationFormDispatch,
@@ -15,6 +15,7 @@ import {
   getCertManagerResourceTemplateFromAcceptor,
   getConfigSecret,
 } from '@app/reducers/7.12/reducer';
+import base64 from 'base-64';
 
 jest.mock('@openshift-console/dynamic-plugin-sdk', () => ({
   useK8sWatchResource: jest.fn(),
@@ -181,5 +182,130 @@ describe('CertSecretSelector', () => {
     expect(
       await screen.findByText('Modal open for Good-cert-secret'),
     ).toBeInTheDocument();
+  });
+
+  it('should show an error alert when certificate parsing fails and closes the error alert when the cross button is clicked', async () => {
+    jest.spyOn(base64, 'decode').mockImplementationOnce(() => {
+      throw new Error('Invalid base64');
+    });
+
+    mockUseK8sWatchResource.mockReturnValue([mockSecrets, false, null]);
+    mockK8sCreate.mockResolvedValue({ metadata: { name: 'bad-cert-secret' } });
+
+    render(
+      <BrokerCreationFormState.Provider value={mockFormState}>
+        <BrokerCreationFormDispatch.Provider value={mocDispatch}>
+          <CertSecretSelector
+            namespace="test-namespace"
+            isCa={false}
+            configType={ConfigType.acceptors}
+            configName="my-broker"
+            canSetCustomNames={true}
+          />
+        </BrokerCreationFormDispatch.Provider>
+      </BrokerCreationFormState.Provider>,
+    );
+
+    const toggleButton = screen.getByRole('button', {
+      name: /typeahead menu toggle/i,
+    });
+    await act(async () => {
+      fireEvent.click(toggleButton);
+    });
+
+    const secretOption = await screen.findByText('bad-cert-secret');
+    expect(secretOption).toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(secretOption);
+    });
+
+    const infoBtn = screen.getByRole('button', { name: /view cert/i });
+    expect(infoBtn).not.toBeDisabled();
+
+    await act(async () => {
+      fireEvent.click(infoBtn);
+    });
+    expect(
+      await screen.findByText(
+        /selected certificate is invalid or cannot be parsed/i,
+      ),
+    ).toBeInTheDocument();
+
+    // Should close the error alert when the close button is clicked
+    const closeButton = screen.getByRole('button', { name: /close/i });
+    await act(async () => {
+      fireEvent.click(closeButton);
+    });
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('heading', {
+          name: /selected certificate is invalid or cannot be parsed/i,
+        }),
+      ).not.toBeInTheDocument(),
+    );
+  });
+
+  it('should show an error alert when certificate parsing fails and auto closes the error alert after timeout', async () => {
+    jest.spyOn(base64, 'decode').mockImplementationOnce(() => {
+      throw new Error('Invalid base64');
+    });
+
+    jest.useFakeTimers();
+
+    mockUseK8sWatchResource.mockReturnValue([mockSecrets, false, null]);
+    mockK8sCreate.mockResolvedValue({ metadata: { name: 'bad-cert-secret' } });
+
+    render(
+      <BrokerCreationFormState.Provider value={mockFormState}>
+        <BrokerCreationFormDispatch.Provider value={mocDispatch}>
+          <CertSecretSelector
+            namespace="test-namespace"
+            isCa={false}
+            configType={ConfigType.acceptors}
+            configName="my-broker"
+            canSetCustomNames={true}
+          />
+        </BrokerCreationFormDispatch.Provider>
+      </BrokerCreationFormState.Provider>,
+    );
+
+    const toggleButton = screen.getByRole('button', {
+      name: /typeahead menu toggle/i,
+    });
+    await act(async () => {
+      fireEvent.click(toggleButton);
+    });
+
+    const secretOption = await screen.findByText('bad-cert-secret');
+    expect(secretOption).toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(secretOption);
+    });
+
+    const infoBtn = screen.getByRole('button', { name: /view cert/i });
+    expect(infoBtn).not.toBeDisabled();
+
+    await act(async () => {
+      fireEvent.click(infoBtn);
+    });
+    expect(
+      await screen.findByText(
+        /selected certificate is invalid or cannot be parsed/i,
+      ),
+    ).toBeInTheDocument();
+
+    // Should close the error alert after 10s timeout
+    act(() => {
+      jest.advanceTimersByTime(10000);
+    });
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('heading', {
+          name: /selected certificate is invalid or cannot be parsed/i,
+        }),
+      ).not.toBeInTheDocument(),
+    );
   });
 });
