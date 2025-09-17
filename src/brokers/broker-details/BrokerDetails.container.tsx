@@ -6,7 +6,6 @@ import { OverviewContainer } from './components/Overview/Overview.container';
 import { PodsContainer } from '@app/brokers/broker-details/components/broker-pods/PodsList.container';
 import { ResourcesContainer } from './components/Resources/Resources.container';
 import { useParams } from 'react-router-dom-v5-compat';
-import { JolokiaAuthentication } from '@app/jolokia/components/JolokiaAuthentication';
 import { useGetBrokerCR } from '@app/k8s/customHooks';
 import { BrokerCR } from '@app/k8s/types';
 import {
@@ -80,13 +79,11 @@ export const BrokerDetailsPage: FC = () => {
 
   return (
     <>
-      <JolokiaAuthentication brokerCR={brokerCr} podOrdinal={0}>
-        <AuthenticatedPageContent
-          brokerCr={brokerCr}
-          name={name}
-          namespace={namespace}
-        />
-      </JolokiaAuthentication>
+      <AuthenticatedPageContent
+        brokerCr={brokerCr}
+        name={name}
+        namespace={namespace}
+      />
     </>
   );
 };
