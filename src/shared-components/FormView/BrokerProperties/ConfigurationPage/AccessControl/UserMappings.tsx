@@ -25,7 +25,6 @@ import {
   Spinner,
   TextInput,
   InputGroupItem,
-  FormHelperText,
   Popover,
   DescriptionList,
   DescriptionListGroup,
@@ -267,11 +266,6 @@ export const SelectUserMappings: FC = () => {
                     />
                   </InputGroupItem>
                 </FormGroup>
-                <FormHelperText>
-                  {t(
-                    'This custom jaas config will allow the user specified as administrator to access the jolokia endpoint of the broker.',
-                  )}
-                </FormHelperText>
                 <Button onClick={triggerJaasConfigCreation}>
                   {t('Create the jaas config')}
                 </Button>
@@ -375,11 +369,6 @@ export const SelectUserMappings: FC = () => {
                 <br />
                 <DescriptionList aria-label="details-selected-jaas-config">
                   <DescriptionListGroup>
-                    <DescriptionListTerm>
-                      {t(
-                        'Openshift users allowed to read the jolokia endpoint',
-                      )}
-                    </DescriptionListTerm>
                     <DescriptionListDescription>
                       <Table>
                         <Thead noWrap>

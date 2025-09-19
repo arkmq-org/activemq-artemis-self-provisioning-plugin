@@ -85,7 +85,6 @@ const config: Configuration = {
       'process.env.ENV_IS_PRODUCTION': isProd
         ? JSON.stringify(true)
         : JSON.stringify(false),
-      'process.env.JOLOKIA_NO_TLS': JSON.stringify(true),
     }),
     new ConsoleRemotePlugin(),
     new CopyWebpackPlugin({

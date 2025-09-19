@@ -11,7 +11,6 @@ To be able to run the local development environment you need to:
 - have access to a local or remote OpenShift cluster
 - have the operator installed on the cluster
 - have the cert-manager operator installed on the cluster
-- have the jolokia-api-server running
 - have the plugin running
 - have the console running
 
@@ -148,12 +147,6 @@ cd bridge-auth-https
 ./setup.sh
 ```
 
-#### start the jolokia api-server
-
-In one terminal start the jolokia-api-server, [follow the
-readme](https://github.com/lavocatt/activemq-artemis-jolokia-api-server/blob/main/README.md)
-on the project to know what to do.
-
 #### start the webpack server
 
 In one terminal window, run:
@@ -215,12 +208,6 @@ for details.
 
 ## Deployment on cluster
 
-### deploy the jolokia api-server
-
-[Follow the
-readme](https://github.com/lavocatt/activemq-artemis-jolokia-api-server/blob/main/README.md)
-on the project to know what to do.
-
 You can deploy the plugin to a cluster by running this following command:
 
 ### deploy the plugin
@@ -253,14 +240,6 @@ To undeploy the plugin, run
 ```sh
 ./undeploy-plugin.sh
 ```
-
-## Keep in sync the jolokia api-server markdown file
-
-The codegen relies on the jolokia api-server's openapi definition to work. The
-project keeps a copy of the version of the api server it is compatible with
-under `api-server/openapi.yml`.
-This files needs to be kept in sync when upgrades on the api-server are
-performed.
 
 ## Configuring a Broker for token reviews
 
@@ -304,13 +283,13 @@ While we wait for the `7.13` broker to get available, any broker that intends to
 perform a token review should have the following env in its spec:
 
 ```yaml
-  env:
-    - name: KUBERNETES_CA_PATH
-      value: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-    - name: KUBERNETES_SERVICE_HOST
-      value: "api.crc.testing"
-    - name: KUBERNETES_SERVICE_PORT
-      value: "6443"
+env:
+  - name: KUBERNETES_CA_PATH
+    value: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+  - name: KUBERNETES_SERVICE_HOST
+    value: 'api.crc.testing'
+  - name: KUBERNETES_SERVICE_PORT
+    value: '6443'
 ```
 
 ### An example of valid YAML for token reviews
@@ -331,9 +310,9 @@ spec:
     - name: KUBERNETES_CA_PATH
       value: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
     - name: KUBERNETES_SERVICE_HOST
-      value: "api.crc.testing"
+      value: 'api.crc.testing'
     - name: KUBERNETES_SERVICE_PORT
-      value: "6443"
+      value: '6443'
   ingressDomain: apps-crc.testing
   console:
     expose: true
