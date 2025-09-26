@@ -19,7 +19,7 @@ type BrokersTableProps = Pick<
   data: BrokerCR[];
   unfilteredData: BrokerCR[];
   loaded: boolean;
-  loadError: any;
+  loadError: Error | null;
 };
 
 const BrokersTable: FC<BrokersTableProps> = ({
@@ -66,7 +66,7 @@ const BrokersTable: FC<BrokersTableProps> = ({
       loaded={loaded}
       loadError={loadError}
       columns={columns}
-      Row={({ obj, activeColumnIDs, rowData }) => (
+      Row={({ obj, activeColumnIDs, rowData, index }) => (
         <BrokerRow
           obj={obj}
           rowData={rowData}
@@ -74,6 +74,7 @@ const BrokersTable: FC<BrokersTableProps> = ({
           columns={columns}
           onOpenModal={onOpenModal}
           onEditBroker={onEditBroker}
+          index={index}
         />
       )}
     />
@@ -86,7 +87,7 @@ export type BrokersListProps = Pick<
 > & {
   brokers: BrokerCR[];
   loaded: boolean;
-  loadError: any;
+  loadError: Error | null;
   namespace: string;
 };
 

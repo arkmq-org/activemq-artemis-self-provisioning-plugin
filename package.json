@@ -42,8 +42,8 @@
     "@babel/preset-env": "^7.22.0",
     "@babel/preset-react": "7.22.0",
     "@babel/preset-typescript": "7.21.0",
-    "@openshift-console/dynamic-plugin-sdk": "1.4.0",
-    "@openshift-console/dynamic-plugin-sdk-webpack": "1.1.1",
+    "@openshift-console/dynamic-plugin-sdk": "4.19.1",
+    "@openshift-console/dynamic-plugin-sdk-webpack": "4.19.0",
     "@patternfly/patternfly": "5.3.1",
     "@patternfly/react-charts": "7.3.1",
     "@patternfly/react-core": "5.3.3",
@@ -61,8 +61,8 @@
     "@types/node": "^20.10.4",
     "@types/react": "^17.0.37",
     "@types/webpack": "5.28.1",
-    "@typescript-eslint/eslint-plugin": "^5.14.0",
-    "@typescript-eslint/parser": "^5.14.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
     "base-64": "^1.0.0",
     "copy-webpack-plugin": "11.0.0",
     "eslint": "^8.10.0",
@@ -94,11 +94,11 @@
     "stylelint": "^15.3.0",
     "stylelint-config-prettier": "9.0.3",
     "stylelint-config-standard": "^31.0.0",
-    "ts-jest": "^29.2.1",
-    "ts-loader": "^9.3.1",
-    "ts-node": "^10.8.1",
-    "typescript": "^4.7.4",
-    "webpack": "5.75.0",
+    "ts-jest": "^29.2.5",
+    "ts-loader": "^9.5.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2",
+    "webpack": "^5.101.3",
     "webpack-cli": "^4.9.2",
     "webpack-dev-server": "^4.7.4",
     "yaml": "^2.4.5"
@@ -120,5 +120,8 @@
   },
   "readme": "README.md",
   "_id": "activemq-artemis-self-provisioning-plugin@0.5.4",
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
+  "resolutions": {
+    "@types/d3-dispatch": "3.0.5"
+  }
 }

@@ -1,4 +1,4 @@
-import _ from 'lodash-es';
+import * as _ from 'lodash-es';
 import { PrometheusValue } from '@openshift-console/dynamic-plugin-sdk';
 import {
   humanizeNumberSI,
@@ -77,7 +77,7 @@ export const formatSeriesValues = (
   samples: number,
   span: number,
 ): GraphDataPoint[] => {
-  const newValues = _.map(values, (v) => {
+  const newValues = _.map(values, (v: PrometheusValue) => {
     const y = Number(v[1]);
     return {
       x: new Date(v[0] * 1000),
@@ -90,7 +90,7 @@ export const formatSeriesValues = (
   const start = Number(_.get(newValues, '[0].x'));
   const end = Number(_.get(_.last(newValues), 'x'));
   const step = span / samples;
-  _.range(start, end, step).forEach((t, i) => {
+  _.range(start, end, step).forEach((t: number, i: number) => {
     const x = new Date(t);
     if (_.get(newValues, [i, 'x']) > x) {
       newValues.splice(i, 0, { x, y: null });
@@ -100,7 +100,7 @@ export const formatSeriesValues = (
   return newValues;
 };
 
-export const xAxisTickFormat = (span: number): ((tick: any) => string) => {
+export const xAxisTickFormat = (span: number): ((tick: number) => string) => {
   return (tick) => {
     if (span > parsePrometheusDuration('1d')) {
       // Add a newline between the date and time so tick labels don't overlap.

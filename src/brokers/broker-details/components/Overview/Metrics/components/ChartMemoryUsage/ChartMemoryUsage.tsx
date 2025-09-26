@@ -1,5 +1,5 @@
 import { FC, useMemo, useCallback } from 'react';
-import _ from 'lodash-es';
+import * as _ from 'lodash-es';
 import {
   Chart,
   ChartAxis,
@@ -57,39 +57,54 @@ export const ChartMemoryUsage: FC<ChartMemoryUsageProps> = ({
   const [containerRef, width] = useChartWidth();
   // const [xDomain, setXDomain] = useState(fixedXDomain || getXDomain(Date.now(), span));
 
-  const data: GraphSeries[] = [];
-  const tooltipSeriesNames: string[] = [];
-  const tooltipSeriesLabels: PrometheusLabels[] = [];
-  const legendData: { name: string }[] = [];
+  const {
+    data,
+    tooltipSeriesNames,
+    tooltipSeriesLabels,
+    legendData,
+    hasMetrics,
+  } = useMemo(() => {
+    const data: GraphSeries[] = [];
+    const tooltipSeriesNames: string[] = [];
+    const tooltipSeriesLabels: PrometheusLabels[] = [];
+    const legendData: { name: string }[] = [];
+
+    const newResult = _.map(allMetricsSeries, 'data.result');
+    const hasMetrics = _.some(
+      newResult,
+      (r: PrometheusResult[]) => (r && r.length) > 0,
+    );
+
+    const newGraphData = _.map(newResult, (result: PrometheusResult[]) => {
+      return _.map(result, ({ metric, values }: PrometheusResult): Series => {
+        return [metric, formatSeriesValues(values, samples, span)];
+      });
+    });
+
+    _.each(newGraphData, (series: Series[], i: number) => {
+      _.each(series, ([metric, values]: Series) => {
+        data.push(values);
+        if (formatSeriesTitle) {
+          const name = formatSeriesTitle(metric, i);
+          legendData.push({ name });
+          tooltipSeriesNames.push(name);
+        } else {
+          tooltipSeriesLabels.push(metric);
+        }
+      });
+    });
+
+    return {
+      data,
+      tooltipSeriesNames,
+      tooltipSeriesLabels,
+      legendData,
+      hasMetrics,
+    };
+  }, [allMetricsSeries, samples, span, formatSeriesTitle]);
+
   const domain = { x: fixedXDomain, y: fixedXDomain };
   const xAxisTickCount = Math.round(width / 100);
-
-  const newResult = _.map(allMetricsSeries, 'data.result');
-  const hasMetrics = _.some(newResult, (r) => (r && r.length) > 0);
-
-  // Only update X-axis if the time range (fixedXDomain or span) or graph data (allSeries) change
-  // useEffect(() => {
-  //   setXDomain(fixedXDomain || getXDomain(Date.now(), span));
-  // }, [allMetricsSeries, span, fixedXDomain]);
-
-  const newGraphData = _.map(newResult, (result: PrometheusResult[]) => {
-    return _.map(result, ({ metric, values }): Series => {
-      return [metric, formatSeriesValues(values, samples, span)];
-    });
-  });
-
-  _.each(newGraphData, (series, i) => {
-    _.each(series, ([metric, values]) => {
-      data.push(values);
-      if (formatSeriesTitle) {
-        const name = formatSeriesTitle(metric, i);
-        legendData.push({ name });
-        tooltipSeriesNames.push(name);
-      } else {
-        tooltipSeriesLabels.push(metric);
-      }
-    });
-  });
 
   const { processedData, unit } = useMemo(() => {
     const nonEmptyDataSets = data.filter((dataSet) => dataSet?.length);
@@ -97,11 +112,11 @@ export const ChartMemoryUsage: FC<ChartMemoryUsageProps> = ({
   }, [data]);
 
   const xTickFormat = useCallback(
-    (tick) => {
+    (tick: number) => {
       const tickFormat = xAxisTickFormat(span);
       return tickFormat(tick);
     },
-    [xAxisTickFormat, span],
+    [span],
   );
 
   const yTickFormat = useCallback(

@@ -10,7 +10,7 @@ import { AddBroker } from './AddBroker.component';
 import { useAccessReview } from '@openshift-console/dynamic-plugin-sdk';
 
 jest.mock('@openshift-console/dynamic-plugin-sdk', () => ({
-  useAccessReview: jest.fn(() => []),
+  useAccessReview: jest.fn((): [boolean, boolean] => [true, false]),
 }));
 
 const mockUseAccessReview = useAccessReview as jest.Mock;

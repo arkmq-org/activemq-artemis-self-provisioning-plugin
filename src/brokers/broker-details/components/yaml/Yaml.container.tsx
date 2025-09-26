@@ -1,7 +1,6 @@
 import { FC, Suspense } from 'react';
 import { Loading } from '@app/shared-components/Loading/Loading';
 import { ResourceYAMLEditor } from '@openshift-console/dynamic-plugin-sdk';
-import YAML from 'yaml';
 import { Alert, AlertVariant, Button } from '@patternfly/react-core';
 import { useTranslation } from '@app/i18n/i18n';
 import { useNavigate, useParams } from 'react-router-dom-v5-compat';
@@ -50,10 +49,7 @@ const YamlContainer: FC = () => {
         </p>
       </Alert>
       <Suspense fallback={<Loading />}>
-        <ResourceYAMLEditor
-          initialResource={YAML.stringify(brokerCr, null, '  ')}
-          readOnly
-        />
+        <ResourceYAMLEditor initialResource={brokerCr} readOnly />
       </Suspense>
     </>
   );

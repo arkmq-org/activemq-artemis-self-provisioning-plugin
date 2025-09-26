@@ -1,5 +1,5 @@
 import { FC, useCallback } from 'react';
-import _ from 'lodash-es';
+import * as _ from 'lodash-es';
 import {
   Chart,
   ChartAxis,
@@ -67,15 +67,18 @@ export const ChartCPUUsage: FC<ChartCPUUsageProps> = ({
   const yTickFormat = valueFormatter('');
 
   const xTickFormat = useCallback(
-    (tick) => {
+    (tick: number) => {
       const tickFormat = xAxisTickFormat(span);
       return tickFormat(tick);
     },
-    [xAxisTickFormat, span],
+    [span],
   );
 
   const newResult = _.map(allMetricsSeries, 'data.result');
-  const hasMetrics = _.some(newResult, (r) => (r && r.length) > 0);
+  const hasMetrics = _.some(
+    newResult,
+    (r: PrometheusResult[]) => (r && r.length) > 0,
+  );
 
   // Only update X-axis if the time range (fixedXDomain or span) or graph data (allSeries) change
   // useEffect(() => {
@@ -83,13 +86,13 @@ export const ChartCPUUsage: FC<ChartCPUUsageProps> = ({
   // }, [allMetricsSeries, span, fixedXDomain]);
 
   const newGraphData = _.map(newResult, (result: PrometheusResult[]) => {
-    return _.map(result, ({ metric, values }): Series => {
+    return _.map(result, ({ metric, values }: PrometheusResult): Series => {
       return [metric, formatSeriesValues(values, samples, span)];
     });
   });
 
-  _.each(newGraphData, (series, i) => {
-    _.each(series, ([metric, values]) => {
+  _.each(newGraphData, (series: Series[], i: number) => {
+    _.each(series, ([metric, values]: Series) => {
       data.push(values);
       if (formatSeriesTitle) {
         const name = formatSeriesTitle(metric, i);

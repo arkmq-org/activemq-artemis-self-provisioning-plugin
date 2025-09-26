@@ -56,6 +56,7 @@ const Props: PodRowProps = {
   rowData: {},
   activeColumnIDs: new Set(mockColumns.map((column) => column.id)),
   columns: mockColumns,
+  index: 0,
 };
 
 describe('PodRow', () => {
@@ -154,6 +155,7 @@ describe('PodRow', () => {
       rowData: {},
       activeColumnIDs: new Set(mockColumns.map((column) => column.id)),
       columns: mockColumns,
+      index: 0,
     };
 
     render(

@@ -15,7 +15,7 @@ type PodsTableProps = {
   data: BrokerCR[];
   unfilteredData: BrokerCR[];
   loaded: boolean;
-  loadError: any;
+  loadError: Error | null;
 };
 
 const PodsTable: FC<PodsTableProps> = ({
@@ -54,12 +54,13 @@ const PodsTable: FC<PodsTableProps> = ({
       loaded={loaded}
       loadError={loadError}
       columns={columns}
-      Row={({ obj, activeColumnIDs, rowData }) => (
+      Row={({ obj, activeColumnIDs, rowData, index }) => (
         <PodRow
           obj={obj}
           rowData={rowData}
           activeColumnIDs={activeColumnIDs}
           columns={columns}
+          index={index}
         />
       )}
     />
@@ -69,7 +70,7 @@ const PodsTable: FC<PodsTableProps> = ({
 export type PodsListProps = {
   brokerPods: BrokerCR[];
   loaded: boolean;
-  loadError: any;
+  loadError: Error | null;
 };
 
 const PodsList: FC<PodsListProps> = ({ brokerPods, loaded, loadError }) => {

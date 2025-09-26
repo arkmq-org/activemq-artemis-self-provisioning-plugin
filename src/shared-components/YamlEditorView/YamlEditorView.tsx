@@ -121,7 +121,7 @@ export const YamlEditorView: FC<YamlEditorViewPropTypes> = ({
       </AlertGroup>
       <Suspense fallback={<Loading />}>
         <ResourceYAMLEditor
-          initialResource={YAML.stringify(formState.cr, null, '  ')}
+          initialResource={formState.cr}
           onSave={updateModel}
           onChange={(newContent: string) => {
             setCurrentYaml(newContent);

@@ -1,4 +1,4 @@
-import _ from 'lodash-es';
+import * as _ from 'lodash-es';
 
 // Conversions between units and milliseconds
 const s = 1000;
@@ -23,7 +23,7 @@ export const formatPrometheusDuration = (ms: number) => {
   }
   let remaining = ms;
   let str = '';
-  _.each(units, (factor, unit) => {
+  _.each(units, (factor: number, unit: string) => {
     const n = Math.floor(remaining / factor);
     if (n > 0) {
       str += `${n}${unit} `;

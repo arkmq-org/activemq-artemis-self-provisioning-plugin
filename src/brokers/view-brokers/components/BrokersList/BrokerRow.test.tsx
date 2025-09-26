@@ -69,6 +69,7 @@ const Props: BrokerRowProps = {
   columns: mockColumns,
   onEditBroker: onEditBroker,
   onOpenModal: onOpenModal,
+  index: 0,
 };
 
 describe('BrokerRow', () => {
