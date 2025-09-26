@@ -1,5 +1,3 @@
-import _ from 'lodash-es';
-
 // Conversions between units and milliseconds
 const s = 1000;
 const m = s * 60;
@@ -18,19 +16,19 @@ const units: { [key: string]: number } = { w, d, h, m, s };
  * ```
  */
 export const formatPrometheusDuration = (ms: number) => {
-  if (!_.isFinite(ms) || ms < 0) {
+  if (!Number.isFinite(ms) || ms < 0) {
     return '';
   }
   let remaining = ms;
   let str = '';
-  _.each(units, (factor, unit) => {
+  Object.entries(units).forEach(([unit, factor]) => {
     const n = Math.floor(remaining / factor);
     if (n > 0) {
       str += `${n}${unit} `;
       remaining -= n * factor;
     }
   });
-  return _.trim(str);
+  return str.trim();
 };
 
 /**
@@ -48,9 +46,10 @@ export const parsePrometheusDuration = (duration: string): number => {
       .trim()
       .split(/\s+/)
       .map((p) => p.match(/^(\d+)([wdhms])$/));
-    return _.sumBy(
-      parts,
-      (p: RegExpMatchArray | null) => parseInt(p[1], 10) * units[p[2]],
+    return parts.reduce(
+      (sum, p: RegExpMatchArray | null) =>
+        sum + parseInt(p[1], 10) * units[p[2]],
+      0,
     );
   } catch (ignored) {
     // Invalid duration format

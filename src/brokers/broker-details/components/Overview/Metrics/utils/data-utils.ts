@@ -1,4 +1,3 @@
-import _ from 'lodash-es';
 import { getType } from './units';
 // Types
 export type DataPoint<X = Date | number | string> = {
@@ -33,12 +32,12 @@ const bestUnit = (
   );
 
   const bestLevel = flattenDataPoints.reduce((maxUnit, point) => {
-    const index = Math.floor(log(_.get(type, 'divisor', 1024), point.y));
+    const index = Math.floor(log(type?.divisor ?? 1024, point.y));
     const unitIndex =
       index >= type.units.length ? type.units.length - 1 : index;
     return maxUnit < unitIndex ? unitIndex : maxUnit;
   }, -1);
-  return _.get(type, ['units', bestLevel]);
+  return type?.units?.[bestLevel];
 };
 
 // Array based processor
