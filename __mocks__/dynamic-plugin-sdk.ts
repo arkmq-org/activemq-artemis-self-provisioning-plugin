@@ -16,3 +16,10 @@ export class Dummy extends Error {
 export function useResolvedExtensions(): any[] {
   return [[], undefined, undefined];
 }
+
+const defaultPrometheusPollResult = [{}, true];
+export const usePrometheusPoll = jest.fn(() => defaultPrometheusPollResult);
+
+export const PrometheusEndpoint = {
+  QUERY_RANGE: 'QUERY_RANGE',
+};
