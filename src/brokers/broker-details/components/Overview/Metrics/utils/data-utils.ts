@@ -1,4 +1,5 @@
 import { getType } from './units';
+
 // Types
 export type DataPoint<X = Date | number | string> = {
   x?: X;
