@@ -1,9 +1,11 @@
-import { FC, useEffect, useState } from 'react';
+import { FC, useEffect, useState, useMemo, useCallback } from 'react';
 import { parsePrometheusDuration } from '../../../../Overview/Metrics/utils/prometheus';
 import { getMaxSamplesForSpan, valueFormatter } from '../../utils/format';
-import { useFetchCpuUsageMetrics } from '../../hooks/useFetchCpuUsageMetrics';
+import { cpuUsageQuery } from '../../utils/queries';
+import { MetricsPolling } from '../MetricsPolling/MetricsPolling';
 import { useTranslation } from '@app/i18n/i18n';
 import { CardQueryBrowser } from '../CardQueryBrowser/CardQueryBrowser';
+import { PrometheusResponse } from '@openshift-console/dynamic-plugin-sdk';
 
 export type CardBrokerCPUUsageMetricsContainerProps = {
   name: string;
@@ -29,9 +31,43 @@ export const CardBrokerCPUUsageMetricsContainer: FC<
 }) => {
   const { t } = useTranslation();
 
-  const fetchCpuUsageMetrics = useFetchCpuUsageMetrics(size);
-  //states
   const [xDomain] = useState<AxisDomain>();
+  // State to store the results from each MetricsPolling component.
+  // The key is the index of the poller.
+  const [results, setResults] = useState<{
+    [key: number]: { result: PrometheusResponse; loaded: boolean };
+  }>({});
+
+  // Generate the Prometheus queries for each pod replica.
+  const queries = useMemo(
+    () => [...Array(size)].map((_, i) => cpuUsageQuery(name, namespace, i)),
+    [size, name, namespace],
+  );
+
+  // Callback to handle results from the MetricsPolling components.
+  const handleMetricResult = useCallback(
+    (index: number, result: PrometheusResponse, loaded: boolean) => {
+      setResults((prev) => ({
+        ...prev,
+        [index]: { result, loaded },
+      }));
+    },
+    [],
+  );
+
+  // Memoized aggregation of results from all pollers.
+  const { result, loaded } = useMemo(() => {
+    const resultsArray = Object.values(results);
+    const loaded =
+      queries.length > 0 && resultsArray.length === queries.length
+        ? resultsArray.every((r) => r.loaded)
+        : false;
+    const result = resultsArray
+      .map((r) => r.result)
+      .filter((res): res is PrometheusResponse => !!res);
+    return { result, loaded };
+  }, [results, queries]);
+
   // If we have both `timespan` and `defaultTimespan`, `timespan` takes precedence
   // Limit the number of samples so that the step size doesn't fall below minStep
   const maxSamplesForSpan = defaultSamples || getMaxSamplesForSpan(span);
@@ -47,34 +83,40 @@ export const CardBrokerCPUUsageMetricsContainer: FC<
     }
   }, [defaultSamples, span]);
 
-  const [result, loaded] = fetchCpuUsageMetrics({
-    name,
-    namespace,
-    span,
-    samples,
-    endTime,
-    delay: parsePrometheusDuration(pollTime),
-  });
-
   // const data: GraphSeries[] = [];
   const yTickFormat = valueFormatter('');
 
   return (
-    <CardQueryBrowser
-      isInitialLoading={false}
-      backendUnavailable={false}
-      allMetricsSeries={result}
-      span={span}
-      isLoading={!loaded}
-      fixedXDomain={xDomain}
-      samples={samples}
-      formatSeriesTitle={(labels) => labels.pod}
-      title={t('CPU Usage')}
-      helperText={t('CPU Usage')}
-      dataTestId={'metrics-broker-cpu-usage'}
-      yTickFormat={yTickFormat}
-      ariaTitle={t('CPU Usage')}
-      // data={data}
-    />
+    <>
+      {queries.map((query, i) => (
+        <MetricsPolling
+          key={i}
+          query={query}
+          index={i}
+          namespace={namespace}
+          span={span}
+          samples={samples}
+          endTime={endTime}
+          delay={parsePrometheusDuration(pollTime)}
+          onResult={handleMetricResult}
+        />
+      ))}
+      <CardQueryBrowser
+        isInitialLoading={false}
+        backendUnavailable={false}
+        allMetricsSeries={result}
+        span={span}
+        isLoading={!loaded}
+        fixedXDomain={xDomain}
+        samples={samples}
+        formatSeriesTitle={(labels) => labels.pod}
+        title={t('CPU Usage')}
+        helperText={t('CPU Usage')}
+        dataTestId={'metrics-broker-cpu-usage'}
+        yTickFormat={yTickFormat}
+        ariaTitle={t('CPU Usage')}
+        // data={data}
+      />
+    </>
   );
 };
