@@ -1,4 +1,4 @@
-/z* eslint-env node */;
+/* eslint-env node */
 
 import * as path from 'path';
 import { DefinePlugin, Configuration as WebpackConfiguration } from 'webpack';

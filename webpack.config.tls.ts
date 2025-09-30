@@ -68,7 +68,15 @@ const config: Configuration = {
   devServer: {
     static: './dist',
     port: 9444,
-    https: true,
+    host: '0.0.0.0',
+    server: {
+      type: 'https',
+      options: {
+        key: path.resolve(__dirname, 'console-cert/domain.key'),
+        cert: path.resolve(__dirname, 'console-cert/domain.crt'),
+        ca: path.resolve(__dirname, 'console-cert/rootCA.crt'),
+      },
+    },
     // Allow bridge running in a container to connect to the plugin dev server.
     allowedHosts: 'all',
     headers: {
@@ -79,6 +87,13 @@ const config: Configuration = {
     },
     devMiddleware: {
       writeToDisk: true,
+    },
+    client: {
+      webSocketURL: {
+        hostname: 'localhost',
+        port: 9444,
+        protocol: 'wss',
+      },
     },
   },
   plugins: [
