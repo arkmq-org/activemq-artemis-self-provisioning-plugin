@@ -1,6 +1,5 @@
 import { FormState712 } from './import-types';
 import { BrokerCR, Acceptor, ResourceTemplate } from '@app/k8s/types';
-import { SelectOptionObject } from '@patternfly/react-core/deprecated';
 import { ConfigType } from '@app/shared-components/FormView/BrokerProperties/ConfigurationPage/ConfigurationPage';
 import { EditorType } from '../reducer';
 
@@ -458,7 +457,7 @@ interface SetAcceptorSecretAction extends ArtemisReducerActionBase {
     /** the name of the configuration */
     name: string;
     /** the secret of the configuration, set to undefined to delete the secret*/
-    secret: SelectOptionObject | undefined;
+    secret: string | undefined;
     /** the secret is a certificate */
     isCa: boolean;
   };
@@ -470,7 +469,7 @@ interface SetConnectorSecretAction extends ArtemisReducerActionBase {
     /** the name of the configuration */
     name: string;
     /** the secret of the configuration, set to undefined to delete the secret*/
-    secret: SelectOptionObject | undefined;
+    secret: string | undefined;
     /** the secret is a certificate */
     isCa: boolean;
   };
@@ -482,7 +481,7 @@ interface SetConsoleSecretAction extends ArtemisReducerActionBase {
     /** the name of the configuration */
     name: string;
     /** the secret of the configuration, set to undefined to delete the secret*/
-    secret: SelectOptionObject | undefined;
+    secret: string | undefined;
     /** the secret is a certificate */
     isCa: boolean;
   };
@@ -1257,7 +1256,7 @@ const renameConfig = (
 const updateConfigSecret = (
   brokerModel: BrokerCR,
   configType: ConfigType,
-  secret: SelectOptionObject,
+  secret: string,
   configName: string,
   isCa: boolean,
 ) => {
@@ -1271,7 +1270,7 @@ const updateConfigSecret = (
                 brokerModel.spec.connectors[i].needClientAuth = true;
                 brokerModel.spec.connectors[i].wantClientAuth = true;
               }
-              brokerModel.spec.connectors[i].trustSecret = secret.toString();
+              brokerModel.spec.connectors[i].trustSecret = secret;
             } else {
               delete brokerModel.spec.connectors[i].trustSecret;
               delete brokerModel.spec.connectors[i].needClientAuth;
@@ -1279,7 +1278,7 @@ const updateConfigSecret = (
             }
           } else {
             if (secret) {
-              brokerModel.spec.connectors[i].sslSecret = secret.toString();
+              brokerModel.spec.connectors[i].sslSecret = secret;
             } else {
               delete brokerModel.spec.connectors[i].sslSecret;
             }
@@ -1297,7 +1296,7 @@ const updateConfigSecret = (
                 brokerModel.spec.acceptors[i].needClientAuth = true;
                 brokerModel.spec.acceptors[i].wantClientAuth = true;
               }
-              brokerModel.spec.acceptors[i].trustSecret = secret.toString();
+              brokerModel.spec.acceptors[i].trustSecret = secret;
             } else {
               delete brokerModel.spec.acceptors[i].trustSecret;
               delete brokerModel.spec.acceptors[i].needClientAuth;
@@ -1305,7 +1304,7 @@ const updateConfigSecret = (
             }
           } else {
             if (secret) {
-              brokerModel.spec.acceptors[i].sslSecret = secret.toString();
+              brokerModel.spec.acceptors[i].sslSecret = secret;
             } else {
               delete brokerModel.spec.acceptors[i].sslSecret;
             }
@@ -1320,7 +1319,7 @@ const updateConfigSecret = (
           if (!brokerModel.spec.console.trustSecret) {
             brokerModel.spec.console.useClientAuth = true;
           }
-          brokerModel.spec.console.trustSecret = secret.toString();
+          brokerModel.spec.console.trustSecret = secret;
         } else {
           delete brokerModel.spec.console.trustSecret;
           delete brokerModel.spec.console.useClientAuth;
@@ -1580,23 +1579,16 @@ export const getConfigSecret = (
   configType: ConfigType,
   configName: string,
   isCa: boolean,
-): SelectOptionObject => {
-  const newOptionObject = (value: string): SelectOptionObject => {
-    return {
-      toString() {
-        return value;
-      },
-    };
-  };
+): string => {
   if (configType === ConfigType.connectors) {
     const connector = getConnector(brokerModel, configName);
     if (connector) {
       if (isCa) {
         if (connector.trustSecret) {
-          return newOptionObject(connector.trustSecret);
+          return connector.trustSecret;
         }
       } else if (connector.sslSecret) {
-        return newOptionObject(connector.sslSecret);
+        return connector.sslSecret;
       }
     }
   }
@@ -1605,20 +1597,20 @@ export const getConfigSecret = (
     if (acceptor) {
       if (isCa) {
         if (acceptor.trustSecret) {
-          return newOptionObject(acceptor.trustSecret);
+          return acceptor.trustSecret;
         }
       } else if (acceptor.sslSecret) {
-        return newOptionObject(acceptor.sslSecret);
+        return acceptor.sslSecret;
       }
     }
   }
   if (configType === ConfigType.console) {
     if (isCa) {
       if (brokerModel.spec.console.trustSecret) {
-        return newOptionObject(brokerModel.spec.console.trustSecret);
+        return brokerModel.spec.console.trustSecret;
       }
     } else if (brokerModel.spec.console.sslSecret) {
-      return newOptionObject(brokerModel.spec.console.sslSecret);
+      return brokerModel.spec.console.sslSecret;
     }
   }
   return '';

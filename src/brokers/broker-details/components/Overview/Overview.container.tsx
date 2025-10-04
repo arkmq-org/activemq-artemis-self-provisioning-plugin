@@ -42,7 +42,10 @@ import {
 import { Metrics } from './Metrics/Metrics';
 import { useTranslation } from '@app/i18n/i18n';
 import { ConditionsContainer } from '@app/brokers/broker-details/components/Overview/Conditions/Conditions.container';
-import { useNavigate } from 'react-router-dom-v5-compat';
+import { useNavigate, useParams } from 'react-router-dom-v5-compat';
+import { Loading } from '@app/shared-components/Loading/Loading';
+import { ErrorState } from '@app/shared-components/ErrorState/ErrorState';
+import { useGetBrokerCR } from '@app/k8s/customHooks';
 
 const useGetIssuerCa = (
   cr: BrokerCR,
@@ -342,18 +345,18 @@ const Labels: FC<IssuerSecretsDownloaderProps> = ({ cr }) => {
   );
 };
 
-export type OverviewContainerProps = {
-  namespace: string;
-  name: string;
-  cr: BrokerCR;
-};
-
-export const OverviewContainer: FC<OverviewContainerProps> = ({
-  namespace,
-  name,
-  cr,
-}) => {
+export const OverviewContainer: FC = () => {
   const { t } = useTranslation();
+  const { ns: namespace, name } = useParams<{ ns?: string; name?: string }>();
+
+  const { brokerCr: cr, isLoading, error } = useGetBrokerCR(name, namespace);
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  if (error) {
+    return <ErrorState />;
+  }
 
   return (
     <PageSection type="tabs">

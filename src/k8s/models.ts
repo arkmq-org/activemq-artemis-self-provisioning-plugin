@@ -20,7 +20,7 @@ export const AMQBrokerModel: K8sModel = {
   plural: 'activemqartemises',
   id: 'broker',
   abbr: 'B',
-  namespaced: false,
+  namespaced: true,
   crd: true,
 };
 
@@ -35,7 +35,7 @@ export const CertIssuerModel: K8sModel = {
   plural: 'issuers',
   id: 'issuer',
   abbr: 'I',
-  namespaced: false,
+  namespaced: true,
   crd: true,
 };
 
@@ -50,7 +50,7 @@ export const CertModel: K8sModel = {
   plural: 'certificates',
   id: 'certificate',
   abbr: 'C',
-  namespaced: false,
+  namespaced: true,
   crd: true,
 };
 
@@ -65,7 +65,7 @@ export const SecretModel: K8sModel = {
   plural: 'secrets',
   id: 'secret',
   abbr: 'S',
-  namespaced: false,
+  namespaced: true,
   crd: true,
 };
 
@@ -92,5 +92,5 @@ export const IngressDomainModel: K8sModel = {
   plural: 'ingresses',
   labelPlural: 'ingresses',
   abbr: 'I',
-  namespaced: false,
+  namespaced: true,
 };

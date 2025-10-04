@@ -28,7 +28,13 @@ RUN yarn build
 
 FROM registry.access.redhat.com/ubi9/nginx-122:latest
 
+USER root
+
+## Upgrade packages
+RUN dnf update -y --setopt=install_weak_deps=0 && rm -rf /var/cache/yum
+
 COPY --from=build-image /usr/src/app/dist /usr/share/nginx/html
+
 
 USER 1001
 
@@ -38,4 +44,4 @@ ENTRYPOINT ["nginx", "-g", "daemon off;"]
 LABEL name="arkmq-org/activemq-artemis-self-provisioning-plugin"
 LABEL description="ActiveMQ Artemis Self Provisioning Plugin"
 LABEL maintainer="Roderick Kieley <rkieley@redhat.com>"
-LABEL version="0.5.3"
+LABEL version="0.5.4"

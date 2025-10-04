@@ -5,13 +5,12 @@ import {
   Button,
   Level,
   LevelItem,
-} from '@patternfly/react-core';
-import {
   Dropdown,
+  DropdownList,
   DropdownItem,
-  DropdownPosition,
-  KebabToggle,
-} from '@patternfly/react-core/deprecated';
+  MenuToggle,
+} from '@patternfly/react-core';
+import { EllipsisVIcon } from '@patternfly/react-icons';
 import { PreConfirmDeleteModal } from '../../../view-brokers/components/PreConfirmDeleteModal/PreConfirmDeleteModal';
 import { useTranslation } from '@app/i18n/i18n';
 import { k8sDelete } from '@openshift-console/dynamic-plugin-sdk';
@@ -52,6 +51,10 @@ const BrokerDetailsBreadcrumb: FC<BrokerDetailsBreadcrumbProps> = ({
     setIsModalOpen(!isModalOpen);
   };
 
+  const onToggle = () => {
+    setIsOpen(!isOpen);
+  };
+
   const onDeleteBroker = () => {
     k8sDelete({
       model: AMQBrokerModel,
@@ -63,19 +66,6 @@ const BrokerDetailsBreadcrumb: FC<BrokerDetailsBreadcrumbProps> = ({
       .catch((e) => {
         setLoadError(e.message);
       });
-  };
-
-  const dropdownItems = [
-    <DropdownItem key="edit-broker" onClick={onClickEditBroker}>
-      {t('Edit Broker')}
-    </DropdownItem>,
-    <DropdownItem key="delete-broker" onClick={onClickDeleteBroker}>
-      {t('Delete Broker')}
-    </DropdownItem>,
-  ];
-
-  const onToggle = (isOpen: boolean) => {
-    setIsOpen(isOpen);
   };
 
   const onSelect = () => {
@@ -99,18 +89,33 @@ const BrokerDetailsBreadcrumb: FC<BrokerDetailsBreadcrumbProps> = ({
         </LevelItem>
         <LevelItem>
           <Dropdown
-            onSelect={onSelect}
-            toggle={
-              <KebabToggle
-                data-testid="broker-toggle-kebab"
-                onToggle={(_event, isOpen: boolean) => onToggle(isOpen)}
-              />
-            }
             isOpen={isOpen}
-            isPlain
-            dropdownItems={dropdownItems}
-            position={DropdownPosition.right}
-          />
+            onSelect={onSelect}
+            onOpenChange={(isOpen: boolean) => setIsOpen(isOpen)}
+            toggle={(toggleRef) => (
+              <MenuToggle
+                ref={toggleRef}
+                aria-label="kebab dropdown"
+                variant="plain"
+                onClick={onToggle}
+                isExpanded={isOpen}
+                data-testid="broker-toggle-kebab"
+              >
+                <EllipsisVIcon />
+              </MenuToggle>
+            )}
+            popperProps={{ position: 'right' }}
+            shouldFocusToggleOnSelect
+          >
+            <DropdownList>
+              <DropdownItem key="edit-broker" onClick={onClickEditBroker}>
+                {t('Edit Broker')}
+              </DropdownItem>
+              <DropdownItem key="delete-broker" onClick={onClickDeleteBroker}>
+                {t('Delete Broker')}
+              </DropdownItem>
+            </DropdownList>
+          </Dropdown>
         </LevelItem>
       </Level>
       <PreConfirmDeleteModal

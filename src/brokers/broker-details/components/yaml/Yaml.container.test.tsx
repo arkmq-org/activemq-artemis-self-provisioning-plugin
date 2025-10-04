@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@app/test-utils';
 import { YamlContainer } from './Yaml.container';
 import { useNavigate, useParams } from 'react-router-dom-v5-compat';
+import { useGetBrokerCR } from '@app/k8s/customHooks';
 
 jest.mock('@openshift-console/dynamic-plugin-sdk', () => ({
   ResourceYAMLEditor: jest.fn(() => <div>Mocked ResourceYAMLEditor</div>),
@@ -11,8 +12,13 @@ jest.mock('react-router-dom-v5-compat', () => ({
   useNavigate: jest.fn(),
 }));
 
+jest.mock('@app/k8s/customHooks', () => ({
+  useGetBrokerCR: jest.fn(),
+}));
+
 const mockUseParams = useParams as jest.Mock;
 const mockUseNavigate = useNavigate as jest.Mock;
+const mockUseGetBrokerCR = useGetBrokerCR as jest.Mock;
 
 describe('YamlContainer', () => {
   beforeEach(() => {
@@ -24,30 +30,29 @@ describe('YamlContainer', () => {
     });
 
     mockUseNavigate.mockReturnValue(jest.fn());
+    mockUseGetBrokerCR.mockReturnValue({
+      apiVersion: 'broker.amq.io/v1beta1',
+      kind: 'ActiveMQArtemis',
+      metadata: {
+        creationTimestamp: '2024-12-05T07:41:45Z',
+        name: 'test-1',
+        namespace: 'test-namespace',
+      },
+      spec: {
+        adminPassword: 'admin',
+        adminUser: 'admin',
+        console: { expose: true },
+        deploymentPlan: {
+          image: 'placeholder',
+          requireLogin: false,
+          size: 2,
+        },
+      },
+    });
   });
 
-  const mockBrokerCr = {
-    apiVersion: 'broker.amq.io/v1beta1',
-    kind: 'ActiveMQArtemis',
-    metadata: {
-      creationTimestamp: '2024-12-05T07:41:45Z',
-      name: 'ex-aao',
-      namespace: 'default',
-    },
-    spec: {
-      adminPassword: 'admin',
-      adminUser: 'admin',
-      console: { expose: true },
-      deploymentPlan: {
-        image: 'placeholder',
-        requireLogin: false,
-        size: 2,
-      },
-    },
-  };
-
   it('should render the YamlContainer component successfully', () => {
-    render(<YamlContainer brokerCr={mockBrokerCr} />);
+    render(<YamlContainer />);
     expect(
       screen.getByText('This YAML view is in read-only mode.'),
     ).toBeInTheDocument();
@@ -60,7 +65,7 @@ describe('YamlContainer', () => {
     const navigate = jest.fn();
     mockUseNavigate.mockReturnValue(navigate);
 
-    render(<YamlContainer brokerCr={mockBrokerCr} />);
+    render(<YamlContainer />);
 
     fireEvent.click(screen.getByRole('button', { name: /edit form/i }));
 

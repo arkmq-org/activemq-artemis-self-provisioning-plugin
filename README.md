@@ -1,6 +1,8 @@
 # ActiveMQ Artemis Self Provisioning Plugin
 
-This project is a ActiveMQ Artemis Self Provisioning Plugin to the Administrator perspective in OpenShift console. It requires OpenShift `4.16` to use.
+This project is a ActiveMQ Artemis Self Provisioning Plugin to the Administrator
+perspective in OpenShift console. It requires at least OpenShift `4.18` to use
+and is compatible with OpenShift `4.19`.
 
 ## Local development
 
@@ -9,7 +11,6 @@ To be able to run the local development environment you need to:
 - have access to a local or remote OpenShift cluster
 - have the operator installed on the cluster
 - have the cert-manager operator installed on the cluster
-- have the jolokia-api-server running
 - have the plugin running
 - have the console running
 
@@ -88,6 +89,46 @@ its functionalities.
 
 Navigate to the operatorHub on the console and search for `Cert-manager`.
 
+#### Bootstraping a cluster issuer
+
+Apply this:
+
+```yaml
+oc apply -f - <<EOF
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned-issuer
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: my-selfsigned-ca
+  namespace: cert-manager
+spec:
+  isCA: true
+  commonName: my-selfsigned-ca
+  secretName: root-secret
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: selfsigned-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: my-ca-issuer
+spec:
+  ca:
+    secretName: root-secret
+EOF
+```
+
 ### Running the plugin
 
 #### Download the secrets so that the bridge can authenticate the user with the api server backend
@@ -105,12 +146,6 @@ cd bridge-auth-http
 cd bridge-auth-https
 ./setup.sh
 ```
-
-#### start the jolokia api-server
-
-In one terminal start the jolokia-api-server, [follow the
-readme](https://github.com/lavocatt/activemq-artemis-jolokia-api-server/blob/main/README.md)
-on the project to know what to do.
 
 #### start the webpack server
 
@@ -173,12 +208,6 @@ for details.
 
 ## Deployment on cluster
 
-### deploy the jolokia api-server
-
-[Follow the
-readme](https://github.com/lavocatt/activemq-artemis-jolokia-api-server/blob/main/README.md)
-on the project to know what to do.
-
 You can deploy the plugin to a cluster by running this following command:
 
 ### deploy the plugin
@@ -211,14 +240,6 @@ To undeploy the plugin, run
 ```sh
 ./undeploy-plugin.sh
 ```
-
-## Keep in sync the jolokia api-server markdown file
-
-The codegen relies on the jolokia api-server's openapi definition to work. The
-project keeps a copy of the version of the api server it is compatible with
-under `api-server/openapi.yml`.
-This files needs to be kept in sync when upgrades on the api-server are
-performed.
 
 ## Configuring a Broker for token reviews
 
@@ -262,13 +283,13 @@ While we wait for the `7.13` broker to get available, any broker that intends to
 perform a token review should have the following env in its spec:
 
 ```yaml
-  env:
-    - name: KUBERNETES_CA_PATH
-      value: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-    - name: KUBERNETES_SERVICE_HOST
-      value: "api.crc.testing"
-    - name: KUBERNETES_SERVICE_PORT
-      value: "6443"
+env:
+  - name: KUBERNETES_CA_PATH
+    value: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+  - name: KUBERNETES_SERVICE_HOST
+    value: 'api.crc.testing'
+  - name: KUBERNETES_SERVICE_PORT
+    value: '6443'
 ```
 
 ### An example of valid YAML for token reviews
@@ -289,9 +310,9 @@ spec:
     - name: KUBERNETES_CA_PATH
       value: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
     - name: KUBERNETES_SERVICE_HOST
-      value: "api.crc.testing"
+      value: 'api.crc.testing'
     - name: KUBERNETES_SERVICE_PORT
-      value: "6443"
+      value: '6443'
   ingressDomain: apps-crc.testing
   console:
     expose: true

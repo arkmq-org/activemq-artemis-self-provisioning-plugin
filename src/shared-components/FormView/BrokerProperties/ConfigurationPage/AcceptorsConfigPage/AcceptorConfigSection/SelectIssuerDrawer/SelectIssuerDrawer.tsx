@@ -20,18 +20,16 @@ import {
   DrawerHead,
   DrawerPanelContent,
   FormGroup,
-  InputGroup,
-  Spinner,
-  TextInput,
-  InputGroupItem,
   FormHelperText,
+  InputGroup,
+  InputGroupItem,
+  Spinner,
+  Split,
+  SplitItem,
+  TextInput,
 } from '@patternfly/react-core';
-import {
-  Select,
-  SelectOption,
-  SelectVariant,
-} from '@patternfly/react-core/deprecated';
-import { FC, useContext, useState } from 'react';
+import { FC, useContext, useMemo, useState } from 'react';
+import { TypeaheadSelect } from '@patternfly/react-templates';
 
 const createChainOftrust = async (
   name: string,
@@ -122,10 +120,24 @@ export const SelectIssuerDrawer: FC<SelectIssuerDrawerProps> = ({
     isList: true,
     namespace: isClusterIssuer ? '' : cr.metadata.namespace,
   });
-  const [isOpen, setIsOpen] = useState(false);
   const [alertIssuer, setAlertIssuer] = useState<Error>();
   const [isExpanded, setIsExpanded] = useState(false);
   const [newIssuer, setNewIssuer] = useState('');
+
+  const validIssuers = useMemo(() => {
+    if (!issuers) return [];
+    return issuers.filter((issuer) => issuer.spec?.ca !== undefined);
+  }, [issuers]);
+
+  const selectOptions = useMemo(() => {
+    return validIssuers
+      .map((issuer) => ({
+        value: issuer.metadata.name,
+        content: issuer.metadata.name,
+      }))
+      .sort((a, b) => String(a.content).localeCompare(String(b.content)));
+  }, [validIssuers]);
+
   if (!loaded) {
     return <Spinner size="lg" />;
   }
@@ -137,33 +149,14 @@ export const SelectIssuerDrawer: FC<SelectIssuerDrawerProps> = ({
       </>
     );
   }
-  const options = issuers
-    .filter((issuer) => issuer.spec?.ca !== undefined)
-    .map((issuer) => (
-      <SelectOption key={issuer.metadata.name} value={issuer.metadata.name} />
-    ));
-
-  const onSelect = (_event: any, selection: string, isPlaceholder: any) => {
-    if (isPlaceholder) clearSelection();
-    else {
-      setSelectedIssuer(selection);
-      setIsOpen(false);
-    }
-  };
 
   const clearSelection = () => {
     setAlertIssuer(undefined);
     clearIssuer();
-    setIsOpen(false);
   };
 
-  const filterMatchingOptions = (_: any, value: string) => {
-    if (!value) {
-      return options;
-    }
-
-    const input = new RegExp(value, 'i');
-    return options.filter((child) => input.test(child.props.value));
+  const onSelectIssuer = (selection: string) => {
+    setSelectedIssuer(selection);
   };
 
   const triggerChainOfTrustCreation = () => {
@@ -177,7 +170,6 @@ export const SelectIssuerDrawer: FC<SelectIssuerDrawerProps> = ({
         setAlertIssuer(reason);
       });
   };
-  const titleId = 'typeahead-select-issuer';
   return (
     <>
       <Drawer
@@ -225,43 +217,34 @@ export const SelectIssuerDrawer: FC<SelectIssuerDrawerProps> = ({
           }
         >
           <DrawerContentBody>
-            <InputGroup>
-              <InputGroupItem>
-                <Select
-                  variant={SelectVariant.typeahead}
-                  typeAheadAriaLabel={
+            <Split>
+              <SplitItem isFilled>
+                <TypeaheadSelect
+                  selectOptions={selectOptions}
+                  onClearSelection={clearSelection}
+                  onSelect={(_ev, selectedValue) => {
+                    const selection = String(selectedValue);
+                    onSelectIssuer(selection);
+                  }}
+                  selected={selectedIssuer}
+                  placeholder={
                     isClusterIssuer
                       ? t('Select a cluster issuer')
                       : t('Select an issuer')
                   }
-                  onToggle={() => setIsOpen(!isOpen)}
-                  onSelect={onSelect}
-                  onClear={clearSelection}
-                  onFilter={filterMatchingOptions}
-                  selections={selectedIssuer}
-                  isOpen={isOpen}
-                  aria-labelledby={titleId}
-                  placeholderText={
-                    isClusterIssuer
-                      ? t('Select a cluster issuer')
-                      : t('Select an issuer')
-                  }
-                  menuAppendTo={() => document.body}
-                >
-                  {options}
-                </Select>
-              </InputGroupItem>
+                />
+              </SplitItem>
               {!disableCreation && (
-                <InputGroupItem>
+                <SplitItem>
                   <Button
                     variant={ButtonVariant.primary}
                     onClick={() => setIsExpanded(true)}
                   >
                     {t('Create a new chain of trust')}
                   </Button>
-                </InputGroupItem>
+                </SplitItem>
               )}
-            </InputGroup>
+            </Split>
           </DrawerContentBody>
         </DrawerContent>
       </Drawer>

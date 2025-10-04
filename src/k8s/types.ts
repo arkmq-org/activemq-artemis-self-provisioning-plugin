@@ -101,7 +101,6 @@ export type BrokerCR = K8sResourceCommon & {
       size: number;
       messageMigration?: boolean;
       persistenceEnabled?: boolean;
-      jolokiaAgentEnabled?: boolean;
       journalType?: string;
       managementRBACEnabled?: boolean;
       podSecurity?: {

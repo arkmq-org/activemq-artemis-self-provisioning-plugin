@@ -1,4 +1,3 @@
-import _ from 'lodash-es';
 import { PrometheusValue } from '@openshift-console/dynamic-plugin-sdk';
 import {
   humanizeNumberSI,
@@ -34,7 +33,7 @@ export const formatNumber = (
   format = 'short',
 ): string => {
   const value = Number(s);
-  if (_.isNil(s) || isNaN(value)) {
+  if (s === null || s === undefined || isNaN(value)) {
     return s || '-';
   }
 
@@ -70,14 +69,14 @@ export const getXDomain = (endTime: number, span: number): AxisDomain => [
 ];
 
 export const getMaxSamplesForSpan = (span: number) =>
-  _.clamp(Math.round(span / minStep), minSamples, maxSamples);
+  Math.min(Math.max(Math.round(span / minStep), minSamples), maxSamples);
 
 export const formatSeriesValues = (
   values: PrometheusValue[],
   samples: number,
   span: number,
 ): GraphDataPoint[] => {
-  const newValues = _.map(values, (v) => {
+  const newValues = values.map((v) => {
     const y = Number(v[1]);
     return {
       x: new Date(v[0] * 1000),
@@ -87,15 +86,15 @@ export const formatSeriesValues = (
 
   // The data may have missing values, so we fill those gaps with nulls so that the graph correctly
   // shows the missing values as gaps in the line
-  const start = Number(_.get(newValues, '[0].x'));
-  const end = Number(_.get(_.last(newValues), 'x'));
+  const start = Number(newValues[0]?.x);
+  const end = Number(newValues[newValues.length - 1]?.x);
   const step = span / samples;
-  _.range(start, end, step).forEach((t, i) => {
+  for (let t = start, i = 0; t < end; t += step, i++) {
     const x = new Date(t);
-    if (_.get(newValues, [i, 'x']) > x) {
+    if (newValues[i]?.x > x) {
       newValues.splice(i, 0, { x, y: null });
     }
-  });
+  }
 
   return newValues;
 };

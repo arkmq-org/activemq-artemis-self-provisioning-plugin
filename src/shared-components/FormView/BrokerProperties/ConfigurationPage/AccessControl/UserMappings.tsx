@@ -22,11 +22,9 @@ import {
   DrawerHead,
   DrawerPanelContent,
   FormGroup,
-  InputGroup,
   Spinner,
   TextInput,
   InputGroupItem,
-  FormHelperText,
   Popover,
   DescriptionList,
   DescriptionListGroup,
@@ -35,13 +33,10 @@ import {
   FormFieldGroupExpandable,
   FormFieldGroupHeader,
   Tooltip,
+  SplitItem,
+  Split,
 } from '@patternfly/react-core';
-import {
-  Select,
-  SelectOption,
-  SelectVariant,
-} from '@patternfly/react-core/deprecated';
-import { FC, useContext, useState } from 'react';
+import { FC, useContext, useMemo, useState } from 'react';
 import {
   ArtemisReducerOperations713,
   getInitSecurityRoles,
@@ -49,6 +44,7 @@ import {
 import { HelpIcon } from '@patternfly/react-icons';
 import styles from '@patternfly/react-styles/css/components/Form/form';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { TypeaheadSelect } from '@patternfly/react-templates';
 
 const createJaasConfig = async (
   name: string,
@@ -109,7 +105,6 @@ export const SelectUserMappings: FC = () => {
     isList: true,
     namespace: cr.metadata.namespace,
   });
-  const [isOpen, setIsOpen] = useState(false);
   const [alertSecret, setAlertSecret] = useState<Error>();
   const [isExpanded, setIsExpanded] = useState(false);
   const [newJaasConfigName, setNewJaasConfigName] = useState('');
@@ -117,6 +112,30 @@ export const SelectUserMappings: FC = () => {
 
   const [needsInitializingSR, setNeedsInitializingSR] =
     useState<boolean>(false);
+
+  const validSecrets = useMemo(() => {
+    if (!secrets) return [];
+    return secrets.filter(
+      (secret) =>
+        (secret.metadata?.name
+          ? secret.metadata.name.includes('-jaas-config')
+          : false) &&
+        secret.data?.['login.config'] !== undefined &&
+        secret.data?.['k8s-users-to-roles-mapping.properties'] !== undefined &&
+        secret.data?.['extra-roles.properties'] !== undefined &&
+        secret.data?.['extra-users.properties'] !== undefined,
+    );
+  }, [secrets]);
+
+  const selectOptions = useMemo(() => {
+    return validSecrets
+      .map((jaasConfig) => ({
+        value: jaasConfig.metadata.name,
+        content: jaasConfig.metadata.name,
+      }))
+      .sort((a, b) => String(a.content).localeCompare(String(b.content)));
+  }, [validSecrets]);
+
   if (!loaded) {
     return <Spinner size="lg" />;
   }
@@ -127,22 +146,6 @@ export const SelectUserMappings: FC = () => {
       </Alert>
     );
   }
-  const validSecrets = secrets.filter(
-    (secret) =>
-      (secret.metadata?.name
-        ? secret.metadata.name.includes('-jaas-config')
-        : false) &&
-      secret.data?.['login.config'] !== undefined &&
-      secret.data?.['k8s-users-to-roles-mapping.properties'] !== undefined &&
-      secret.data?.['extra-roles.properties'] !== undefined &&
-      secret.data?.['extra-users.properties'] !== undefined,
-  );
-  const options = validSecrets.map((jaasConfig) => (
-    <SelectOption
-      key={jaasConfig.metadata.name}
-      value={jaasConfig.metadata.name}
-    />
-  ));
 
   const selectedSecret =
     cr.spec?.deploymentPlan?.extraMounts?.secrets[0] !== undefined
@@ -165,40 +168,20 @@ export const SelectUserMappings: FC = () => {
     });
   }
 
-  const onSelect = (_event: any, selection: string, isPlaceholder: any) => {
-    if (isPlaceholder) {
-      clearSelection();
-      // clear the associated security roles
-      dispatch({
-        operation: ArtemisReducerOperations713.setSecurityRoles,
-        payload: new Map(),
-      });
-    } else {
-      dispatch({
-        operation: ArtemisReducerOperations713.setJaasExtraConfig,
-        payload: selection,
-      });
-      setIsOpen(false);
-      setNeedsInitializingSR(true);
-    }
-  };
-
   const clearSelection = () => {
     setAlertSecret(undefined);
     dispatch({
       operation: ArtemisReducerOperations713.setJaasExtraConfig,
       payload: undefined,
     });
-    setIsOpen(false);
   };
 
-  const filterMatchingOptions = (_: any, value: string) => {
-    if (!value) {
-      return options;
-    }
-
-    const input = new RegExp(value, 'i');
-    return options.filter((child) => input.test(child.props.value));
+  const onSelectSecret = (selection: string) => {
+    dispatch({
+      operation: ArtemisReducerOperations713.setJaasExtraConfig,
+      payload: selection,
+    });
+    setNeedsInitializingSR(true);
   };
 
   const triggerJaasConfigCreation = () => {
@@ -220,7 +203,6 @@ export const SelectUserMappings: FC = () => {
         setAlertSecret(reason);
       });
   };
-  const titleId = 'typeahead-select-jaas-config';
   return (
     <FormGroup
       label={t('Jaas login module')}
@@ -284,11 +266,6 @@ export const SelectUserMappings: FC = () => {
                     />
                   </InputGroupItem>
                 </FormGroup>
-                <FormHelperText>
-                  {t(
-                    'This custom jaas config will allow the user specified as administrator to access the jolokia endpoint of the broker.',
-                  )}
-                </FormHelperText>
                 <Button onClick={triggerJaasConfigCreation}>
                   {t('Create the jaas config')}
                 </Button>
@@ -305,25 +282,20 @@ export const SelectUserMappings: FC = () => {
           }
         >
           <DrawerContentBody>
-            <InputGroup>
-              <InputGroupItem>
-                <Select
-                  variant={SelectVariant.typeahead}
-                  typeAheadAriaLabel={t('Select a jaas config')}
-                  onToggle={() => setIsOpen(!isOpen)}
-                  onSelect={onSelect}
-                  onClear={clearSelection}
-                  onFilter={filterMatchingOptions}
-                  selections={cr.spec?.deploymentPlan?.extraMounts?.secrets[0]}
-                  isOpen={isOpen}
-                  aria-labelledby={titleId}
-                  placeholderText={t('Select a jaas config')}
-                  menuAppendTo={() => document.body}
-                >
-                  {options}
-                </Select>
-              </InputGroupItem>
-              <InputGroupItem>
+            <Split>
+              <SplitItem isFilled>
+                <TypeaheadSelect
+                  selectOptions={selectOptions}
+                  placeholder={t('Select a jaas config')}
+                  onClearSelection={clearSelection}
+                  onSelect={(_ev, selectedValue) => {
+                    const selection = String(selectedValue);
+                    onSelectSecret(selection);
+                  }}
+                  selected={cr.spec?.deploymentPlan?.extraMounts?.secrets[0]}
+                />
+              </SplitItem>
+              <SplitItem>
                 {selectedSecret ? (
                   <>
                     <Tooltip
@@ -378,8 +350,8 @@ export const SelectUserMappings: FC = () => {
                     {t('Create a new jaas config')}
                   </Button>
                 )}
-              </InputGroupItem>
-            </InputGroup>
+              </SplitItem>
+            </Split>
             {selectedSecret !== undefined && (
               <FormFieldGroupExpandable
                 header={
@@ -397,11 +369,6 @@ export const SelectUserMappings: FC = () => {
                 <br />
                 <DescriptionList aria-label="details-selected-jaas-config">
                   <DescriptionListGroup>
-                    <DescriptionListTerm>
-                      {t(
-                        'Openshift users allowed to read the jolokia endpoint',
-                      )}
-                    </DescriptionListTerm>
                     <DescriptionListDescription>
                       <Table>
                         <Thead noWrap>

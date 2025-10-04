@@ -1,15 +1,10 @@
+import { FC } from 'react';
 import { ConfigType } from '../../../../ConfigurationPage';
-
-import { FC, useState } from 'react';
 import { useTranslation } from '@app/i18n/i18n';
 import { PresetAlertPopover } from '../PresetAlertPopover/PresetAlertPopover';
 import { ExposeMode } from '@app/reducers/7.12/reducer';
 import { FormGroup } from '@patternfly/react-core';
-import {
-  Select,
-  SelectOption,
-  SelectVariant,
-} from '@patternfly/react-core/deprecated';
+import { TypeaheadSelect } from '@patternfly/react-templates';
 
 type SelectExposeModeProps = {
   selectedExposeMode: string;
@@ -20,41 +15,21 @@ type SelectExposeModeProps = {
 };
 
 export const SelectExposeMode: FC<SelectExposeModeProps> = ({
-  selectedExposeMode: selected,
-  setSelectedExposeMode: setSelected,
-  clearExposeMode: clear,
+  selectedExposeMode,
+  setSelectedExposeMode,
+  clearExposeMode,
   configName,
   configType,
 }) => {
   const { t } = useTranslation();
-  const [isOpen, setIsOpen] = useState(false);
-  const options = Object.values(ExposeMode).map((exposeMode) => (
-    <SelectOption key={exposeMode} value={exposeMode} />
-  ));
 
-  const onSelect = (_event: any, selection: string, isPlaceholder: any) => {
-    if (isPlaceholder) clearSelection();
-    else {
-      setSelected(selection);
-      setIsOpen(false);
-    }
-  };
+  const exposeModes = Object.values(ExposeMode);
 
-  const clearSelection = () => {
-    clear();
-    setIsOpen(false);
-  };
+  const selectOptions = exposeModes.map((mode) => ({
+    value: mode,
+    content: mode,
+  }));
 
-  const filterMatchingOptions = (_: any, value: string) => {
-    if (!value) {
-      return options;
-    }
-
-    const input = new RegExp(value, 'i');
-    return options.filter((child) => input.test(child.props.value));
-  };
-
-  const titleId = 'typeahead-select-issuer';
   return (
     <FormGroup
       label={t('Expose Mode')}
@@ -66,20 +41,15 @@ export const SelectExposeMode: FC<SelectExposeModeProps> = ({
         />
       }
     >
-      <Select
-        variant={SelectVariant.typeahead}
-        typeAheadAriaLabel={t('Expose Mode')}
-        onToggle={() => setIsOpen(!isOpen)}
-        onSelect={onSelect}
-        onClear={clearSelection}
-        onFilter={filterMatchingOptions}
-        selections={selected}
-        isOpen={isOpen}
-        aria-labelledby={titleId}
-        isGrouped
-      >
-        {options}
-      </Select>
+      <TypeaheadSelect
+        selectOptions={selectOptions}
+        selected={selectedExposeMode}
+        placeholder={t('Select expose mode')}
+        onSelect={(_e, selectedValue) => {
+          setSelectedExposeMode(String(selectedValue));
+        }}
+        onClearSelection={clearExposeMode}
+      />
     </FormGroup>
   );
 };
