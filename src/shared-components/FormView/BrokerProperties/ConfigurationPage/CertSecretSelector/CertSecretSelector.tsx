@@ -18,6 +18,7 @@ import {
 import * as x509 from '@peculiar/x509';
 import {
   Alert,
+  AlertActionCloseButton,
   Button,
   FormGroup,
   InputGroup,
@@ -664,6 +665,7 @@ export const CertSecretSelector: FC<CertSecretSelectorProps> = ({
     }
   };
 
+  const [parseError, setParseError] = useState(null);
   /**
    * A ref to the button that shows the certificate info, used for positioning the tooltip.
    */
@@ -673,17 +675,18 @@ export const CertSecretSelector: FC<CertSecretSelectorProps> = ({
    * the details modal. It handles both CA and regular TLS secrets.
    */
   const showCertInfo = () => {
+    setParseError(null);
     const theSecret = certManagerSecrets.filter((value) => {
       return value.metadata.name === selectedSecret;
     });
-    if (theSecret.length !== 1) {
-      <Alert
-        variant="info"
-        title={t('only support tls format secret from cert-manager')}
-      />;
-    }
     let pem: string;
     try {
+      if (theSecret.length !== 1) {
+        <Alert
+          variant="info"
+          title={t('only support tls format secret from cert-manager')}
+        />;
+      }
       if (isCa) {
         Object.keys(theSecret[0].data).forEach((key) => {
           pem = base64.decode(theSecret[0].data[key]);
@@ -696,6 +699,7 @@ export const CertSecretSelector: FC<CertSecretSelectorProps> = ({
       setCertsToShowPem(pem);
       setIsCertDetailsModalOpen(true);
     } catch (err) {
+      setParseError(err.message || 'Failed to parse certificate');
       <Alert variant="danger" title={err.message} />;
     }
   };
@@ -736,6 +740,17 @@ export const CertSecretSelector: FC<CertSecretSelectorProps> = ({
         pem={certsToShowPem}
         onCloseModal={onCloseCertDetailsModal}
       ></CertificateDetailsModal>
+
+      {parseError && (
+        <Alert
+          variant="danger"
+          title={parseError}
+          isInline
+          actionClose={
+            <AlertActionCloseButton onClose={() => setParseError(null)} />
+          }
+        />
+      )}
       <Tooltip
         content={
           <>
