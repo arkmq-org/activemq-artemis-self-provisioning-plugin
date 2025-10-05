@@ -17,6 +17,28 @@ export const MetricsLayout: FC<MetricsLayoutProps> = ({
   metricsType,
 }) => {
   const { t } = useTranslation();
+
+  const renderMetricsContent = () => {
+    if (metricsType === MetricsType.AllMetrics) {
+      return (
+        <>
+          <GridItem sm={6}>{metricsMemoryUsage}</GridItem>
+          <GridItem sm={6}>{metricsCPUUsage}</GridItem>
+        </>
+      );
+    }
+
+    if (metricsType === MetricsType.MemoryUsage) {
+      return <GridItem>{metricsMemoryUsage}</GridItem>;
+    }
+
+    if (metricsType === MetricsType.CPUUsage) {
+      return <GridItem>{metricsCPUUsage}</GridItem>;
+    }
+
+    return null;
+  };
+
   return (
     <PageSection
       hasOverflowScroll={true}
@@ -31,25 +53,7 @@ export const MetricsLayout: FC<MetricsLayoutProps> = ({
       </Title>
       <Grid hasGutter>
         <GridItem>{metricsActions}</GridItem>
-        {(() => {
-          switch (true) {
-            case metricsType === MetricsType.AllMetrics:
-              return (
-                <>
-                  <GridItem sm={6}>{metricsMemoryUsage}</GridItem>
-                  <GridItem sm={6}>{metricsCPUUsage}</GridItem>
-                  {/* <GridItem sm={6}>{metricsMemoryUsage} </GridItem>
-                <GridItem sm={6}>{metricsMemoryUsage} </GridItem> */}
-                </>
-              );
-            case metricsType === MetricsType.MemoryUsage:
-              return <GridItem>{metricsMemoryUsage}</GridItem>;
-            case metricsType === MetricsType.CPUUsage:
-              return <GridItem>{metricsCPUUsage}</GridItem>;
-            default:
-              return <></>;
-          }
-        })()}
+        {renderMetricsContent()}
       </Grid>
     </PageSection>
   );
