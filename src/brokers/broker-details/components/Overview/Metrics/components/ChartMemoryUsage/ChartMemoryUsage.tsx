@@ -1,5 +1,4 @@
 import { FC, useMemo, useCallback } from 'react';
-import _ from 'lodash-es';
 import {
   Chart,
   ChartAxis,
@@ -64,22 +63,22 @@ export const ChartMemoryUsage: FC<ChartMemoryUsageProps> = ({
   const domain = { x: fixedXDomain, y: fixedXDomain };
   const xAxisTickCount = Math.round(width / 100);
 
-  const newResult = _.map(allMetricsSeries, 'data.result');
-  const hasMetrics = _.some(newResult, (r) => (r && r.length) > 0);
+  const newResult = allMetricsSeries.map((series) => series.data.result);
+  const hasMetrics = newResult.some((r) => (r && r.length) > 0);
 
   // Only update X-axis if the time range (fixedXDomain or span) or graph data (allSeries) change
   // useEffect(() => {
   //   setXDomain(fixedXDomain || getXDomain(Date.now(), span));
   // }, [allMetricsSeries, span, fixedXDomain]);
 
-  const newGraphData = _.map(newResult, (result: PrometheusResult[]) => {
-    return _.map(result, ({ metric, values }): Series => {
+  const newGraphData = newResult.map((result: PrometheusResult[]) => {
+    return result.map(({ metric, values }): Series => {
       return [metric, formatSeriesValues(values, samples, span)];
     });
   });
 
-  _.each(newGraphData, (series, i) => {
-    _.each(series, ([metric, values]) => {
+  newGraphData.forEach((series, i) => {
+    series.forEach(([metric, values]) => {
       data.push(values);
       if (formatSeriesTitle) {
         const name = formatSeriesTitle(metric, i);
@@ -110,10 +109,20 @@ export const ChartMemoryUsage: FC<ChartMemoryUsageProps> = ({
   );
 
   // Set a reasonable Y-axis range based on the min and max values in the data
-  const findMin = (series: GraphSeries): GraphDataPoint => _.minBy(series, 'y');
-  const findMax = (series: GraphSeries): GraphDataPoint => _.maxBy(series, 'y');
-  let minY: number = findMin(data.map(findMin))?.y ?? 0;
-  let maxY: number = findMax(data.map(findMax))?.y ?? 0;
+  const findMin = (series: GraphSeries): GraphDataPoint | undefined => {
+    if (!series.length) return undefined;
+    return series.reduce((min, point) => (point.y < min.y ? point : min));
+  };
+  const findMax = (series: GraphSeries): GraphDataPoint => {
+    if (!series.length) return undefined;
+    return series.reduce((max, point) => (point.y > max.y ? point : max));
+  };
+
+  const minPoints = data.map(findMin).filter(Boolean);
+  const maxPoints = data.map(findMax).filter(Boolean);
+
+  let minY: number = findMin(minPoints)?.y ?? 0;
+  let maxY: number = findMax(maxPoints)?.y ?? 0;
   if (minY === 0 && maxY === 0) {
     minY = 0;
     maxY = 1;
