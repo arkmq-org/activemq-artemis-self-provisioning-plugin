@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { CardBrokerCPUUsageMetricsContainer } from './CardBrokerCPUUsageMetrics.container';
 import { usePrometheusPoll } from '@openshift-console/dynamic-plugin-sdk';
 import '@testing-library/jest-dom';
+import { MetricsState, MetricsType } from '../../utils/types';
 
 jest.mock('../CardQueryBrowser/CardQueryBrowser', () => ({
   CardQueryBrowser: ({
@@ -20,6 +21,15 @@ jest.mock('../CardQueryBrowser/CardQueryBrowser', () => ({
 
 const usePrometheusPollMock = usePrometheusPoll as jest.Mock;
 
+const mockMetricsState: MetricsState = {
+  name: 'ex-aao',
+  namespace: 'test-namespace',
+  size: 2,
+  pollTime: '5m',
+  span: '30m',
+  metricsType: MetricsType.AllMetrics,
+};
+
 describe('CardBrokerCPUUsageMetricsContainer', () => {
   beforeEach(() => {
     usePrometheusPollMock.mockClear();
@@ -32,13 +42,7 @@ describe('CardBrokerCPUUsageMetricsContainer', () => {
       .mockReturnValueOnce([mockResult1, true, undefined])
       .mockReturnValueOnce([mockResult2, true, undefined]);
 
-    render(
-      <CardBrokerCPUUsageMetricsContainer
-        name="my-broker"
-        namespace="my-namespace"
-        size={2}
-      />,
-    );
+    render(<CardBrokerCPUUsageMetricsContainer state={mockMetricsState} />);
 
     await waitFor(() => {
       expect(screen.getByTestId('loading-status').textContent).toBe('false');

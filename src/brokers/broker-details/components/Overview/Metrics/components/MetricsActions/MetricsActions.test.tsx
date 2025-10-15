@@ -1,46 +1,35 @@
-import { fireEvent, render, screen, act } from '@app/test-utils';
+import { Dispatch } from 'react';
+import { act, fireEvent, render, screen } from '@app/test-utils';
 import { MetricsActions } from './MetricsActions';
+import { MetricsState, MetricsAction, MetricsType } from '../../utils/types';
 
 describe('MetricsActions', () => {
-  const pollingTime = '5m';
-  const span = '30m';
-  const onSelectOptionPolling = jest.fn();
-  const onSelectOptionSpan = jest.fn();
-  const onSelectOptionChart = jest.fn();
+  const mockMetricsState: MetricsState = {
+    name: 'ex-aao',
+    namespace: 'test-namespace',
+    size: 1,
+    pollTime: '5m',
+    span: '30m',
+    metricsType: MetricsType.AllMetrics,
+  };
+
+  const mockDispatch: Dispatch<MetricsAction> = jest.fn();
 
   it('should render span dropdown items correctly', async () => {
-    render(
-      <MetricsActions
-        pollingTime={pollingTime}
-        span={span}
-        metricsType="MemoryUsage"
-        onSelectOptionPolling={onSelectOptionPolling}
-        onSelectOptionSpan={onSelectOptionSpan}
-        onSelectOptionChart={onSelectOptionChart}
-      />,
-    );
-    expect(screen.getByText(/Last 30 minutes/i)).toBeInTheDocument();
+    render(<MetricsActions state={mockMetricsState} dispatch={mockDispatch} />);
+    expect(screen.getByText(/30m/i)).toBeInTheDocument();
 
-    const last30MinutesItem = screen.getAllByText(/Last 30 minutes/i)[0];
+    const last30MinutesItem = screen.getAllByText(/30m/i)[0];
     await act(async () => {
       fireEvent.click(last30MinutesItem);
     });
   });
 
   it('should render polling dropdown items correctly', async () => {
-    render(
-      <MetricsActions
-        pollingTime={pollingTime}
-        span={span}
-        metricsType="MemoryUsage"
-        onSelectOptionPolling={onSelectOptionPolling}
-        onSelectOptionSpan={onSelectOptionSpan}
-        onSelectOptionChart={onSelectOptionChart}
-      />,
-    );
-    expect(screen.getByText(/5 minutes/i)).toBeInTheDocument();
+    render(<MetricsActions state={mockMetricsState} dispatch={mockDispatch} />);
+    expect(screen.getByText(/5m/i)).toBeInTheDocument();
 
-    const fiveMinutesItem = screen.getAllByText(/5 minutes/i)[0];
+    const fiveMinutesItem = screen.getAllByText(/5m/i)[0];
     await act(async () => {
       fireEvent.click(fiveMinutesItem);
     });

@@ -9,24 +9,24 @@ import {
 } from '@patternfly/react-core';
 import type { DropdownProps } from '@patternfly/react-core';
 
-export interface IDropdownWithToggleProps {
+export interface IDropdownWithToggleProps<T> {
   id: string;
   toggleId: string;
-  value: string;
+  value: T;
   name?: string;
-  items: IDropdownOption[];
-  onSelectOption?: (value: string, name: string) => void;
+  items: IDropdownOption<T>[];
+  onSelectOption?: (value: T, name: string) => void;
   isLabelAndValueNotSame?: boolean;
 }
 
-export interface IDropdownOption {
-  value?: string;
+export interface IDropdownOption<T> {
+  value?: T;
   label?: string;
   key?: string;
   isDisabled?: boolean;
 }
 
-export const DropdownWithToggle: React.FC<IDropdownWithToggleProps> = ({
+export const DropdownWithToggle = <T,>({
   id,
   toggleId,
   items,
@@ -34,7 +34,7 @@ export const DropdownWithToggle: React.FC<IDropdownWithToggleProps> = ({
   onSelectOption,
   name,
   isLabelAndValueNotSame,
-}) => {
+}: IDropdownWithToggleProps<T>) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
   const onToggleClick = () => {
@@ -46,13 +46,13 @@ export const DropdownWithToggle: React.FC<IDropdownWithToggleProps> = ({
       const value: string = e.currentTarget.textContent;
       const filteredOption = items?.filter((item) => item.label === value)[0];
       if (onSelectOption && filteredOption) {
-        onSelectOption(filteredOption.value.toLowerCase(), name);
+        onSelectOption(filteredOption.value, name);
       }
       setIsOpen((isOpen) => !isOpen);
     }
   };
 
-  const getItems = (options: IDropdownOption[]) => {
+  const getItems = (options: IDropdownOption<T>[]) => {
     return (
       <DropdownList>
         {options.map((option) => {

@@ -1,4 +1,4 @@
-import { FC, useState, useEffect, useMemo, useCallback } from 'react';
+import { FC, useState, useMemo, useCallback } from 'react';
 import { parsePrometheusDuration } from '../../../Metrics/utils/prometheus';
 import { getMaxSamplesForSpan } from '../../utils/format';
 import { humanizeBinaryBytes } from '../../utils/units';
@@ -9,33 +9,19 @@ import { MetricsPolling } from '../MetricsPolling/MetricsPolling';
 import { useTranslation } from '@app/i18n/i18n';
 import { CardQueryBrowser } from '../CardQueryBrowser/CardQueryBrowser';
 import { PrometheusResponse } from '@openshift-console/dynamic-plugin-sdk';
+import { MetricsState } from '../../utils/types';
 
-export type CardBrokerMemoryUsageMetricsContainerProps = {
-  name: string;
-  namespace: string;
-  defaultSamples?: number;
-  timespan?: number;
-  fixedEndTime?: number;
-  size: number;
-  pollTime?: string;
-  span?: string;
+type CardBrokerMemoryUsageMetricsContainerProps = {
+  state: MetricsState;
 };
 
 type AxisDomain = [number, number];
 
 export const CardBrokerMemoryUsageMetricsContainer: FC<
   CardBrokerMemoryUsageMetricsContainerProps
-> = ({
-  name,
-  namespace,
-  defaultSamples = 300,
-  timespan: span,
-  size,
-  pollTime,
-}) => {
+> = ({ state }) => {
   const { t } = useTranslation();
 
-  //states
   const [xDomain] = useState<AxisDomain>();
   // State to store the results from each MetricsPolling component.
   // The key is the index of the poller.
@@ -45,8 +31,11 @@ export const CardBrokerMemoryUsageMetricsContainer: FC<
 
   // Generate the Prometheus queries for each pod replica.
   const queries = useMemo(
-    () => [...Array(size)].map((_, i) => memoryUsageQuery(name, namespace, i)),
-    [size, name, namespace],
+    () =>
+      [...Array(state.size)].map((_, i) =>
+        memoryUsageQuery(state.name, state.namespace, i),
+      ),
+    [state.size, state.name, state.namespace],
   );
 
   // Callback to handle results from the MetricsPolling components.
@@ -73,23 +62,10 @@ export const CardBrokerMemoryUsageMetricsContainer: FC<
     return { metricsResult, loaded };
   }, [results, queries]);
 
-  // If we have both `timespan` and `defaultTimespan`, `timespan` takes precedence
-  // Limit the number of samples so that the step size doesn't fall below minStep
-  const maxSamplesForSpan = defaultSamples || getMaxSamplesForSpan(span);
-  const [samples, setSamples] = useState(maxSamplesForSpan);
-  //const [metricsResult, setMetricsResult] = useState<PrometheusResponse[]>();
-  //const [loaded, setLoaded] = useState<boolean>(false);
+  const samples = getMaxSamplesForSpan(parsePrometheusDuration(state.span));
 
   // Define this once for all queries so that they have exactly the same time range and X values
   const endTime = xDomain?.[1];
-
-  // If provided, `timespan` overrides any existing span setting
-  useEffect(() => {
-    if (span) {
-      //setSpan(timespan);
-      setSamples(defaultSamples || getMaxSamplesForSpan(span));
-    }
-  }, [defaultSamples, span]);
 
   const { processedData, unit } = useMemo(() => {
     const data: GraphSeries[] = [];
@@ -109,11 +85,11 @@ export const CardBrokerMemoryUsageMetricsContainer: FC<
           key={i}
           query={query}
           index={i}
-          namespace={namespace}
-          span={span}
+          namespace={state.namespace}
+          span={parsePrometheusDuration(state.span)}
           samples={samples}
           endTime={endTime}
-          delay={parsePrometheusDuration(pollTime)}
+          delay={parsePrometheusDuration(state.pollTime)}
           onResult={handleMetricResult}
         />
       ))}
@@ -121,7 +97,7 @@ export const CardBrokerMemoryUsageMetricsContainer: FC<
         isInitialLoading={false}
         backendUnavailable={false}
         allMetricsSeries={metricsResult}
-        span={span}
+        span={parsePrometheusDuration(state.span)}
         isLoading={!loaded}
         fixedXDomain={xDomain}
         samples={samples}

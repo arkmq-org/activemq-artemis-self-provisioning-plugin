@@ -1,66 +1,50 @@
-import { FC, useCallback, useState } from 'react';
-import {
-  CardBrokerMemoryUsageMetricsContainer,
-  CardBrokerMemoryUsageMetricsContainerProps,
-} from './components/CardBrokerMemoryUsageMetrics/CardBrokerMemoryUsageMetrics.container';
+import { FC, useReducer } from 'react';
+import { CardBrokerMemoryUsageMetricsContainer } from './components/CardBrokerMemoryUsageMetrics/CardBrokerMemoryUsageMetrics.container';
 import { MetricsActions } from './components/MetricsActions/MetricsActions';
 import { CardBrokerCPUUsageMetricsContainer } from './components/CardBrokerCPUUsageMetrics/CardBrokerCPUUsageMetrics.container';
-import { parsePrometheusDuration } from '../Metrics/utils/prometheus';
-import { MetricsType } from './utils/types';
+import { MetricsType, MetricsState, MetricsAction } from './utils/types';
 import { MetricsLayout } from './components/MetricsLayout/MetricsLayout';
 
-export type MetricsProps = CardBrokerMemoryUsageMetricsContainerProps;
+export const Metrics: FC<{ name: string; namespace: string; size: number }> = ({
+  name,
+  namespace,
+  size,
+}) => {
+  const metricsReducer = (
+    state: MetricsState,
+    action: MetricsAction,
+  ): MetricsState => {
+    switch (action.type) {
+      case 'SET_POLL_TIME':
+        return { ...state, pollTime: action.payload };
+      case 'SET_SPAN':
+        return { ...state, span: action.payload };
+      case 'SET_METRICS_TYPE':
+        return { ...state, metricsType: action.payload };
+      default:
+        return state;
+    }
+  };
 
-export const Metrics: FC<MetricsProps> = ({ name, namespace, size }) => {
-  const [pollTime, setPollTime] = useState<string>('0');
-  const [span, setSpan] = useState<string>('30m');
-  const [metricsType, setMetricsType] = useState<MetricsType>(
-    MetricsType.AllMetrics,
-  );
+  const initialState: MetricsState = {
+    name: name,
+    namespace: namespace,
+    size: size,
+    pollTime: '0',
+    span: '30m',
+    metricsType: MetricsType.AllMetrics,
+  };
 
-  const onSelectOptionPolling = useCallback((value: string) => {
-    setPollTime(value);
-  }, []);
-
-  const onSelectOptionSpan = useCallback((value: string) => {
-    setSpan(value);
-  }, []);
-
-  const onSelectOptionChart = useCallback((value: MetricsType) => {
-    setMetricsType(value);
-  }, []);
+  const [state, dispatch] = useReducer(metricsReducer, initialState);
 
   return (
     <MetricsLayout
-      metricsType={metricsType}
+      metricsType={state.metricsType}
       metricsMemoryUsage={
-        <CardBrokerMemoryUsageMetricsContainer
-          name={name}
-          namespace={namespace}
-          size={size}
-          pollTime={pollTime}
-          timespan={parsePrometheusDuration(span)}
-        />
+        <CardBrokerMemoryUsageMetricsContainer state={state} />
       }
-      metricsCPUUsage={
-        <CardBrokerCPUUsageMetricsContainer
-          name={name}
-          namespace={namespace}
-          size={size}
-          pollTime={pollTime}
-          timespan={parsePrometheusDuration(span)}
-        />
-      }
-      metricsActions={
-        <MetricsActions
-          pollingTime={pollTime}
-          span={span}
-          metricsType={metricsType}
-          onSelectOptionPolling={onSelectOptionPolling}
-          onSelectOptionSpan={onSelectOptionSpan}
-          onSelectOptionChart={onSelectOptionChart}
-        />
-      }
+      metricsCPUUsage={<CardBrokerCPUUsageMetricsContainer state={state} />}
+      metricsActions={<MetricsActions state={state} dispatch={dispatch} />}
     />
   );
 };
