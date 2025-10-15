@@ -1,4 +1,4 @@
-import { FC, useCallback, useState } from 'react';
+import { FC, useReducer } from 'react';
 import {
   CardBrokerMemoryUsageMetricsContainer,
   CardBrokerMemoryUsageMetricsContainerProps,
@@ -12,34 +12,51 @@ import { MetricsLayout } from './components/MetricsLayout/MetricsLayout';
 export type MetricsProps = CardBrokerMemoryUsageMetricsContainerProps;
 
 export const Metrics: FC<MetricsProps> = ({ name, namespace, size }) => {
-  const [pollTime, setPollTime] = useState<string>('0');
-  const [span, setSpan] = useState<string>('30m');
-  const [metricsType, setMetricsType] = useState<MetricsType>(
-    MetricsType.AllMetrics,
-  );
+  type MetricsState = {
+    pollTime: string;
+    span: string;
+    metricsType: MetricsType;
+  };
 
-  const onSelectOptionPolling = useCallback((value: string) => {
-    setPollTime(value);
-  }, []);
+  type MetricsAction =
+    | { type: 'SET_POLL_TIME'; payload: string }
+    | { type: 'SET_SPAN'; payload: string }
+    | { type: 'SET_METRICS_TYPE'; payload: MetricsType };
 
-  const onSelectOptionSpan = useCallback((value: string) => {
-    setSpan(value);
-  }, []);
+  const metricsReducer = (
+    state: MetricsState,
+    action: MetricsAction,
+  ): MetricsState => {
+    switch (action.type) {
+      case 'SET_POLL_TIME':
+        return { ...state, pollTime: action.payload };
+      case 'SET_SPAN':
+        return { ...state, span: action.payload };
+      case 'SET_METRICS_TYPE':
+        return { ...state, metricsType: action.payload };
+      default:
+        return state;
+    }
+  };
 
-  const onSelectOptionChart = useCallback((value: MetricsType) => {
-    setMetricsType(value);
-  }, []);
+  const initialState: MetricsState = {
+    pollTime: '0',
+    span: '30m',
+    metricsType: MetricsType.AllMetrics,
+  };
+
+  const [state, dispatch] = useReducer(metricsReducer, initialState);
 
   return (
     <MetricsLayout
-      metricsType={metricsType}
+      metricsType={state.metricsType}
       metricsMemoryUsage={
         <CardBrokerMemoryUsageMetricsContainer
           name={name}
           namespace={namespace}
           size={size}
-          pollTime={pollTime}
-          timespan={parsePrometheusDuration(span)}
+          pollTime={state.pollTime}
+          timespan={parsePrometheusDuration(state.span)}
         />
       }
       metricsCPUUsage={
@@ -47,18 +64,24 @@ export const Metrics: FC<MetricsProps> = ({ name, namespace, size }) => {
           name={name}
           namespace={namespace}
           size={size}
-          pollTime={pollTime}
-          timespan={parsePrometheusDuration(span)}
+          pollTime={state.pollTime}
+          timespan={parsePrometheusDuration(state.span)}
         />
       }
       metricsActions={
         <MetricsActions
-          pollingTime={pollTime}
-          span={span}
-          metricsType={metricsType}
-          onSelectOptionPolling={onSelectOptionPolling}
-          onSelectOptionSpan={onSelectOptionSpan}
-          onSelectOptionChart={onSelectOptionChart}
+          pollingTime={state.pollTime}
+          span={state.span}
+          metricsType={state.metricsType}
+          onSelectOptionPolling={(value) =>
+            dispatch({ type: 'SET_POLL_TIME', payload: value })
+          }
+          onSelectOptionSpan={(value) =>
+            dispatch({ type: 'SET_SPAN', payload: value })
+          }
+          onSelectOptionChart={(value) =>
+            dispatch({ type: 'SET_METRICS_TYPE', payload: value })
+          }
         />
       }
     />
