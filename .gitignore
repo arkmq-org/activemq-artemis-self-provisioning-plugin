@@ -6,4 +6,4 @@ storybook-static
 coverage
 tmp/
 server/
-
+cypress/screenshots/
