@@ -18,6 +18,7 @@ import {
 import * as x509 from '@peculiar/x509';
 import {
   Alert,
+  AlertActionCloseButton,
   Button,
   FormGroup,
   InputGroup,
@@ -672,18 +673,21 @@ export const CertSecretSelector: FC<CertSecretSelectorProps> = ({
    * Fetches and parses the certificate details from the selected secret and opens
    * the details modal. It handles both CA and regular TLS secrets.
    */
+
+  const [parseError, setParseError] = useState(null);
   const showCertInfo = () => {
+    setParseError(null);
     const theSecret = certManagerSecrets.filter((value) => {
       return value.metadata.name === selectedSecret;
     });
-    if (theSecret.length !== 1) {
-      <Alert
-        variant="info"
-        title={t('only support tls format secret from cert-manager')}
-      />;
-    }
     let pem: string;
     try {
+      if (theSecret.length !== 1) {
+        setParseError(t('only support tls format secret from cert-manager'));
+        // clear the message after 5 seconds
+        setTimeout(() => setParseError(null), 3000);
+        return;
+      }
       if (isCa) {
         Object.keys(theSecret[0].data).forEach((key) => {
           pem = base64.decode(theSecret[0].data[key]);
@@ -696,7 +700,8 @@ export const CertSecretSelector: FC<CertSecretSelectorProps> = ({
       setCertsToShowPem(pem);
       setIsCertDetailsModalOpen(true);
     } catch (err) {
-      <Alert variant="danger" title={err.message} />;
+      setParseError(err.message || t('failed to parse certificate'));
+      setTimeout(() => setParseError(null), 3000);
     }
   };
   const onCloseCertDetailsModal = () => {
@@ -736,6 +741,17 @@ export const CertSecretSelector: FC<CertSecretSelectorProps> = ({
         pem={certsToShowPem}
         onCloseModal={onCloseCertDetailsModal}
       ></CertificateDetailsModal>
+
+      {parseError && (
+        <Alert
+          variant="danger"
+          title={parseError}
+          isInline
+          actionClose={
+            <AlertActionCloseButton onClose={() => setParseError(null)} />
+          }
+        />
+      )}
       <Tooltip
         content={
           <>
