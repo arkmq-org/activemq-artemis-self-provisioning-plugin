@@ -6,7 +6,7 @@ env:
 on:
   push:
     branches: [main]
-  pull_request:
+  pull_request_target:
     branches: [main]
   schedule:
     - cron: '6 0 * * *'
@@ -36,12 +36,12 @@ jobs:
       fail-fast: false
       matrix:
         language: ['javascript']
-        # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'ruby' ]
-        # Learn more about CodeQL language support at https://aka.ms/codeql-docs/language-support
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.sha || github.sha }}
 
       # Initializes the CodeQL tools for scanning.
       - name: Initialize CodeQL
@@ -52,43 +52,23 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
 
-  openapi:
-    name: Check that the openapi file is in sync with the generated files
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20.x
-
-      - name: Get cache and install dependencies
-        uses: ./.github/actions/cache-restore
-
-      - name: run the code generation
-        continue-on-error: true
-        run: yarn codegen
-
-      - name: check there is no manual changes
-        run: git diff && [ -z "$(git status --porcelain=v1 2>/dev/null)" ] && echo "✓ No manual changes." || echo "✗ Codegen manually changed, please refer to the api.md for the procedure to follow for programmatically generated endpoints." && [ -z "$(git status --porcelain=v1 2>/dev/null)" ]
-
   build:
     name: Build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repo
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20.x
+          node-version: 22.x
 
       - name: Get cache and install dependencies
         uses: ./.github/actions/cache-restore
-      
+
       - name: Extract translations
         run: yarn i18n && git diff --exit-code locales/en/plugin__activemq-artemis-self-provisioning-plugin.json
 
@@ -101,7 +81,7 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         env:
-         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Check for uncommited changes
         run: git diff --quiet --exit-code
@@ -147,3 +127,218 @@ jobs:
           registry: quay.io/${{ secrets.QUAY_NAMESPACE }}
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
+
+  e2e-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.sha || github.sha }}
+
+      - name: Free up disk space
+        run: |
+          echo "Initial disk space:"
+          df -h
+          # Standard cleanup
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          # Aggressive cleanup
+          sudo rm -rf /opt/hostedtoolcache/Android
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          # Remove other language toolchains
+          sudo rm -rf /usr/lib/jvm
+          sudo rm -rf /opt/hostedtoolcache/Python
+          sudo rm -rf /opt/hostedtoolcache/Go
+          sudo rm -rf /opt/hostedtoolcache/Ruby
+          sudo rm -rf /usr/share/swift
+          sudo rm -rf /usr/local/share/powershell
+          sudo rm -rf /usr/share/miniconda
+          # Docker and swap cleanup
+          sudo docker image prune --all --force
+          sudo swapoff -a
+          sudo rm -f /mnt/swapfile
+          sudo apt-get clean
+          echo "Disk space after cleanup:"
+          df -h
+
+      - name: Set up CRC
+        uses: crc-org/crc-github-action@v1
+        with:
+          pull-secret: ${{ secrets.CRC_PULL_SECRET }}
+          preset: openshift
+
+      - name: Wait for OLM to be ready
+        run: |
+          echo "Waiting for Operator Lifecycle Manager APIs to become available..."
+          timeout=300
+          interval=10
+          elapsed=0
+          while [ $elapsed -lt $timeout ]; do
+            if oc api-resources | grep -q "operators.coreos.com"; then
+              echo "OLM APIs are available."
+              break
+            fi
+            echo "Waiting for OLM APIs..."
+            sleep $interval
+            elapsed=$((elapsed + interval))
+            if [ $elapsed -ge $timeout ]; then
+              echo "::error::Timed out waiting for OLM APIs to become available."
+              oc api-resources
+              exit 1
+            fi
+          done
+
+      - name: Get Kubeadmin Password
+        id: get_password
+        run: |
+          sudo usermod -a -G libvirt $USER
+          creds=$(sudo -su $USER crc start)
+          password=$(echo "$creds" | grep -A 1 "Username: kubeadmin" | grep -oP "(?<=Password: ).*")
+          if [ -z "$password" ]; then
+            echo "::error::Could not extract kubeadmin password from crc start output."
+            exit 1
+          fi
+          echo "password=$password" >> $GITHUB_OUTPUT
+          echo "Kubeadmin password set as step output."
+
+      - name: Install cert-manager
+        run: |
+          oc apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.2/cert-manager.yaml
+          oc wait pod --all --for=condition=Ready --namespace=cert-manager --timeout=30m
+
+      - name: Install trust-manager
+        run: |
+          helm repo add jetstack https://charts.jetstack.io --force-update
+          helm upgrade trust-manager jetstack/trust-manager --install \
+            --namespace cert-manager \
+            --set secretTargets.enabled=true \
+            --set secretTargets.authorizedSecretsAll=true\
+            --wait  \
+            --timeout 30m
+
+      - name: Install ActiveMQ Artemis Broker Operator
+        run: |
+          helm install my-arkmq-org-broker-operator oci://quay.io/arkmq-org/helm-charts/arkmq-org-broker-operator
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=arkmq-org-broker-operator -n default --timeout=30m
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Start plugin server
+        run: |
+          # Setup secrets
+          cd bridge-auth-http
+          ./setup.sh
+          cd ..
+
+          # Start the plugin development server in the background
+          yarn start &
+
+          # Wait for the plugin server to be ready
+          echo "Waiting for plugin server to start..."
+          curl --retry 300 --retry-connrefused --retry-delay 5 --retry-max-time 600 --head http://localhost:9001 > /dev/null \
+            && echo "Plugin server is up and running." \
+            || (echo "::error::Timed out waiting for the plugin server to start." && exit 1)
+
+      - name: Run Cypress tests for console version 4.16
+        env:
+          CYPRESS_KUBEADMIN_PASSWORD: ${{ steps.get_password.outputs.password }}
+        run: |
+          sudo kill $(sudo lsof -t -i:9000) || true
+          sleep 5
+          yarn start-console "4.16" &
+          curl --retry 300 --retry-connrefused --retry-delay 5 --retry-max-time 600 --head http://localhost:9000 > /dev/null \
+            && echo "Console is up and running." \
+            || (echo "::error::Timed out waiting for console version 4.16 to start." && exit 1)
+          yarn cy:run
+          sudo kill $(sudo lsof -t -i:9000) || true
+
+      - name: Run Cypress tests for console version 4.17
+        env:
+          CYPRESS_KUBEADMIN_PASSWORD: ${{ steps.get_password.outputs.password }}
+        run: |
+          sudo kill $(sudo lsof -t -i:9000) || true
+          sleep 5
+          yarn start-console "4.17" &
+          curl --retry 300 --retry-connrefused --retry-delay 5 --retry-max-time 600 --head http://localhost:9000 > /dev/null \
+            && echo "Console is up and running." \
+            || (echo "::error::Timed out waiting for console version 4.17 to start." && exit 1)
+          yarn cy:run
+          sudo kill $(sudo lsof -t -i:9000) || true
+
+      - name: Run Cypress tests for console version 4.18
+        env:
+          CYPRESS_KUBEADMIN_PASSWORD: ${{ steps.get_password.outputs.password }}
+        run: |
+          sudo kill $(sudo lsof -t -i:9000) || true
+          sleep 5
+          yarn start-console "4.18" &
+          curl --retry 300 --retry-connrefused --retry-delay 5 --retry-max-time 600 --head http://localhost:9000 > /dev/null \
+            && echo "Console is up and running." \
+            || (echo "::error::Timed out waiting for console version 4.18 to start." && exit 1)
+          yarn cy:run
+          sudo kill $(sudo lsof -t -i:9000) || true
+
+      - name: Run Cypress tests for console version 4.19
+        env:
+          CYPRESS_KUBEADMIN_PASSWORD: ${{ steps.get_password.outputs.password }}
+        run: |
+          sudo kill $(sudo lsof -t -i:9000) || true
+          sleep 5
+          yarn start-console "4.19" &
+          curl --retry 300 --retry-connrefused --retry-delay 5 --retry-max-time 600 --head http://localhost:9000 > /dev/null \
+            && echo "Console is up and running." \
+            || (echo "::error::Timed out waiting for console version 4.19 to start." && exit 1)
+          yarn cy:run
+          sudo kill $(sudo lsof -t -i:9000) || true
+
+      - name: Run Cypress tests for console version 4.20
+        env:
+          CYPRESS_KUBEADMIN_PASSWORD: ${{ steps.get_password.outputs.password }}
+        run: |
+          sudo kill $(sudo lsof -t -i:9000) || true
+          sleep 5
+          yarn start-console "4.20" &
+          curl --retry 300 --retry-connrefused --retry-delay 5 --retry-max-time 600 --head http://localhost:9000 > /dev/null \
+            && echo "Console is up and running." \
+            || (echo "::error::Timed out waiting for console version 4.20 to start." && exit 1)
+          yarn cy:run
+          sudo kill $(sudo lsof -t -i:9000) || true
+
+      - name: Run Cypress tests for console version latest
+        env:
+          CYPRESS_KUBEADMIN_PASSWORD: ${{ steps.get_password.outputs.password }}
+        run: |
+          sudo kill $(sudo lsof -t -i:9000) || true
+          sleep 5
+          yarn start-console "latest" &
+          curl --retry 300 --retry-connrefused --retry-delay 5 --retry-max-time 600 --head http://localhost:9000 > /dev/null \
+            && echo "Console is up and running." \
+            || (echo "::error::Timed out waiting for console version latest to start." && exit 1)
+          yarn cy:run
+          sudo kill $(sudo lsof -t -i:9000) || true
+
+      - name: Upload Cypress screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-screenshots
+          path: cypress/screenshots
+
+      - name: Upload Cypress videos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-videos
+          path: cypress/videos

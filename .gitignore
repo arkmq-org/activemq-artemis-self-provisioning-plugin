@@ -6,4 +6,6 @@ storybook-static
 coverage
 tmp/
 server/
-
+cypress/screenshots/
+test-results/
+playwright-report/
