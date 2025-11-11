@@ -94,7 +94,7 @@ export const ResourcesTable: FC<ResourcesTableProps> = ({ data }) => {
 type ResourcesListProps = {
   brokerResources: BrokerCR[];
   loaded: boolean;
-  loadError: any;
+  loadError: Error | null;
 };
 
 const ResourcesList: FC<ResourcesListProps> = ({ brokerResources, loaded }) => {

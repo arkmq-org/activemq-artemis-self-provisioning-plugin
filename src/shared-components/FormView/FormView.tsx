@@ -36,7 +36,10 @@ export const FormView: FC = () => {
     });
   };
 
-  const onChangeVersion = (value: '7.12' | '7.13') => {
+  const versions = ['7.12', '7.13'] as const;
+  type BrokerVersion = (typeof versions)[number];
+
+  const onChangeVersion = (value: BrokerVersion) => {
     dispatch({
       operation: ArtemisReducerGlobalOperations.setBrokerVersion,
       payload: value,
@@ -108,7 +111,9 @@ export const FormView: FC = () => {
                 </InputGroupText>
                 <FormSelect
                   value={formState.brokerVersion}
-                  onChange={(_event, value: any) => onChangeVersion(value)}
+                  onChange={(_event, value) =>
+                    onChangeVersion(value as BrokerVersion)
+                  }
                   aria-label="FormSelect Input"
                 >
                   {options.map((option, index) => (
