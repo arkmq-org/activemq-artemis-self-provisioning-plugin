@@ -14,7 +14,7 @@ export const enum ConfigType {
 
 type BrokerConfigProps = {
   brokerId: number;
-  target: any;
+  target: ConfigType;
   isPerBrokerConfig: boolean;
 };
 
@@ -32,15 +32,15 @@ export const ConfigurationPage: FC<BrokerConfigProps> = ({
     return <Text>{t('Per Broker Config is disabled for now.')}</Text>;
   }
 
-  const configType: ConfigType = target;
-
   if (target) {
     return (
       <Form isWidthLimited>
-        <ConfigTypeContext.Provider value={configType}>
-          {target === 'console' && <ConsoleConfigPage brokerId={brokerId} />}
-          {target === 'rbac' && <AccessControlPage />}
-          {['acceptors', 'connectors'].find((v) => v === target) && (
+        <ConfigTypeContext.Provider value={target}>
+          {target === ConfigType.console && (
+            <ConsoleConfigPage brokerId={brokerId} />
+          )}
+          {target === ConfigType.rbac && <AccessControlPage />}
+          {[ConfigType.acceptors, ConfigType.connectors].includes(target) && (
             <AcceptorsConfigPage brokerId={brokerId} />
           )}
         </ConfigTypeContext.Provider>

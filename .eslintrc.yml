@@ -30,6 +30,7 @@ rules:
   unused-imports/no-unused-imports-ts: 2
   no-console: 'error'
   no-alert: 'error'
+  no-explicit-any: 'error'
 settings:
   react:
     version: detect
@@ -37,3 +38,7 @@ overrides:
   - files: ['./src/openapi/*']
     rules:
       no-console: 'off'
+  - files: ['./src/k8s/types.ts']
+    rules:
+      no-explicit-any: 'off'
+  

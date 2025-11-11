@@ -165,3 +165,12 @@ export type Ingress = K8sResourceCommon & {
     };
   };
 };
+
+export type ContainerStatus = {
+  name: string;
+  ready: boolean;
+  restartCount: number;
+  image?: string;
+  imageID?: string;
+  started?: boolean;
+};

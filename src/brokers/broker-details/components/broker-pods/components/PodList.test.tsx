@@ -6,23 +6,11 @@ jest.mock('@openshift-console/dynamic-plugin-sdk', () => ({
   ListPageHeader: jest.fn(({ title }) => <div>{title}</div>),
   ListPageBody: jest.fn(({ children }) => <div>{children}</div>),
   ListPageFilter: jest.fn(() => <div>ListPageFilter</div>),
-  VirtualizedTable: jest.fn(({ Row, data, columns }) => (
-    <div>
-      <div>VirtualizedTable</div>
-      {data.map((item: any, index: number) => (
-        <Row
-          key={index}
-          obj={item}
-          activeColumnIDs={columns.map((col: any) => col.id)}
-        />
-      ))}
-    </div>
-  )),
   useListPageFilter: jest.fn(),
 }));
 
-jest.mock('./PodRow', () => ({
-  PodRow: jest.fn(() => <div>PodRow Component</div>),
+jest.mock('./PodsTable', () => ({
+  PodsTable: jest.fn(() => <div>PodsTable component</div>),
 }));
 
 describe('PodsList', () => {
@@ -65,15 +53,8 @@ describe('PodsList', () => {
     expect(screen.getByText('ListPageFilter')).toBeInTheDocument();
   });
 
-  it('should render the VirtualizedTable', () => {
+  it('should render the PodsTable', () => {
     render(<PodsList {...mockPodsListProps} />);
-    expect(screen.getByText('VirtualizedTable')).toBeInTheDocument();
-  });
-
-  it('should render PodRow components within the VirtualizedTable', () => {
-    render(<PodsList {...mockPodsListProps} />);
-
-    const podRowElements = screen.getAllByText('PodRow Component');
-    expect(podRowElements.length).toBe(mockPodsListProps.brokerPods.length);
+    expect(screen.getByText('PodsTable component')).toBeInTheDocument();
   });
 });

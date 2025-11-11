@@ -2,83 +2,14 @@ import { FC } from 'react';
 import {
   ListPageHeader,
   ListPageBody,
-  VirtualizedTable,
   useListPageFilter,
   ListPageFilter,
-  TableColumn,
   ListPageCreateLink,
 } from '@openshift-console/dynamic-plugin-sdk';
-import { BrokerRow, BrokerRowProps } from './BrokerRow';
+import { BrokerRowProps } from './BrokerRow';
 import { useTranslation } from '@app/i18n/i18n';
 import { BrokerCR } from '@app/k8s/types';
-
-type BrokersTableProps = Pick<
-  BrokerRowProps,
-  'onOpenModal' | 'onEditBroker'
-> & {
-  data: BrokerCR[];
-  unfilteredData: BrokerCR[];
-  loaded: boolean;
-  loadError: any;
-};
-
-const BrokersTable: FC<BrokersTableProps> = ({
-  data,
-  unfilteredData,
-  loaded,
-  loadError,
-  onOpenModal,
-  onEditBroker,
-}) => {
-  const { t } = useTranslation();
-
-  const columns: TableColumn<BrokerCR>[] = [
-    {
-      title: t('Name'),
-      id: 'name',
-    },
-    {
-      title: t('Ready'),
-      id: 'ready',
-    },
-    {
-      title: t('Conditions'),
-      id: 'conditions',
-    },
-    {
-      title: t('Size'),
-      id: 'Size',
-    },
-    {
-      title: t('Create'),
-      id: 'created',
-    },
-    {
-      title: '',
-      id: 'action',
-    },
-  ];
-
-  return (
-    <VirtualizedTable<BrokerCR>
-      data={data}
-      unfilteredData={unfilteredData}
-      loaded={loaded}
-      loadError={loadError}
-      columns={columns}
-      Row={({ obj, activeColumnIDs, rowData }) => (
-        <BrokerRow
-          obj={obj}
-          rowData={rowData}
-          activeColumnIDs={activeColumnIDs}
-          columns={columns}
-          onOpenModal={onOpenModal}
-          onEditBroker={onEditBroker}
-        />
-      )}
-    />
-  );
-};
+import { BrokersTable } from './BrokersTable';
 
 export type BrokersListProps = Pick<
   BrokerRowProps,
@@ -86,11 +17,11 @@ export type BrokersListProps = Pick<
 > & {
   brokers: BrokerCR[];
   loaded: boolean;
-  loadError: any;
+  loadError: Error | null;
   namespace: string;
 };
 
-const BrokersList: FC<BrokersListProps> = ({
+export const BrokersList: FC<BrokersListProps> = ({
   brokers,
   loaded,
   loadError,
@@ -130,5 +61,3 @@ const BrokersList: FC<BrokersListProps> = ({
     </>
   );
 };
-
-export { BrokersList };

@@ -29,7 +29,7 @@ const BrokerDetailsBreadcrumb: FC<BrokerDetailsBreadcrumbProps> = ({
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [_loadError, setLoadError] = useState<any>();
+  const [_loadError, setLoadError] = useState<Error | null>(null);
   const navigate = useNavigate();
 
   const redirectPath = `/k8s/ns/${namespace}/brokers`;

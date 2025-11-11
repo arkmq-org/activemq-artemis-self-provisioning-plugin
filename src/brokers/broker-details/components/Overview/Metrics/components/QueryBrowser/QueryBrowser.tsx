@@ -42,9 +42,8 @@ export type QueryBrowserProps = {
   formatSeriesTitle?: FormatSeriesTitle;
   yTickFormat: (v: number) => string;
   processedData?: DataPoint<string | number | Date>[][];
-  // data: GraphSeries[]
   metricsType?: 'memory' | 'cpu';
-  label?: any;
+  label?: string;
   ariaTitle: string;
 };
 

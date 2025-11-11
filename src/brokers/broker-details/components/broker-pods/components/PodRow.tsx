@@ -5,7 +5,7 @@ import {
   TableColumn,
   Timestamp,
 } from '@openshift-console/dynamic-plugin-sdk';
-import { BrokerCR } from '@app/k8s/types';
+import { BrokerCR, ContainerStatus } from '@app/k8s/types';
 import { Link } from 'react-router-dom-v5-compat';
 
 export type PodRowProps = RowProps<BrokerCR> & {
@@ -19,9 +19,11 @@ export const PodRow: FC<PodRowProps> = ({ obj, activeColumnIDs, columns }) => {
   } = obj;
 
   const readyCount = status?.containerStatuses
-    ? status.containerStatuses.filter((container: any) => container.ready)
-        .length
+    ? status.containerStatuses.filter(
+        (container: ContainerStatus) => container.ready,
+      ).length
     : 0;
+
   const totalCount = status?.containerStatuses?.length || 0;
   const podReadiness = `${readyCount}/${totalCount}`;
 
