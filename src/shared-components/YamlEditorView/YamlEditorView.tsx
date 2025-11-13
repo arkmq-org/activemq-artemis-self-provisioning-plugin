@@ -120,19 +120,21 @@ export const YamlEditorView: FC<YamlEditorViewPropTypes> = ({
         ))}
       </AlertGroup>
       <Suspense fallback={<Loading />}>
-        <ResourceYAMLEditor
-          initialResource={YAML.stringify(formState.cr, null, '  ')}
-          onSave={updateModel}
-          onChange={(newContent: string) => {
-            setCurrentYaml(newContent);
-            if (stringedFormState !== newContent) {
-              dispatch({
-                operation:
-                  ArtemisReducerGlobalOperations.setYamlHasUnsavedChanges,
-              });
-            }
-          }}
-        />
+        <div className="broker-yaml-editor">
+          <ResourceYAMLEditor
+            initialResource={YAML.stringify(formState.cr, null, '  ')}
+            onSave={updateModel}
+            onChange={(newContent: string) => {
+              setCurrentYaml(newContent);
+              if (stringedFormState !== newContent) {
+                dispatch({
+                  operation:
+                    ArtemisReducerGlobalOperations.setYamlHasUnsavedChanges,
+                });
+              }
+            }}
+          />
+        </div>
       </Suspense>
     </>
   );
