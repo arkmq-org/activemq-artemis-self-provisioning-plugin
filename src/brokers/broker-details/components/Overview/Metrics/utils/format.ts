@@ -99,7 +99,7 @@ export const formatSeriesValues = (
   return newValues;
 };
 
-export const xAxisTickFormat = (span: number): ((tick: any) => string) => {
+export const xAxisTickFormat = (span: number): ((tick: number) => string) => {
   return (tick) => {
     if (span > parsePrometheusDuration('1d')) {
       // Add a newline between the date and time so tick labels don't overlap.

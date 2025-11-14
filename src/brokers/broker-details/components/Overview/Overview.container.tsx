@@ -134,7 +134,7 @@ const HelpConnectAcceptor: FC<HelperConnectAcceptorProps> = ({
     navigator.clipboard.writeText(text.toString());
   };
 
-  const onClick = (_event: any, text: string) => {
+  const onClick = (_event: React.MouseEvent, text: string) => {
     clipboardCopyFunc(text);
     setCopied(true);
   };

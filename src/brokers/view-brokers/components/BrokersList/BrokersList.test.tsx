@@ -9,23 +9,11 @@ jest.mock('@openshift-console/dynamic-plugin-sdk', () => ({
   )),
   ListPageBody: jest.fn(({ children }) => <div>{children}</div>),
   ListPageFilter: jest.fn(() => <div>ListPageFilter</div>),
-  VirtualizedTable: jest.fn(({ Row, data, columns }) => (
-    <div>
-      <div>VirtualizedTable</div>
-      {data.map((item: any, index: number) => (
-        <Row
-          key={index}
-          obj={item}
-          activeColumnIDs={columns.map((col: any) => col.id)}
-        />
-      ))}
-    </div>
-  )),
   useListPageFilter: jest.fn(),
 }));
 
-jest.mock('./BrokerRow', () => ({
-  BrokerRow: jest.fn(() => <div>BrokerRow Component</div>),
+jest.mock('./BrokersTable', () => ({
+  BrokersTable: jest.fn(() => <div>BrokersTable component</div>),
 }));
 
 describe('BrokersList', () => {
@@ -110,15 +98,8 @@ describe('BrokersList', () => {
     expect(screen.getByText('ListPageFilter')).toBeInTheDocument();
   });
 
-  it('should render the VirtualizedTable', () => {
+  it('should render the BrokersTable', () => {
     render(<BrokersList {...mockBrokersListProps} />);
-    expect(screen.getByText('VirtualizedTable')).toBeInTheDocument();
-  });
-
-  it('should render BrokerRow component within the VirtualizedTable', () => {
-    render(<BrokersList {...mockBrokersListProps} />);
-
-    const BrokerRowElements = screen.getAllByText('BrokerRow Component');
-    expect(BrokerRowElements.length).toBe(mockBrokersListProps.brokers.length);
+    expect(screen.getByText('BrokersTable component')).toBeInTheDocument();
   });
 });
