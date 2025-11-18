@@ -115,3 +115,46 @@ export const useGetServiceAccounts = (
   });
   return { serviceAccounts: sas, isLoading: !loaded, error: error };
 };
+
+/**
+ * Watches for specific Kubernetes secrets in a namespace and returns the found secret name.
+ * This hook declaratively tracks secret existence - when secret names change, it automatically
+ * watches for the new names. Follows React best practices - no Effects needed!
+ *
+ * @param namespace - The Kubernetes namespace to watch
+ * @param secretNames - Array of secret names to look for (checked in order, first match wins). Undefined/empty values are filtered out.
+ * @returns The name of the found secret, or empty string if not found/not loaded yet
+ */
+export const useSecretWatcher = (
+  namespace: string,
+  secretNames: (string | undefined)[],
+): string => {
+  const [secrets, loaded] = useK8sWatchResource<K8sResourceCommon[]>({
+    isList: true,
+    groupVersionKind: {
+      group: '',
+      kind: 'Secret',
+      version: 'v1',
+    },
+    namespaced: true,
+    namespace: namespace,
+  });
+
+  // Filter out empty/undefined values - they're invalid secret names
+  // This is a cheap operation, no need to memoize
+  const validSecretNames = secretNames.filter(
+    (name) => name && name.trim() !== '',
+  );
+
+  // Calculate during render - no Effect needed!
+  if (!loaded || validSecretNames.length === 0) {
+    return '';
+  }
+
+  // Find the first matching secret name from the list
+  return (
+    validSecretNames.find((name) =>
+      secrets.some((s) => s.metadata?.name === name),
+    ) || ''
+  );
+};

@@ -75,6 +75,18 @@ export const AddBroker: FC<AddBrokerPropTypes> = ({
   const [triggerDelayedSubmit, setTriggerDelayedSubmit] = useState(false);
   const [prevTriggerDelayedSubmit, setPrevTriggerDelayedSubmit] =
     useState(triggerDelayedSubmit);
+
+  const [navigationDisabled, setNavigationDisabled] = useState(true);
+  const [prevFormValues, setPrevFormValues] = useState(formValues);
+  if (prevFormValues !== formValues) {
+    setPrevFormValues(formValues);
+    setNavigationDisabled(
+      formValues.editorType === EditorType.BROKER
+        ? !areMandatoryValuesSet(formValues)
+        : false,
+    );
+  }
+
   const onQuittingYamlView = () => {
     if (pendingActionQuittingYAMLView === 'switch') {
       setWantsToQuitYamlView(false);
@@ -116,10 +128,6 @@ export const AddBroker: FC<AddBrokerPropTypes> = ({
       </Alert>
     );
   }
-  const navigationDisabled =
-    formValues.editorType === EditorType.BROKER
-      ? !areMandatoryValuesSet(formValues)
-      : false;
   return (
     <>
       <Modal

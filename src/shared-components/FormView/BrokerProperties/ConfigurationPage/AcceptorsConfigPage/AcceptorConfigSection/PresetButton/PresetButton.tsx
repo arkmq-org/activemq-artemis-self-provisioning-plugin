@@ -28,7 +28,7 @@ import {
   ArtemisReducerOperations712,
   getCertManagerResourceTemplateFromAcceptor,
 } from '@app/reducers/7.12/reducer';
-import { SelectIssuerDrawer } from '../SelectIssuerDrawer/SelectIssuerDrawer';
+import { SelectIssuerDrawer } from '../../../../../SelectIssuerDrawer/SelectIssuerDrawer';
 import { useHasCertManager } from '@app/k8s/customHooks';
 import { ExclamationTriangleIcon } from '@patternfly/react-icons';
 type PreconfigurationButtonProps = {

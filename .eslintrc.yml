@@ -41,3 +41,10 @@ overrides:
   - files: ['./src/k8s/types.ts']
     rules:
       '@typescript-eslint/no-explicit-any': 'off'
+  - files: ['./playwright/**/*']
+    rules:
+      no-console: 'off'
+  - files: ['./scripts/**/*']
+    rules:
+      no-console: 'off'
+      '@typescript-eslint/no-var-requires': 'off'

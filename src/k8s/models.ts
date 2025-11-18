@@ -7,6 +7,8 @@ import {
   CERT_VERSION,
   SECRET_APIGROUP,
   SECRET_VERSION,
+  TRUST_MANAGER_APIGROUP,
+  TRUST_MANAGER_VERSION,
 } from '@app/constants/constants';
 
 export const AMQBrokerModel: K8sModel = {
@@ -27,7 +29,7 @@ export const AMQBrokerModel: K8sModel = {
 export const CertIssuerModel: K8sModel = {
   apiGroup: CERT_MANAGER_APIGROUP,
   apiVersion: CERT_ISSUER_VERSION,
-  kind: 'IssuerList',
+  kind: 'Issuer',
   label: 'Issuer',
   labelKey: 'Issuers',
   labelPlural: 'Issuers',
@@ -39,10 +41,25 @@ export const CertIssuerModel: K8sModel = {
   crd: true,
 };
 
+export const ClusterIssuerModel: K8sModel = {
+  apiGroup: CERT_MANAGER_APIGROUP,
+  apiVersion: CERT_ISSUER_VERSION,
+  kind: 'ClusterIssuer',
+  label: 'ClusterIssuer',
+  labelKey: 'ClusterIssuers',
+  labelPlural: 'ClusterIssuers',
+  labelPluralKey: 'clusterissuers',
+  plural: 'clusterissuers',
+  id: 'clusterissuer',
+  abbr: 'CI',
+  namespaced: false,
+  crd: true,
+};
+
 export const CertModel: K8sModel = {
   apiGroup: CERT_MANAGER_APIGROUP,
   apiVersion: CERT_VERSION,
-  kind: 'CertificateList',
+  kind: 'Certificate',
   label: 'Certificate',
   labelKey: 'Certificate',
   labelPlural: 'Certificates',
@@ -93,4 +110,19 @@ export const IngressDomainModel: K8sModel = {
   labelPlural: 'ingresses',
   abbr: 'I',
   namespaced: true,
+};
+
+export const BundleModel: K8sModel = {
+  apiGroup: TRUST_MANAGER_APIGROUP,
+  apiVersion: TRUST_MANAGER_VERSION,
+  kind: 'Bundle',
+  label: 'Bundle',
+  labelKey: 'Bundle',
+  labelPlural: 'Bundles',
+  labelPluralKey: 'Bundles',
+  plural: 'bundles',
+  id: 'bundle',
+  abbr: 'BDL',
+  namespaced: false,
+  crd: true,
 };

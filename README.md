@@ -1,36 +1,49 @@
 # ActiveMQ Artemis Self Provisioning Plugin
 
-This project is a ActiveMQ Artemis Self Provisioning Plugin to the Administrator
-perspective in OpenShift console. It requires at least OpenShift `4.18` to use
-and is compatible with OpenShift `4.19`.
+This project is a ActiveMQ Artemis Self Provisioning Plugin to the Administrator perspective in OpenShift console. It requires at least OpenShift `4.18` to use and is compatible with OpenShift `4.19`.
 
-## Local development
+## Table of Contents
 
-To be able to run the local development environment you need to:
+- [Local Development](#local-development)
+  - [Setting up an OpenShift cluster](#setting-up-an-openshift-cluster)
+  - [Installing the operator](#installing-the-operator)
+  - [Installing the cert-manager operator](#installing-the-cert-manager-operator)
+  - [Installing trust-manager](#installing-trust-manager)
+  - [Setting up Chain of Trust](#setting-up-chain-of-trust)
+  - [Running the plugin](#running-the-plugin)
+  - [Trusting Self-Signed Certificates](#trusting-self-signed-certificates-for-websocket-hot-reloading)
+- [PKI Setup and Cleanup Scripts](#pki-setup-and-cleanup-scripts)
+  - [Setup Scripts](#setup-scripts)
+  - [Cleanup Scripts](#cleanup-scripts)
+  - [Manual Cleanup Commands](#manual-cleanup-commands)
+- [E2E Tests](#e2e-tests)
+  - [Prerequisites](#e2e-prerequisites)
+  - [Running Tests](#running-tests)
+  - [Debugging Tests](#debugging-tests)
+  - [Test Cleanup](#test-cleanup)
+- [Docker Image](#docker-image)
+- [Deployment on Cluster](#deployment-on-cluster)
+- [Token Review Configuration](#configuring-a-broker-for-token-reviews)
+- [Additional Documentation](#additional-documentation)
 
-- have access to a local or remote OpenShift cluster
-- have the operator installed on the cluster
-- have the cert-manager operator installed on the cluster
-- have the plugin running
-- have the console running
+## Local Development
+
+To run the local development environment you need:
+
+- Access to a local or remote OpenShift cluster
+- The [ArkMq Broker operator](https://arkmq.org/) installed on the cluster
+- The cert-manager operator installed on the cluster
+- The plugin running
+- The console running
 
 ### Setting up an OpenShift cluster
 
-In order to run the project you need to have access to an OpenShift cluster.
-If you don't have an access to a remote one you can deploy one on your machine
-with `crc`.
+#### Local cluster with CRC
 
-#### Local cluster
-
-Follow the documentation:
-https://access.redhat.com/documentation/en-us/red_hat_openshift_local/2.34/html-single/getting_started_guide/index#introducing
+Follow the documentation: https://access.redhat.com/documentation/en-us/red_hat_openshift_local/2.34/html-single/getting_started_guide/index#introducing
 
 > [!WARNING]
-> If you're encountering an issue where `crc` gets stuck in the step `Waiting
-for kube-apiserver availability` or `Waiting until the user's pull secret is
-written to the instance disk...` [you might
-> need](https://github.com/crc-org/crc/issues/4110) to
-> configure the network as local: `crc config set network-mode user`
+> If you're encountering an issue where `crc` gets stuck in the step `Waiting for kube-apiserver availability` or `Waiting until the user's pull secret is written to the instance disk...` [you might need](https://github.com/crc-org/crc/issues/4110) to configure the network as local: `crc config set network-mode user`
 
 Once your environment is set up you simply need to `crc start` your cluster.
 
@@ -38,34 +51,25 @@ Once your environment is set up you simply need to `crc start` your cluster.
 
 Depending on the remote or local env:
 
-- `oc login -u kubeadmin
-https://api.ci-ln-x671mxk-76ef8.origin-ci-int-aws.dev.rhcloud.com:6443` (to
-  adapt depending on your cluster address)
-- `oc login -u kubeadmin https://api.crc.testing:6443`
+- Remote: `oc login -u kubeadmin https://api.ci-ln-x671mxk-76ef8.origin-ci-int-aws.dev.rhcloud.com:6443` (adapt to your cluster address)
+- Local: `oc login -u kubeadmin https://api.crc.testing:6443`
 
 ### Installing the operator
 
-The plugin requires having access to the operator to function. You can either
-get the operator from the operatorHub or from the upstream repo.
+The plugin requires having access to the operator to function. You can either get the operator from the operatorHub or from the upstream repo.
 
 #### From the operatorHub
 
-Navigate to the operatorHub on the console and search for: `Red Hat Integration
-
-- AMQ Broker for RHEL 8 (Multiarch)` After installation the wait for the
-  operator container to be up and running.
+Navigate to the operatorHub on the console and search for: `Red Hat Integration - AMQ Broker for RHEL 8 (Multiarch)`. After installation wait for the operator container to be up and running.
 
 > [!WARNING]
-> If you're running into an issue where the operatorHub is not accessible, try
-> to force its redeployment: `oc delete pods --all -n openshift-marketplace`
-> see https://github.com/crc-org/crc/issues/4109 for reference.
+> If you're running into an issue where the operatorHub is not accessible, try to force its redeployment: `oc delete pods --all -n openshift-marketplace` (see https://github.com/crc-org/crc/issues/4109 for reference)
 
 #### From the upstream repository
 
-Clone the operator repository then run `./deploy/install_opr.sh` to install the
-operator onto your cluster.
+Clone the operator repository then run `./deploy/install_opr.sh` to install the operator onto your cluster.
 
-```
+```bash
 git clone git@github.com:arkmq-org/activemq-artemis-operator.git
 cd activemq-artemis-operator
 ./deploy/install_opr.sh
@@ -75,151 +79,147 @@ cd activemq-artemis-operator
 > If you need to redeploy the operator, first call `./deploy/undeploy_all.sh`
 
 > [!IMPORTANT]
-> The script `install_opr.sh` will try to deploy on OpenShift with the `oc`
-> command. If it's not available it will fallback to `kubectl`. Make sure your
-> OpenShift cluster is up and running and that `oc` is connected to it before
-> running the install.
+> The script `install_opr.sh` will try to deploy on OpenShift with the `oc` command. If it's not available it will fallback to `kubectl`. Make sure your OpenShift cluster is up and running and that `oc` is connected to it before running the install.
 
 ### Installing the cert-manager operator
 
-The plugin requires having access to the cert-manager operator for certain of
-its functionalities.
+The plugin requires having access to the cert-manager operator for certain of its functionalities.
 
 #### From the operatorHub
 
 Navigate to the operatorHub on the console and search for `Cert-manager`.
 
-#### Bootstraping a cluster issuer
+### Installing trust-manager
 
-Apply this:
+First, add the Jetstack Helm repository:
 
-```yaml
-oc apply -f - <<EOF
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: selfsigned-issuer
-spec:
-  selfSigned: {}
----
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: my-selfsigned-ca
-  namespace: cert-manager
-spec:
-  isCA: true
-  commonName: my-selfsigned-ca
-  secretName: root-secret
-  privateKey:
-    algorithm: ECDSA
-    size: 256
-  issuerRef:
-    name: selfsigned-issuer
-    kind: ClusterIssuer
-    group: cert-manager.io
----
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: my-ca-issuer
-spec:
-  ca:
-    secretName: root-secret
-EOF
-```
-
-### Install trust manager
-
-First, add the Jetstack Helm repository.
-
-```
+```bash
 helm repo add jetstack https://charts.jetstack.io --force-update
 ```
 
-Now, install trust-manager. This will be configured to sync trust Bundles to Secrets in all namespaces.
+Now, install trust-manager. This will be configured to sync trust Bundles to Secrets in all namespaces:
 
+```bash
+helm upgrade trust-manager jetstack/trust-manager \
+  --install \
+  --namespace cert-manager \
+  --set secretTargets.enabled=true \
+  --set secretTargets.authorizedSecretsAll=true \
+  --wait
 ```
-helm upgrade trust-manager jetstack/trust-manager --install --namespace cert-manager --set secretTargets.enabled=true --set secretTargets.authorizedSecretsAll=true --wait
+
+### Setting up Chain of Trust
+
+For testing the SPP, you need a complete PKI infrastructure including trust-manager to distribute CA certificates.
+
+Run the setup script to create all necessary resources:
+
+```bash
+yarn chain-of-trust setup
 ```
 
-
+For detailed options, cleanup procedures, and manual commands, see the [PKI Setup and Cleanup Scripts](#pki-setup-and-cleanup-scripts) section.
 
 ### Running the plugin
 
 #### Download the secrets so that the bridge can authenticate the user with the api server backend
 
-1. For HTTP
+**For HTTP:**
 
-```
+```bash
 cd bridge-auth-http
 ./setup.sh
+cd ..
 ```
 
-2. For HTTPS
+**For HTTPS:**
 
-```
+```bash
 cd bridge-auth-https
 ./setup.sh
+cd ..
 ```
 
-#### start the webpack server
+#### Start the webpack server
 
 In one terminal window, run:
 
-1. `yarn install`
-2. `yarn start`
+```bash
+yarn install
+yarn start
+```
 
-Note: `yarn run start` starts the plugin in http mode.
-if you want the plugin to run in https mode, run
+**Note:** `yarn start` starts the plugin in HTTP mode. For HTTPS mode, run:
 
-`yarn run start-tls`
+```bash
+yarn start-tls
+```
 
-#### start the console
+#### Start the console
 
 In another terminal window, run:
 
-1. `oc login`
-2. `yarn run start-console` (requires [Docker](https://www.docker.com) or [podman](https://podman.io) or another [Open Containers Initiative](https://opencontainers.org/) compatible container runtime)
+```bash
+oc login
+yarn start-console
+```
 
-This will run the OpenShift console in a container connected to the cluster
-you've logged into. The plugin HTTP server runs on port 9001 with CORS enabled.
-Navigate to <http://localhost:9000> to see the running plugin.
+This requires [Docker](https://www.docker.com), [podman](https://podman.io), or another [OCI](https://opencontainers.org/) compatible container runtime.
+
+This will run the OpenShift console in a container connected to the cluster you've logged into. The plugin HTTP server runs on port 9001 with CORS enabled. Navigate to http://localhost:9000 to see the running plugin.
 
 To view our plugin on OpenShift, navigate to the Workloads section. The plugin will be listed as **Brokers**.
 
-If you want the console to run in `https` mode, run:
+**For HTTPS mode:**
 
-`yarn run start-console-tls`
+```bash
+yarn start-console-tls
+```
 
-This command will run the console in `https` mode on port 9442.
-The console url is <https://localhost:9442>
+This command will run the console in HTTPS mode on port 9442. The console URL is https://localhost:9442
 
-Note: Running console in `https` mode requires the plugin running in `https` mode too.
+**Note:** Running console in HTTPS mode requires the plugin running in HTTPS mode too.
 
-The console in https mode requires a private key and a server certificate that are generated
-with openssl command. They are located under `console-cert` directory. The domain.key is the
-private key and domain.crt is the server certificate. Please read the `console-cert/readme`
-for instructions on how they are generated.
+#### Specifying a Console Version
 
-To run the console in https mode, you need to mount the private key and server cert to the
-docker container and pass the locations to the console using BRIDGE_TLS_CERT_FILE and
-BRIDGE_TLS_KEY_FILE environment variables respectively. Please see the `start-console-tls.sh`
-for details.
+By default, the console will start with the `latest` version image. You can specify a different version by passing it as an argument:
 
-##### Specifying a Console Version
-
-By default, the console will start with the `latest` version image. You can specify a different version by passing it as an argument to the `yarn start-console` or `yarn start-console-tls` commands. This is useful for testing compatibility with older console versions.
-
-For example, to run the console using version `4.16`:
-
-```sh
+```bash
 yarn start-console 4.16
-# Or with TLS if required
+# Or with TLS
 yarn start-console-tls 4.16
 ```
 
-Supported versions can be found in the CI configuration file. This allows you to manually test the plugin's behavior on specific OpenShift releases.
+Supported versions can be found in the CI configuration file.
+
+#### Console HTTPS Certificates
+
+The console in HTTPS mode requires a private key and server certificate generated with openssl. They are located under `console-cert` directory:
+
+- `domain.key` - Private key
+- `domain.crt` - Server certificate
+- `rootCA.crt` - Root CA certificate
+
+**How they are generated:**
+
+```bash
+# 1. Generate private key
+openssl genrsa -out domain.key 4096
+
+# 2. Generate certificate signing request (CSR)
+openssl req -key domain.key -new -out domain.csr
+
+# 3. Generate self-signed certificate
+openssl x509 -signkey domain.key -in domain.csr -req -days 3650 -out domain.crt
+
+# 4. Generate root CA certificate and key
+openssl req -x509 -nodes -sha256 -days 3650 -newkey rsa:4096 -keyout rootCA.key -out rootCA.crt
+
+# 5. Sign domain certificate with root CA
+openssl x509 -req -CA rootCA.crt -CAkey rootCA.key -in domain.csr -out domain.crt -days 3650 -CAcreateserial -extfile domain.ext
+```
+
+The signed `domain.crt` and `domain.key` are mounted to the docker container and passed to the console using `BRIDGE_TLS_CERT_FILE` and `BRIDGE_TLS_KEY_FILE` environment variables. See `start-console-tls.sh` for details.
 
 ### Trusting Self-Signed Certificates for WebSocket Hot Reloading
 
@@ -265,83 +265,212 @@ devServer: {
 }
 ```
 
-The `client.webSocketURL` configuration explicitly tells the webpack dev server client where to connect for hot reloading updates, ensuring it uses the secure WebSocket protocol (`wss://`).
+## PKI Setup and Cleanup Scripts
+
+The `scripts` directory contains scripts for setting up and cleaning up PKI resources for ActiveMQ Artemis restricted mode testing.
+
+### Shared Modules
+
+All scripts use centralized modules in the `scripts/` directory to ensure consistency:
+
+- **`scripts/setup-pki.js`** - Shared PKI setup functions (used by setup scripts and Playwright tests)
+- **`scripts/cleanup-config.js`** - Shared cleanup configuration (used by cleanup scripts and Playwright tests)
+
+This eliminates code duplication and ensures consistent behavior across development and test environments. Both TypeScript and JavaScript code import from these shared JavaScript modules.
+
+### Chain of Trust Management
+
+#### `yarn chain-of-trust <command>`
+
+Manages PKI infrastructure for local development and testing with a single unified script.
+
+**Commands:**
+
+- `setup` - Creates a complete PKI infrastructure
+- `cleanup` - Removes PKI infrastructure
+
+**Options:**
+
+- `--namespace <name>` - Target namespace for operator cert (default: "default")
+- `--prefix <name>` - Prefix for resource names (default: "dev")
+- `--help` - Show help message
+
+**What setup creates:**
+
+- Self-signed root ClusterIssuer (`{prefix}-selfsigned-root-issuer`)
+- Root CA Certificate (`{prefix}-root-ca` in cert-manager namespace)
+- CA-signed ClusterIssuer (`{prefix}-ca-issuer`)
+- Trust Bundle (`activemq-artemis-manager-ca`, distributed to all namespaces)
+- Operator Certificate (`activemq-artemis-manager-cert` in specified namespace)
+
+**What cleanup removes:**
+
+- Trust bundles
+- Operator certificates and secrets
+- ClusterIssuers (root and CA)
+- Root CA certificates
+- **All broker certificates** (both generic `broker-cert` and CR-specific `{name}-broker-cert`)
+
+**Examples:**
+
+```bash
+# Setup with defaults (prefix: "dev", namespace: "default")
+yarn chain-of-trust setup
+
+# Setup in custom namespace
+yarn chain-of-trust setup --namespace my-namespace
+
+# Setup with custom prefix
+yarn chain-of-trust setup --prefix test
+
+# Cleanup with defaults
+yarn chain-of-trust cleanup
+
+# Cleanup with custom namespace and prefix
+yarn chain-of-trust cleanup --namespace my-namespace --prefix test
+```
+
+#### `yarn pw:cleanup`
+
+Cleans up leftover e2e test resources including namespaces.
+
+**What it cleans:**
+
+- E2E test namespaces (patterns: `e2e-test-*`, `e2e-restricted-*`)
+- Test ClusterIssuers (patterns: `artemis-*`, `e2e-*`, `dev-*`)
+- Test certificates containing "artemis"
+- **All broker certificates** (pattern: `*broker-cert*`)
+- **All broker certificate secrets** (pattern: `*broker-cert*`)
+- Test bundles (activemq-artemis-manager-ca)
+
+### Broker Certificate Cleanup
+
+All scripts now properly clean up broker certificates in all their forms:
+
+1. **Generic certificates**: `broker-cert`
+2. **CR-specific certificates**: `{broker-name}-broker-cert` (e.g., `ex-aao-broker-cert`)
+
+The cleanup uses pattern matching (`*broker-cert*`) to catch all variations, regardless of the specific broker name.
+
+### Manual Cleanup Commands
+
+If you need to clean up manually:
+
+```bash
+# Delete all broker certificates
+kubectl get certificates -A -o json | \
+  jq -r '.items[] | select(.metadata.name | contains("broker-cert")) | "\(.metadata.namespace) \(.metadata.name)"' | \
+  xargs -r -L1 sh -c 'kubectl delete certificate $1 -n $0' || true
+
+# Delete all broker certificate secrets
+kubectl get secrets -A -o json | \
+  jq -r '.items[] | select(.metadata.name | contains("broker-cert")) | "\(.metadata.namespace) \(.metadata.name)"' | \
+  xargs -r -L1 sh -c 'kubectl delete secret $1 -n $0' || true
+
+# Delete all test namespaces
+kubectl get namespaces -o name | grep -E 'e2e-test-|e2e-restricted-' | xargs kubectl delete
+
+# Delete all test ClusterIssuers
+kubectl get clusterissuers -o name | grep -E 'e2e-|dev-|artemis-' | xargs kubectl delete
+```
 
 ## E2E Tests
 
 The project includes an end-to-end (E2E) test suite using **Playwright** to automate and validate its functionality in a realistic environment.
 
-### Prerequisites
+### E2E Prerequisites
 
 Before running the E2E tests, ensure you have the following set up:
 
-1.  **Running OpenShift Cluster**: You must have a local or remote OpenShift cluster running. See the [Setting up an OpenShift cluster](#setting-up-an-openshift-cluster) section for details.
-2.  **Operators Installed**: The `AMQ Broker` and `cert-manager` operators must be installed on the cluster.
-3.  **Authenticated `oc` CLI**: You must be logged into your cluster via the `oc` command line.
-4.  **Bridge Authentication**: The bridge authentication must be set up for HTTP (non-TLS). From the project root, run:
-    ```sh
-    cd bridge-auth-http && ./setup.sh && cd ..
-    ```
-5.  **Webpack Server**: The plugin's webpack server must be running in a terminal (non-TLS). From the project root, run:
-    ```sh
-    yarn start
-    ```
+1. **Running OpenShift Cluster**: You must have a local or remote OpenShift cluster running. See [Setting up an OpenShift cluster](#setting-up-an-openshift-cluster).
+2. **Operators Installed**: The `AMQ Broker` and `cert-manager` operators must be installed on the cluster.
+3. **Authenticated `oc` CLI**: You must be logged into your cluster via the `oc` command line.
+4. **Bridge Authentication**: The bridge authentication must be set up for HTTP (non-TLS):
+   ```bash
+   cd bridge-auth-http && ./setup.sh && cd ..
+   ```
+5. **Webpack Server**: The plugin's webpack server must be running in a terminal (non-TLS):
+   ```bash
+   yarn start
+   ```
 
 ### Setting the kubeadmin Password
 
 > [!IMPORTANT]
 > The test suite requires the `kubeadmin` password to be set as an environment variable. You can retrieve the password for your local CRC cluster by running:
 >
-> ```sh
+> ```bash
 > crc console --credentials
 > ```
 >
 > Then, export the variable:
 >
-> ```sh
+> ```bash
 > export KUBEADMIN_PASSWORD="<your-password>"
 > ```
 
 > [!NOTE]
-> Alternatively, you can set your CRC `kubeadmin` password to the default value `kubeadmin` so you don't have to export the environment variable. You can do this by running the following command before starting your CRC cluster:
+> Alternatively, you can set your CRC `kubeadmin` password to the default value `kubeadmin` so you don't have to export the environment variable:
 >
-> ```sh
+> ```bash
 > crc config set kubeadmin-password kubeadmin
 > ```
 
-### Running the Test Suite Locally
+### Running Tests
 
-With all the prerequisites in place and the webpack server running, you can run the tests.
+With all prerequisites in place and the webpack server running:
 
-1.  **Start the Console**: In a second terminal, start the OpenShift console.
+1. **Start the Console**: In a second terminal, start the OpenShift console:
 
-    ```sh
-    yarn start-console
-    ```
+   ```bash
+   yarn start-console
+   ```
 
-2.  **Run Tests**: In a third terminal, choose one of the following options:
+2. **Run Tests**: In a third terminal, choose one of the following options:
 
-- **Interactive Mode with UI** (recommended for development and debugging):
+**Interactive Mode with UI** (recommended for development and debugging):
 
-  ```sh
-  KUBEADMIN_PASSWORD=kubeadmin yarn pw:ui
-  ```
+```bash
+KUBEADMIN_PASSWORD=kubeadmin yarn pw:ui
+```
 
-  Opens Playwright's UI Mode with a visual timeline, DOM snapshots, network inspection, and step-by-step debugging capabilities.
+Opens Playwright's UI Mode with a visual timeline, DOM snapshots, network inspection, and step-by-step debugging capabilities.
 
-- **Headed Mode** (browser visible, without UI):
+**Headed Mode** (browser visible, without UI):
 
-  ```sh
-  KUBEADMIN_PASSWORD=kubeadmin yarn pw:headed
-  ```
+```bash
+KUBEADMIN_PASSWORD=kubeadmin yarn pw:headed
+```
 
-  Runs tests with a visible browser window but without the interactive debugger.
+Runs tests with a visible browser window but without the interactive debugger.
 
-- **Headless Mode** (for CI or quick runs):
-  ```sh
-  KUBEADMIN_PASSWORD=kubeadmin yarn pw:test
-  ```
-  Runs tests in the terminal without opening a browser window.
+**Headless Mode** (for CI or quick runs):
+
+```bash
+KUBEADMIN_PASSWORD=kubeadmin yarn pw:test
+```
+
+Runs tests in the terminal without opening a browser window.
+
+### Test Structure
+
+#### `restricted-broker.spec.ts`
+
+Full end-to-end test for restricted mode broker creation:
+
+1. Creates a unique namespace
+2. Generates a ClusterIssuer chain of trust
+3. Generates operator certificate
+4. Generates broker certificate via UI
+5. Generates trust bundle (CA)
+6. Creates a restricted broker
+7. Waits for broker to be ready
+8. Deletes the broker
+9. Cleans up all resources
+
+#### `smoke.spec.ts`
+
+Basic smoke tests for non-restricted mode broker creation and deletion.
 
 ### Debugging Tests
 
@@ -358,63 +487,99 @@ Playwright provides excellent debugging capabilities:
 
 3. **VSCode Debugging**: Set breakpoints in test files and use VSCode's debugger with the Playwright extension.
 
-## Docker image
+### Test Cleanup
 
-1. Build the image:
-   ```sh
+E2E tests create Kubernetes resources (namespaces, ClusterIssuers, Certificates, Bundles). These are automatically cleaned up after tests, but if tests fail or are interrupted, you may need to manually clean up:
+
+```bash
+# Clean up leftover e2e test resources
+yarn pw:cleanup
+```
+
+### Troubleshooting
+
+**Tests fail with "already exists" errors:**
+
+```bash
+yarn pw:cleanup
+yarn pw:test
+```
+
+**Tests timeout:**
+
+- Check that cert-manager and trust-manager are installed in the cluster
+- Verify cluster resources are healthy: `kubectl get pods -n cert-manager`
+- Increase timeout in `playwright.config.ts` if needed
+
+**Resources not cleaned up:**
+
+The `afterAll` hook should clean up resources even on test failure. If not:
+
+```bash
+yarn pw:cleanup
+```
+
+## Docker Image
+
+1. **Build the image:**
+
+   ```bash
    docker build -t quay.io/arkmq-org/activemq-artemis-self-provisioning-plugin:latest .
    ```
-2. Run the image:
-   ```sh
+
+2. **Run the image:**
+
+   ```bash
    docker run -it --rm -d -p 9001:80 quay.io/arkmq-org/activemq-artemis-self-provisioning-plugin:latest
    ```
-3. Push the image to image registry:
-   ```sh
+
+3. **Push the image to image registry:**
+   ```bash
    docker push quay.io/arkmq-org/activemq-artemis-self-provisioning-plugin:latest
    ```
 
-## Deployment on cluster
+## Deployment on Cluster
 
-You can deploy the plugin to a cluster by running this following command:
+You can deploy the plugin to a cluster by running:
 
-### deploy the plugin
-
-```sh
+```bash
 ./deploy-plugin.sh [-i <image> -n]
 ```
 
-Without any arguments, the plugin will run in https mode on port 9443.
+Without any arguments, the plugin will run in HTTPS mode on port 9443.
 
-The optional `-i <image>` (or `--image <image>`) argument allows you to pass in the plugin image. If not specified the default
-`quay.io/arkmq-org/activemq-artemis-self-provisioning-plugin:latest` is deployed. for example:
+**Options:**
 
-```sh
-./deploy-plugin.sh -i quay.io/<repo-username>/activemq-artemis-self-provisioning-plugin:1.0.1
-```
+- `-i <image>` or `--image <image>`: Specify the plugin image. Default: `quay.io/arkmq-org/activemq-artemis-self-provisioning-plugin:latest`
 
-The optional `-n` (or `--nossl`) argument disables the https and makes the plugin run in http mode on port 9001.
-For example:
+  ```bash
+  ./deploy-plugin.sh -i quay.io/<repo-username>/activemq-artemis-self-provisioning-plugin:1.0.1
+  ```
 
-```sh
-./deploy-plugin.sh -n
-```
+- `-n` or `--nossl`: Disable HTTPS and make the plugin run in HTTP mode on port 9001.
 
-The deploy-plugin.sh uses `oc kustomize` (built-in [kustomize](https://github.com/kubernetes-sigs/kustomize)) command to configure and deploy the plugin using
-resources and patches defined under ./deploy directory.
+  ```bash
+  ./deploy-plugin.sh -n
+  ```
 
-To undeploy the plugin, run
+The `deploy-plugin.sh` script uses `oc kustomize` (built-in [kustomize](https://github.com/kubernetes-sigs/kustomize)) to configure and deploy the plugin using resources and patches defined under the `./deploy` directory.
 
-```sh
+**Deployment Structure:**
+
+- `deploy/base/` - Default resources for deploying the plugin in HTTPS mode
+- `deploy/http/` - Patch files for deploying the plugin in HTTP mode
+
+**Undeploy:**
+
+```bash
 ./undeploy-plugin.sh
 ```
 
-## Configuring a Broker for token reviews
+## Configuring a Broker for Token Reviews
 
-### Service account
+### Service Account
 
-If you want to have a broker that is able to perform a token review, you will
-need to have access to a service account with enough rights. To create one,
-execute the following YAML on your environment:
+If you want to have a broker that is able to perform a token review, you will need to have access to a service account with enough rights. To create one, execute the following YAML on your environment:
 
 ```yaml
 apiVersion: v1
@@ -437,17 +602,14 @@ roleRef:
   name: 'system:auth-delegator'
 ```
 
-Important:
+**Important:**
 
-- The service account must reside in the same namespace as the broker you want
-  to deploy.
-- The role binding to 'system:auth-delegator' has to be cluster wide otherwise
-  the broker won't be allowed to perform token reviews.
+- The service account must reside in the same namespace as the broker you want to deploy.
+- The role binding to `system:auth-delegator` has to be cluster-wide otherwise the broker won't be allowed to perform token reviews.
 
-### Broker env
+### Broker Environment Variables
 
-While we wait for the `7.13` broker to get available, any broker that intends to
-perform a token review should have the following env in its spec:
+While we wait for the `7.13` broker to get available, any broker that intends to perform a token review should have the following env in its spec:
 
 ```yaml
 env:
@@ -459,12 +621,9 @@ env:
     value: '6443'
 ```
 
-### An example of valid YAML for token reviews
+### Example YAML for Token Reviews
 
-Assuming you have the service account `ex-aao-sa` available in the same
-namespace as the broker you want to deploy and that you have created with the UI
-a custom jaas config allowing your username to have admin access to the broker,
-your YAML should look like this.
+Assuming you have the service account `ex-aao-sa` available in the same namespace as the broker you want to deploy and that you have created with the UI a custom JAAS config allowing your username to have admin access to the broker, your YAML should look like this:
 
 ```yaml
 apiVersion: broker.amq.io/v1beta1
@@ -493,3 +652,11 @@ spec:
       secrets:
         - custom-jaas-config
 ```
+
+## Additional Documentation
+
+For more detailed information about specific components:
+
+- **PKI Setup Details**: See the `scripts/` directory for setup-pki.js and cleanup-config.js source code
+- **Playwright Fixtures**: See `playwright/fixtures/` for test helper functions and shared setup code
+- **Deployment Configuration**: See `deploy/` directory for kustomize resources and patches

@@ -43,7 +43,7 @@ import { PresetAlertPopover } from '../AcceptorsConfigPage/AcceptorConfigSection
 import { ConfigType } from '../ConfigurationPage';
 import { useHasCertManager } from '../../../../../k8s/customHooks';
 import { useTranslation } from '@app/i18n/i18n';
-import { SelectIssuerDrawer } from '../AcceptorsConfigPage/AcceptorConfigSection/SelectIssuerDrawer/SelectIssuerDrawer';
+import { SelectIssuerDrawer } from '../../../SelectIssuerDrawer/SelectIssuerDrawer';
 import {
   TypeaheadSelect,
   TypeaheadSelectOption,

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { login } from '../fixtures/auth';
+import { toggleRestrictedMode } from '../fixtures/restrictedMode';
 
 const username = 'kubeadmin';
 const password = process.env.KUBEADMIN_PASSWORD || 'kubeadmin';
@@ -37,7 +38,11 @@ test.describe('Create Broker via UI', () => {
     await createBrokerButton.scrollIntoViewIfNeeded();
     await createBrokerButton.click();
 
-    // Fill CR Name with a unique value
+    // Disable restricted mode first (form now defaults to restricted mode)
+    // This needs to be done BEFORE filling the name, as switching modes resets the form
+    await toggleRestrictedMode(page, false);
+
+    // NOW fill CR Name with a unique value (after switching modes)
     const brokerName = `e2e-broker-${Date.now()}`;
     const nameInput = page.locator(
       '#horizontal-form-name, input[name="horizontal-form-name"]',
@@ -46,11 +51,24 @@ test.describe('Create Broker via UI', () => {
     await nameInput.clear();
     await nameInput.fill(brokerName);
 
-    // Click Create
-    await page
+    // Click Create and wait for the creation to start
+    const createButton = page
       .locator('button')
-      .filter({ hasText: /^Create$/i })
-      .click();
+      .filter({ hasText: /^Create$/i });
+
+    // Ensure the button is enabled before clicking
+    await expect(createButton).toBeEnabled({ timeout: 10000 });
+
+    // Click and wait for navigation away from the form (indicates successful submission)
+    await Promise.all([
+      page.waitForURL((url) => !url.pathname.includes('/add-broker'), {
+        timeout: 30000,
+      }),
+      createButton.click(),
+    ]);
+
+    // Wait a bit more for the broker to be created in K8s
+    await page.waitForTimeout(2000);
 
     // Navigate to all-namespaces brokers page to check the status
     await page.goto('/k8s/all-namespaces/brokers', {

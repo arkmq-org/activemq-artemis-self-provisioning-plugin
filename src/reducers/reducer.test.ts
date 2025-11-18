@@ -5,6 +5,7 @@ import {
   newArtemisCR,
 } from './reducer';
 import { ArtemisReducerOperationsRestricted } from './restricted/reducer';
+import { FormStateRestricted } from './restricted/import-types';
 
 describe('test the 7.13 reducer', () => {
   it('test setBrokerVersion', () => {
@@ -150,5 +151,20 @@ describe('test restricted mode in global reducer', () => {
     expect(newState.cr.spec.acceptors).toBeUndefined();
     // Restricted should be set
     expect(newState.cr.spec.restricted).toBe(true);
+  });
+
+  it('should set default secret names when enabling restricted mode', () => {
+    const initialState = newArtemisCR('namespace');
+
+    const newState = artemisCrReducer(initialState, {
+      operation: ArtemisReducerOperationsRestricted.setIsRestrited,
+      payload: true,
+    }) as FormStateRestricted;
+
+    // Check that default secret names are set
+    expect(newState.ACTIVEMQ_ARTEMIS_MANAGER_CA_SECRET_NAME).toBe(
+      'activemq-artemis-manager-ca',
+    );
+    expect(newState.BASE_PROMETHEUS_CERT_SECRET_NAME).toBe('prometheus-cert');
   });
 });

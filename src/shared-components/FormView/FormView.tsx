@@ -22,6 +22,7 @@ import {
   BrokerCreationFormState,
 } from '@app/reducers/reducer';
 import { RestrictedSwitch } from './RestrictedSwitch';
+import { RestrictedConfiguration } from './RestrictedMode/RestrictedConfiguration';
 
 export const FormView: FC = () => {
   const { t } = useTranslation();
@@ -74,64 +75,72 @@ export const FormView: FC = () => {
                 onChange={(_event, name: string) => handleNameChange(name)}
               />
             </FormGroup>
-            <FormGroup
-              label={t('Replicas')}
-              isRequired
-              fieldId="horizontal-form-name"
-            >
-              <NumberInput
-                value={replicas}
-                min={0}
-                max={1024}
-                onMinus={() =>
-                  dispatch({
-                    operation: ArtemisReducerOperations712.decrementReplicas,
-                  })
-                }
-                onChange={(event) =>
-                  dispatch({
-                    operation: ArtemisReducerOperations712.setReplicasNumber,
-                    payload: Number((event.target as HTMLInputElement).value),
-                  })
-                }
-                onPlus={() =>
-                  dispatch({
-                    operation: ArtemisReducerOperations712.incrementReplicas,
-                  })
-                }
-                inputName="input"
-                inputAriaLabel="number input"
-                minusBtnAriaLabel="minus"
-                plusBtnAriaLabel="plus"
-              />
-            </FormGroup>
             <FormGroup label={t('Restricted mode')}>
               <RestrictedSwitch />
             </FormGroup>
-            <FormGroup label={t('Broker Version')}>
-              <InputGroup>
-                <InputGroupText id="broker-version" className=".pf-u-w-initial">
-                  {t('Version:')}
-                </InputGroupText>
-                <FormSelect
-                  value={formState.brokerVersion}
-                  onChange={(_event, value) =>
-                    onChangeVersion(value as BrokerVersion)
-                  }
-                  aria-label="FormSelect Input"
+            {!formState?.cr?.spec?.restricted && (
+              <FormGroup
+                label={t('Replicas')}
+                isRequired
+                fieldId="horizontal-form-name"
+              >
+                <NumberInput
                   isDisabled={formState?.cr?.spec?.restricted}
-                >
-                  {options.map((option, index) => (
-                    <FormSelectOption
-                      isDisabled={option.disabled}
-                      key={index}
-                      value={option.value}
-                      label={option.label}
-                    />
-                  ))}
-                </FormSelect>
-              </InputGroup>
-            </FormGroup>
+                  value={replicas}
+                  min={0}
+                  max={1024}
+                  onMinus={() =>
+                    dispatch({
+                      operation: ArtemisReducerOperations712.decrementReplicas,
+                    })
+                  }
+                  onChange={(event) =>
+                    dispatch({
+                      operation: ArtemisReducerOperations712.setReplicasNumber,
+                      payload: Number((event.target as HTMLInputElement).value),
+                    })
+                  }
+                  onPlus={() =>
+                    dispatch({
+                      operation: ArtemisReducerOperations712.incrementReplicas,
+                    })
+                  }
+                  inputName="input"
+                  inputAriaLabel="number input"
+                  minusBtnAriaLabel="minus"
+                  plusBtnAriaLabel="plus"
+                />
+              </FormGroup>
+            )}
+            {!formState?.cr?.spec?.restricted && (
+              <FormGroup label={t('Broker Version')}>
+                <InputGroup>
+                  <InputGroupText
+                    id="broker-version"
+                    className=".pf-u-w-initial"
+                  >
+                    {t('Version:')}
+                  </InputGroupText>
+                  <FormSelect
+                    value={formState.brokerVersion}
+                    onChange={(_event, value) =>
+                      onChangeVersion(value as BrokerVersion)
+                    }
+                    aria-label="FormSelect Input"
+                    isDisabled={formState?.cr?.spec?.restricted}
+                  >
+                    {options.map((option, index) => (
+                      <FormSelectOption
+                        isDisabled={option.disabled}
+                        key={index}
+                        value={option.value}
+                        label={option.label}
+                      />
+                    ))}
+                  </FormSelect>
+                </InputGroup>
+              </FormGroup>
+            )}
           </Grid>
         </FormFieldGroup>
       </Form>
@@ -146,6 +155,7 @@ export const FormView: FC = () => {
         type="wizard"
         aria-label={t('broker configuration')}
       >
+        {formState.cr.spec.restricted && <RestrictedConfiguration />}
         {!formState.cr.spec.restricted && (
           <LegacyBrokerProperties
             brokerId={0}

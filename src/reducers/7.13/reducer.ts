@@ -1,5 +1,9 @@
 import { BrokerCR } from '@app/k8s/types';
-import { ArtemisReducerActions712, reducer712 } from '../7.12/reducer';
+import {
+  areMandatoryValuesSet712,
+  ArtemisReducerActions712,
+  reducer712,
+} from '../7.12/reducer';
 import { FormState713 } from './import-types';
 
 // Operations for 7.13 start at number 2000
@@ -112,7 +116,7 @@ export const areMandatoryValuesSet713 = (formState: FormState713) => {
       return false;
     }
   }
-  return true;
+  return areMandatoryValuesSet712(formState);
 };
 
 /**

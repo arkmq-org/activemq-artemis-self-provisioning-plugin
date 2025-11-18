@@ -16,7 +16,7 @@ import {
   getCertManagerResourceTemplateFromAcceptor,
 } from '@app/reducers/7.12/reducer';
 import { ResourceTemplate } from '@app/k8s/types';
-import { SelectIssuerDrawer } from '../../SelectIssuerDrawer/SelectIssuerDrawer';
+import { SelectIssuerDrawer } from '../../../../../../SelectIssuerDrawer/SelectIssuerDrawer';
 import { ConfirmDeleteModal } from '../../ConfirmDeleteModal/ConfirmDeleteModal';
 type ResourceTemplateProps = {
   resourceTemplate: ResourceTemplate;

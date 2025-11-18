@@ -1,12 +1,14 @@
 import { useTranslation } from '@app/i18n/i18n';
 import { BrokerCreationFormState } from '@app/reducers/reducer';
-import { CertIssuerModel, CertModel } from '@app/k8s/models';
 import { IssuerResource } from '@app/k8s/types';
 import {
   RedExclamationCircleIcon,
-  k8sCreate,
   useK8sWatchResource,
 } from '@openshift-console/dynamic-plugin-sdk';
+import {
+  createClusterIssuerChainOfTrust,
+  createIssuerChainOfTrust,
+} from '@app/k8s/certManagerUtils';
 import {
   Alert,
   AlertVariant,
@@ -30,69 +32,6 @@ import {
 } from '@patternfly/react-core';
 import { FC, useContext, useMemo, useState } from 'react';
 import { TypeaheadSelect } from '@patternfly/react-templates';
-
-const createChainOftrust = async (
-  name: string,
-  namespace: string,
-  ingressDomain: string,
-) => {
-  const rootIssuer = {
-    apiVersion: 'cert-manager.io/v1',
-    kind: 'Issuer',
-    metadata: {
-      name: name + '-root-issuer',
-      namespace: namespace,
-    },
-    spec: {
-      selfSigned: {},
-    },
-  };
-  const issuerCa = {
-    apiVersion: 'cert-manager.io/v1',
-    kind: 'Certificate',
-    metadata: {
-      name: name + 'cert',
-      namespace: namespace,
-    },
-    spec: {
-      isCA: true,
-      commonName: name,
-      dnsNames: ['issuer.' + ingressDomain],
-      secretName: name + '-cert-secret',
-      privateKey: {
-        algorithm: 'ECDSA',
-        size: 256,
-      },
-      issuerRef: {
-        name: rootIssuer.metadata.name,
-        kind: 'Issuer',
-      },
-    },
-  };
-  const content = {
-    apiVersion: 'cert-manager.io/v1',
-    kind: 'Issuer',
-    metadata: {
-      name: name,
-      namespace: namespace,
-    },
-    spec: {
-      ca: {
-        secretName: issuerCa.spec.secretName,
-      },
-    },
-  };
-
-  return await k8sCreate({ model: CertIssuerModel, data: rootIssuer }).then(
-    async () => {
-      return await k8sCreate({ model: CertModel, data: issuerCa }).then(
-        async () => {
-          return await k8sCreate({ model: CertIssuerModel, data: content });
-        },
-      );
-    },
-  );
-};
 
 type SelectIssuerDrawerProps = {
   selectedIssuer: string;
@@ -161,7 +100,15 @@ export const SelectIssuerDrawer: FC<SelectIssuerDrawerProps> = ({
 
   const triggerChainOfTrustCreation = () => {
     setAlertIssuer(undefined);
-    createChainOftrust(newIssuer, cr.metadata.namespace, cr.spec.ingressDomain)
+    const createPromise = isClusterIssuer
+      ? createClusterIssuerChainOfTrust(newIssuer, cr.spec.ingressDomain)
+      : createIssuerChainOfTrust(
+          newIssuer,
+          cr.metadata.namespace,
+          cr.spec.ingressDomain,
+        );
+
+    createPromise
       .then(() => {
         setIsExpanded(false);
         setSelectedIssuer(newIssuer);
@@ -183,9 +130,13 @@ export const SelectIssuerDrawer: FC<SelectIssuerDrawerProps> = ({
               <DrawerHead>
                 <FormGroup label={t('Name of the issuer')} isRequired>
                   <FormHelperText>
-                    {t(
-                      'Clicking on create will trigger the creation of 3 elements, a root issuer, a certificate signed by the root issuer, and an issuer using the certificate. The name of the issuer will correspond to the later.',
-                    )}
+                    {isClusterIssuer
+                      ? t(
+                          'Clicking create will generate a complete chain of trust: a self-signed root ClusterIssuer, a root CA certificate, a trust-manager Bundle, and the final ClusterIssuer with this name.',
+                        )
+                      : t(
+                          'Clicking on create will trigger the creation of 3 elements, a root issuer, a certificate signed by the root issuer, and an issuer using the certificate. The name of the issuer will correspond to the later.',
+                        )}
                   </FormHelperText>
                   <InputGroup>
                     <InputGroupItem isFill>

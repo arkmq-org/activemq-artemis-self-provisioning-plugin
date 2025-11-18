@@ -143,6 +143,13 @@ export const artemisCrReducer: React.Reducer<FormState, ReducerActions> = (
         delete formState.cr.spec.deploymentPlan.image;
         delete formState.cr.spec.deploymentPlan.requireLogin;
         formState.brokerVersion = '7.13';
+        (
+          formState as FormStateRestricted
+        ).ACTIVEMQ_ARTEMIS_MANAGER_CA_SECRET_NAME =
+          'activemq-artemis-manager-ca';
+        (formState as FormStateRestricted).BASE_PROMETHEUS_CERT_SECRET_NAME =
+          'prometheus-cert';
+        (formState as FormStateRestricted).OPERATOR_NAMESPACE = 'default';
       }
       formState.cr.spec.restricted = action.payload;
       return formState;
@@ -173,9 +180,13 @@ export const getBrokerVersion = (formState: FormState) => {
 };
 
 export const areMandatoryValuesSet = (formState: FormState) => {
-  return (
-    areMandatoryValuesSet712(formState) &&
-    areMandatoryValuesSet713(formState) &&
-    areMandatoryValuesSetRestricted(formState)
-  );
+  if (formState.cr.spec.restricted) {
+    return areMandatoryValuesSetRestricted(formState);
+  }
+  switch (formState.brokerVersion) {
+    case '7.13':
+      return areMandatoryValuesSet713(formState);
+    case '7.12':
+      return areMandatoryValuesSet712(formState);
+  }
 };

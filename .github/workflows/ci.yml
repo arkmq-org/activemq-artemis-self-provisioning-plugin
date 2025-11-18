@@ -225,7 +225,7 @@ jobs:
 
       - name: Install ActiveMQ Artemis Broker Operator
         run: |
-          helm install my-arkmq-org-broker-operator oci://quay.io/arkmq-org/helm-charts/arkmq-org-broker-operator
+          helm install my-arkmq-org-broker-operator oci://quay.io/arkmq-org/helm-charts/arkmq-org-broker-operator --version 0.0.0-dev.latest
           kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=arkmq-org-broker-operator -n default --timeout=30m
 
       - name: Set up Node.js
