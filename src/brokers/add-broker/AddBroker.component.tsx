@@ -186,11 +186,9 @@ export const AddBroker: FC<AddBrokerPropTypes> = ({
                 )}
                 trigger="mouseenter"
               >
-                <span className="pf-u-pt-sm pf-u-pl-sm pf-u-pb-sm">
-                  <Button variant={ButtonVariant.primary} isDisabled>
-                    {isUpdatingExisting ? t('Apply') : t('Create')}
-                  </Button>
-                </span>
+                <Button variant={ButtonVariant.primary} isDisabled>
+                  {isUpdatingExisting ? t('Apply') : t('Create')}
+                </Button>
               </Tooltip>
             ) : (
               <Button
