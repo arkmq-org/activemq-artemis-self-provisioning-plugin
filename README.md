@@ -129,6 +129,22 @@ spec:
 EOF
 ```
 
+### Install trust manager
+
+First, add the Jetstack Helm repository.
+
+```
+helm repo add jetstack https://charts.jetstack.io --force-update
+```
+
+Now, install trust-manager. This will be configured to sync trust Bundles to Secrets in all namespaces.
+
+```
+helm upgrade trust-manager jetstack/trust-manager --install --namespace cert-manager --set secretTargets.enabled=true --set secretTargets.authorizedSecretsAll=true --wait
+```
+
+
+
 ### Running the plugin
 
 #### Download the secrets so that the bridge can authenticate the user with the api server backend
