@@ -25,8 +25,9 @@ type MetricsPollingProps = {
   /** Callback function to handle results. */
   onResult: (
     index: number,
-    result: PrometheusResponse,
+    result: PrometheusResponse | null,
     loaded: boolean,
+    loadError: unknown | null,
   ) => void;
 };
 
@@ -47,7 +48,7 @@ export const MetricsPolling: React.FC<MetricsPollingProps> = ({
   delay,
   onResult,
 }) => {
-  const [result, loaded] = usePrometheusPoll({
+  const [result, loaded, loadError] = usePrometheusPoll({
     endpoint: PrometheusEndpoint.QUERY_RANGE,
     query,
     namespace,
@@ -59,8 +60,8 @@ export const MetricsPolling: React.FC<MetricsPollingProps> = ({
   });
 
   useEffect(() => {
-    onResult(index, result, loaded);
-  }, [index, result, loaded, onResult]);
+    onResult(index, result, loaded, loadError);
+  }, [index, result, loaded, loadError, onResult]);
 
   return null;
 };

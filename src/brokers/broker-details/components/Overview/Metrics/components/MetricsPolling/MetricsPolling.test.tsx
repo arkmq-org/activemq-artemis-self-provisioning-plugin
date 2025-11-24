@@ -16,7 +16,12 @@ describe('MetricsPolling', () => {
   it('should call onResult with the fetched data', () => {
     const mockResult = { data: 'test-data' };
     const mockLoaded = true;
-    usePrometheusPollMock.mockReturnValue([mockResult, mockLoaded]);
+    const mockLoadError: unknown | null = null;
+    usePrometheusPollMock.mockReturnValue([
+      mockResult,
+      mockLoaded,
+      mockLoadError,
+    ]);
 
     const onResultMock = jest.fn();
 
@@ -40,6 +45,11 @@ describe('MetricsPolling', () => {
       delay: undefined,
     });
 
-    expect(onResultMock).toHaveBeenCalledWith(0, mockResult, mockLoaded);
+    expect(onResultMock).toHaveBeenCalledWith(
+      0,
+      mockResult,
+      mockLoaded,
+      mockLoadError,
+    );
   });
 });

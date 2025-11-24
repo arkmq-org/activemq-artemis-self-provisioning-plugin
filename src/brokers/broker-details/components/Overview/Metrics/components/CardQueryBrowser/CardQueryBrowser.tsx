@@ -4,6 +4,8 @@ import { ChartTitle } from '../ChartTitle/ChartTitle';
 import { CardBodyLoading } from '../CardBodyLoading/CardBodyLoading';
 import { EmptyStateNoMetricsData } from '../EmptyStateNoMetricsData/EmptyStateNoMetricsData';
 import { QueryBrowser, QueryBrowserProps } from '../QueryBrowser/QueryBrowser';
+import { MetricsErrorBoundary } from '../../MetricsErrorBoundary';
+import { MetricsErrorState } from '../../MetricsErrorState';
 
 export type CardQueryBrowserProps = QueryBrowserProps & {
   isInitialLoading: boolean;
@@ -11,6 +13,7 @@ export type CardQueryBrowserProps = QueryBrowserProps & {
   title: string;
   helperText: string;
   dataTestId: string;
+  error?: unknown | null;
 };
 
 export const CardQueryBrowser: FC<CardQueryBrowserProps> = ({
@@ -30,42 +33,49 @@ export const CardQueryBrowser: FC<CardQueryBrowserProps> = ({
   label,
   metricsType,
   ariaTitle,
+  error,
 }) => {
   return (
-    <Card data-test-id={dataTestId}>
-      {(() => {
-        switch (true) {
-          case isInitialLoading:
-            return <CardBodyLoading />;
-          case backendUnavailable:
-            return (
-              <CardBody>
-                <EmptyStateNoMetricsData />
-              </CardBody>
-            );
-          default:
-            return (
-              <>
-                <ChartTitle title={title} helperText={helperText} />
+    <>
+      <Card data-test-id={dataTestId}>
+        {(() => {
+          switch (true) {
+            case !!error:
+              return <MetricsErrorState error={error} />;
+            case isInitialLoading:
+              return <CardBodyLoading />;
+            case backendUnavailable:
+              return (
                 <CardBody>
-                  <QueryBrowser
-                    allMetricsSeries={allMetricsSeries}
-                    span={span}
-                    isLoading={isLoading}
-                    samples={samples}
-                    fixedXDomain={fixedXDomain}
-                    formatSeriesTitle={formatSeriesTitle}
-                    processedData={processedData}
-                    yTickFormat={yTickFormat}
-                    metricsType={metricsType}
-                    label={label}
-                    ariaTitle={ariaTitle}
-                  />
+                  <EmptyStateNoMetricsData />
                 </CardBody>
-              </>
-            );
-        }
-      })()}
-    </Card>
+              );
+            default:
+              return (
+                <>
+                  <ChartTitle title={title} helperText={helperText} />
+                  <CardBody>
+                    <MetricsErrorBoundary>
+                      <QueryBrowser
+                        allMetricsSeries={allMetricsSeries}
+                        span={span}
+                        isLoading={isLoading}
+                        samples={samples}
+                        fixedXDomain={fixedXDomain}
+                        formatSeriesTitle={formatSeriesTitle}
+                        processedData={processedData}
+                        yTickFormat={yTickFormat}
+                        metricsType={metricsType}
+                        label={label}
+                        ariaTitle={ariaTitle}
+                      />
+                    </MetricsErrorBoundary>
+                  </CardBody>
+                </>
+              );
+          }
+        })()}
+      </Card>
+    </>
   );
 };
