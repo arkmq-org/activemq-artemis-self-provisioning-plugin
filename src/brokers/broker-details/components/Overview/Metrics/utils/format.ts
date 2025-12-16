@@ -80,7 +80,7 @@ export const formatSeriesValues = (
     const y = Number(v[1]);
     return {
       x: new Date(v[0] * 1000),
-      y: Number.isNaN(y) ? null : y,
+      y: Number.isNaN(y) ? 0 : y,
     };
   });
 

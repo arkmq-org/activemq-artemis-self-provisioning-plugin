@@ -66,7 +66,6 @@ const AuthenticatedPageContent: FC<AuthenticatedPageContentPropType> = ({
 
 export const BrokerDetailsPage: FC = () => {
   const { ns: namespace, name } = useParams<{ ns?: string; name?: string }>();
-
   const { brokerCr, isLoading, error } = useGetBrokerCR(name, namespace);
 
   if (isLoading) {
@@ -81,8 +80,8 @@ export const BrokerDetailsPage: FC = () => {
     <>
       <AuthenticatedPageContent
         brokerCr={brokerCr}
-        name={name}
-        namespace={namespace}
+        name={name || ''}
+        namespace={namespace || ''}
       />
     </>
   );
