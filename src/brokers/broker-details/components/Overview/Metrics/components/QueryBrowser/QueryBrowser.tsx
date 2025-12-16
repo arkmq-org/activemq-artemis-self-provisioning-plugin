@@ -30,7 +30,7 @@ import {
 } from '../../utils/types';
 import { DataPoint } from '../../utils/data-utils';
 
-const colors = chartTheme.line.colorScale;
+const colors = chartTheme.line?.colorScale;
 
 export type QueryBrowserProps = {
   allMetricsSeries: PrometheusResponse[];

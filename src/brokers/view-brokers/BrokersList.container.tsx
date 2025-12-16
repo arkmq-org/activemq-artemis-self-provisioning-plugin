@@ -33,8 +33,8 @@ export const BrokersContainer: FC = () => {
   });
 
   const onEditBroker = (broker: BrokerCR) => {
-    const namespace = broker.metadata.namespace;
-    const name = broker.metadata.name;
+    const namespace = broker.metadata?.namespace;
+    const name = broker.metadata?.name;
     navigate(`/k8s/ns/${namespace}/edit-broker/${name}`);
   };
 

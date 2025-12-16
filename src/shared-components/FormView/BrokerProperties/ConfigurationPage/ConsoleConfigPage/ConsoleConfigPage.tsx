@@ -163,13 +163,13 @@ export const ConsoleConfigPage: FC<ConsoleConfigProps> = ({ brokerId }) => {
           }
         >
           <CertSecretSelector
-            namespace={cr.metadata.namespace}
+            namespace={cr.metadata?.namespace}
             isCa={false}
             configType={ConfigType.console}
             configName={'console'}
           />
           <CertSecretSelector
-            namespace={cr.metadata.namespace}
+            namespace={cr.metadata?.namespace}
             isCa={true}
             configType={ConfigType.console}
             configName={'console'}

@@ -168,7 +168,7 @@ const GenerateCertificateModal: FC<GenerateCertificateModalProps> = ({
           ],
     ),
   );
-  const certName = cr.metadata.name + '-' + configType + '-cert';
+  const certName = cr.metadata?.name + '-' + configType + '-cert';
   const commonName = cr.metadata.name + '-' + configType;
   const secretName = cr.metadata.name + '-' + configType + '-cert-secret';
   const handleGenerateCertificate = () => {
@@ -329,9 +329,9 @@ const useCreateSecretOptions = ({
 }: CreateSecretOptionsPropTypes): TypeaheadSelectOption[] => {
   const nonptlsSecrets = certManagerSecrets
     .filter((secret) => {
-      return !secret.metadata.name.endsWith('-ptls');
+      return !!secret.metadata?.name && !secret.metadata.name.endsWith('-ptls');
     })
-    .map((option) => option.metadata.name);
+    .map((option) => option.metadata!.name);
   const filteredCustomOptions = customOptions.filter(
     (option) =>
       !nonptlsSecrets.find((s) => s === option) &&
@@ -678,7 +678,7 @@ export const CertSecretSelector: FC<CertSecretSelectorProps> = ({
   const showCertInfo = () => {
     setParseError(null);
     const theSecret = certManagerSecrets.filter((value) => {
-      return value.metadata.name === selectedSecret;
+      return value.metadata?.name === selectedSecret;
     });
     let pem: string;
     try {
