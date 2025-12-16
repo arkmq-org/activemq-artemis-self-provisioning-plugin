@@ -5,7 +5,7 @@ import { EditorType } from '@app/reducers/reducer';
 
 type EditorToggleProps = {
   value: EditorType;
-  onChange?: (editorType: EditorType) => void;
+  onChange: (editorType: EditorType) => void;
   isDisabled?: boolean;
 };
 
@@ -19,7 +19,7 @@ export const EditorToggle: React.FC<EditorToggleProps> = ({
     _checked: boolean,
     event: React.FormEvent<HTMLInputElement>,
   ) => {
-    onChange(event?.currentTarget?.value as EditorType);
+    onChange(event.currentTarget.value as EditorType);
   };
   return (
     <div className="pf-u-mx-md pf-u-my-sm">

@@ -3,8 +3,8 @@ import { BaseFormState, EditorType } from '../reducer';
 
 export interface FormState712 extends BaseFormState {
   shouldShowYAMLMessage?: boolean;
-  editorType?: EditorType;
+  editorType: EditorType;
   yamlHasUnsavedChanges?: boolean;
   hasChanges?: boolean;
-  cr?: BrokerCR;
+  cr: BrokerCR;
 }

@@ -71,11 +71,16 @@ describe('test the 7.13 reducer', () => {
 describe('test restricted mode in global reducer', () => {
   it('should enable restricted mode via global reducer and clear specific fields', () => {
     const initialState = newArtemisCR('namespace');
-    initialState.cr.spec.adminUser = 'testuser';
-    initialState.cr.spec.adminPassword = 'testpass';
-    initialState.cr.spec.console = { expose: true };
-    initialState.cr.spec.deploymentPlan.image = 'custom-image:latest';
-    initialState.cr.spec.deploymentPlan.requireLogin = true;
+    const spec = initialState.cr.spec;
+    if (!spec) throw new Error('spec should not be undefined');
+    const deploymentPlan = spec.deploymentPlan;
+    if (!deploymentPlan)
+      throw new Error('deploymentPlan should not be undefined');
+    spec.adminUser = 'testuser';
+    spec.adminPassword = 'testpass';
+    spec.console = { expose: true };
+    deploymentPlan.image = 'custom-image:latest';
+    deploymentPlan.requireLogin = true;
 
     const newState = artemisCrReducer(initialState, {
       operation: ArtemisReducerOperationsRestricted.setIsRestrited,
@@ -83,14 +88,14 @@ describe('test restricted mode in global reducer', () => {
     });
 
     // Check that restricted mode is enabled
-    expect(newState.cr.spec.restricted).toBe(true);
+    expect(newState.cr?.spec?.restricted).toBe(true);
 
     // Check that specific fields are cleared
-    expect(newState.cr.spec.adminUser).toBeUndefined();
-    expect(newState.cr.spec.adminPassword).toBeUndefined();
-    expect(newState.cr.spec.console).toBeUndefined();
-    expect(newState.cr.spec.deploymentPlan.image).toBeUndefined();
-    expect(newState.cr.spec.deploymentPlan.requireLogin).toBeUndefined();
+    expect(newState.cr?.spec?.adminUser).toBeUndefined();
+    expect(newState.cr?.spec?.adminPassword).toBeUndefined();
+    expect(newState.cr?.spec?.console).toBeUndefined();
+    expect(newState.cr?.spec?.deploymentPlan?.image).toBeUndefined();
+    expect(newState.cr?.spec?.deploymentPlan?.requireLogin).toBeUndefined();
 
     // Check that broker version is set to 7.13
     expect(newState.brokerVersion).toBe('7.13');
@@ -98,15 +103,17 @@ describe('test restricted mode in global reducer', () => {
 
   it('should preserve ingressDomain when enabling restricted mode', () => {
     const initialState = newArtemisCR('namespace');
-    initialState.cr.spec.ingressDomain = 'apps.example.com';
+    const spec = initialState.cr.spec;
+    if (!spec) throw new Error('spec should not be undefined');
+    spec.ingressDomain = 'apps.example.com';
 
     const newState = artemisCrReducer(initialState, {
       operation: ArtemisReducerOperationsRestricted.setIsRestrited,
       payload: true,
     });
 
-    expect(newState.cr.spec.restricted).toBe(true);
-    expect(newState.cr.spec.ingressDomain).toBe('apps.example.com');
+    expect(newState.cr?.spec?.restricted).toBe(true);
+    expect(newState.cr?.spec?.ingressDomain).toBe('apps.example.com');
   });
 
   it('should disable restricted mode via global reducer', () => {
@@ -116,7 +123,7 @@ describe('test restricted mode in global reducer', () => {
       operation: ArtemisReducerOperationsRestricted.setIsRestrited,
       payload: true,
     });
-    expect(stateWithRestricted.cr.spec.restricted).toBe(true);
+    expect(stateWithRestricted.cr?.spec?.restricted).toBe(true);
 
     // Then disable it
     const newState = artemisCrReducer(stateWithRestricted, {
@@ -124,18 +131,21 @@ describe('test restricted mode in global reducer', () => {
       payload: false,
     });
 
-    expect(newState.cr.spec.restricted).toBe(false);
+    expect(newState.cr?.spec?.restricted).toBe(false);
   });
 
   it('should reset the CR to initial state when toggling restricted mode', () => {
     const initialState = newArtemisCR('namespace');
-    const initialCRName = initialState.cr.metadata.name;
+    const initialCRName = initialState.cr?.metadata?.name;
 
+    const spec = initialState.cr.spec;
+    if (!spec) throw new Error('spec should not be undefined');
+    const deploymentPlan = spec.deploymentPlan;
+    if (!deploymentPlan)
+      throw new Error('deploymentPlan should not be undefined');
     // Make some changes to the state
-    initialState.cr.spec.deploymentPlan.size = 5;
-    initialState.cr.spec.acceptors = [
-      { name: 'test-acceptor', port: 5555, protocols: 'ALL' },
-    ];
+    deploymentPlan.size = 5;
+    spec.acceptors = [{ name: 'test-acceptor', port: 5555, protocols: 'ALL' }];
 
     // Enable restricted mode - this should reset the CR
     const newState = artemisCrReducer(initialState, {
@@ -144,13 +154,13 @@ describe('test restricted mode in global reducer', () => {
     });
 
     // The CR should be reset but metadata.name should be preserved
-    expect(newState.cr.metadata.name).toBe(initialCRName);
+    expect(newState.cr.metadata?.name).toBe(initialCRName);
     // Size should be back to default (1)
-    expect(newState.cr.spec.deploymentPlan.size).toBe(1);
+    expect(newState.cr.spec?.deploymentPlan?.size).toBe(1);
     // Acceptors should be undefined (not set in initial state)
-    expect(newState.cr.spec.acceptors).toBeUndefined();
+    expect(newState.cr.spec?.acceptors).toBeUndefined();
     // Restricted should be set
-    expect(newState.cr.spec.restricted).toBe(true);
+    expect(newState.cr.spec?.restricted).toBe(true);
   });
 
   it('should set default secret names when enabling restricted mode', () => {

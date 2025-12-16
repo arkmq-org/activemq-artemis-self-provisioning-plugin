@@ -241,11 +241,7 @@ export const AcceptorConfigPage: FC<AcceptorProps> = ({
             >
               <Checkbox
                 label={t('Expose')}
-                isChecked={
-                  getAcceptor(cr, configName)
-                    ? getAcceptor(cr, configName).expose
-                    : false
-                }
+                isChecked={getAcceptor(cr, configName)?.expose ?? false}
                 name={'check-expose' + configType + configName}
                 id={'check-expose' + configType + configName}
                 onChange={(_event, v) =>
@@ -264,11 +260,7 @@ export const AcceptorConfigPage: FC<AcceptorProps> = ({
             <SelectExposeMode
               configName={configName}
               configType={configType}
-              selectedExposeMode={
-                getAcceptor(cr, configName)
-                  ? getAcceptor(cr, configName).exposeMode
-                  : ''
-              }
+              selectedExposeMode={getAcceptor(cr, configName)?.exposeMode ?? ''}
               setSelectedExposeMode={(v) =>
                 dispatch({
                   operation: ArtemisReducerOperations712.setAcceptorExposeMode,
@@ -344,12 +336,7 @@ export const AcceptorConfigPage: FC<AcceptorProps> = ({
                 label={t('ingressHost')}
                 name={'ingressHost' + configType + configName}
                 id={'ingressHost' + configType + configName}
-                value={
-                  getAcceptor(cr, configName) &&
-                  getAcceptor(cr, configName).ingressHost
-                    ? getAcceptor(cr, configName).ingressHost
-                    : ''
-                }
+                value={getAcceptor(cr, configName)?.ingressHost ?? ''}
                 onChange={(_event, v) =>
                   dispatch({
                     operation:
@@ -420,21 +407,21 @@ export const AcceptorConfigPage: FC<AcceptorProps> = ({
           }
         >
           <CertSecretSelector
-            namespace={cr.metadata.namespace}
+            namespace={cr.metadata?.namespace ?? ''}
             isCa={false}
             configType={configType}
             configName={configName}
             canSetCustomNames
           />
           <CertSecretSelector
-            namespace={cr.metadata.namespace}
+            namespace={cr.metadata?.namespace ?? ''}
             isCa={true}
             configType={configType}
             configName={configName}
           />
         </FormFieldGroup>
       )}
-      {configType === ConfigType.acceptors && cr.spec.resourceTemplates && (
+      {configType === ConfigType.acceptors && cr.spec?.resourceTemplates && (
         <FormFieldGroup
           header={
             <FormFieldGroupHeader

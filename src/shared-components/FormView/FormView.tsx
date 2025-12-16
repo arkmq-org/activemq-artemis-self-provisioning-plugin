@@ -28,7 +28,7 @@ export const FormView: FC = () => {
   const { t } = useTranslation();
   const formState = useContext(BrokerCreationFormState);
   const { cr } = useContext(BrokerCreationFormState);
-  const targetNs = cr.metadata.namespace;
+  const targetNs = cr.metadata?.namespace;
   const dispatch = useContext(BrokerCreationFormDispatch);
 
   const handleNameChange = (name: string) => {
@@ -53,8 +53,8 @@ export const FormView: FC = () => {
     { value: '7.13', label: 'AMQ 7.13', disabled: false },
   ];
 
-  const crName = formState.cr.metadata.name;
-  const replicas = formState.cr.spec.deploymentPlan.size;
+  const crName = formState.cr.metadata?.name;
+  const replicas = formState.cr.spec?.deploymentPlan?.size;
   return (
     <>
       <Form isHorizontal>
@@ -155,13 +155,13 @@ export const FormView: FC = () => {
         type="wizard"
         aria-label={t('broker configuration')}
       >
-        {formState.cr.spec.restricted && <RestrictedConfiguration />}
-        {!formState.cr.spec.restricted && (
+        {formState.cr.spec?.restricted && <RestrictedConfiguration />}
+        {!formState.cr.spec?.restricted && (
           <LegacyBrokerProperties
             brokerId={0}
             perBrokerProperties={false}
-            crName={crName}
-            targetNs={targetNs}
+            crName={crName ?? ''}
+            targetNs={targetNs ?? ''}
           />
         )}
       </PageSection>

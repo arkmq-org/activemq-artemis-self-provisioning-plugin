@@ -128,8 +128,8 @@ export const ConsoleConfigPage: FC<ConsoleConfigProps> = ({ brokerId }) => {
           <FormSelect
             label={t('console expose mode')}
             value={exposeMode}
-            onChange={(_event, value: ExposeMode) =>
-              setConsoleExposeMode(value)
+            onChange={(_event, value: string) =>
+              setConsoleExposeMode(value as ExposeMode)
             }
             aria-label="formselect-expose-mode-aria-label"
           >
@@ -151,7 +151,7 @@ export const ConsoleConfigPage: FC<ConsoleConfigProps> = ({ brokerId }) => {
           ouiaId="BasicSwitch-console-ssl"
         />
       </FormFieldGroupExpandable>
-      {isSSLEnabled && (
+      {isSSLEnabled && cr.metadata?.namespace && (
         <FormFieldGroup
           header={
             <FormFieldGroupHeader
@@ -163,13 +163,13 @@ export const ConsoleConfigPage: FC<ConsoleConfigProps> = ({ brokerId }) => {
           }
         >
           <CertSecretSelector
-            namespace={cr.metadata.namespace}
+            namespace={cr.metadata?.namespace}
             isCa={false}
             configType={ConfigType.console}
             configName={'console'}
           />
           <CertSecretSelector
-            namespace={cr.metadata.namespace}
+            namespace={cr.metadata?.namespace}
             isCa={true}
             configType={ConfigType.console}
             configName={'console'}

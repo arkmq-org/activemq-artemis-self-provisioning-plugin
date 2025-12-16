@@ -76,7 +76,7 @@ export const ControlPlane: FC = () => {
 
         <CertSecretFinder
           expectedSecretNames={[
-            `${cr.metadata.name}-broker-cert`,
+            `${cr.metadata?.name}-broker-cert`,
             'broker-cert',
           ]}
           validationFlag={MandatorySecretsToWatchFor.BROKER_CERT}

@@ -16,45 +16,80 @@ import {
 import { ArtemisReducerOperations712 } from '@app/reducers/7.12/reducer';
 import { ArtemisReducerOperationsRestricted } from '@app/reducers/restricted/reducer';
 import { useNavigate, useParams } from 'react-router-dom-v5-compat';
+import { useTranslation } from '@app/i18n/i18n';
 
 export const UpdateBrokerPage: FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { ns: namespace, name } = useParams<{ ns?: string; name?: string }>();
 
   //states
   const [loadingBrokerCR, setLoading] = useState<boolean>(false);
-
   const [brokerModel, dispatch] = useReducer(
     artemisCrReducer,
-    newArtemisCR(namespace),
+    newArtemisCR(namespace ?? ''),
   );
-
   const [hasBrokerUpdated, setHasBrokerUpdated] = useState(false);
   const [alert, setAlert] = useState('');
+  const { clusterDomain, isLoading: isLoadingClusterDomain } =
+    useGetIngressDomain();
+  const [isDomainSet, setIsDomainSet] = useState(false);
+
+  useEffect(() => {
+    if (name && namespace) {
+      setLoading(true);
+      k8sGet({ model: AMQBrokerModel, name, ns: namespace })
+        .then((broker: BrokerCR) => {
+          dispatch({
+            operation: ArtemisReducerGlobalOperations.setModel,
+            payload: { model: broker, isSetByUser: false },
+          });
+
+          // If this is a restricted broker, initialize UI-only fields with defaults
+          // These fields are used by the UI to know which secrets to validate
+          if (broker.spec?.restricted) {
+            dispatch({
+              operation:
+                ArtemisReducerOperationsRestricted.setACTIVEMQ_ARTEMIS_MANAGER_CA_SECRET_NAME,
+              payload: 'activemq-artemis-manager-ca',
+            });
+            dispatch({
+              operation:
+                ArtemisReducerOperationsRestricted.setBASE_PROMETHEUS_CERT_SECRET_NAME,
+              payload: 'prometheus-cert',
+            });
+            dispatch({
+              operation:
+                ArtemisReducerOperationsRestricted.setOPERATOR_NAMESPACE,
+              payload: 'default',
+            });
+          }
+        })
+        .catch((e) => {
+          setAlert(e.message);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+  }, [name, namespace]);
+
+  if (!namespace || !name) {
+    return (
+      <Alert
+        variant={AlertVariant.danger}
+        isInline
+        title="Missing required parameters"
+      >
+        {t('namespace and broker name are required.')}
+      </Alert>
+    );
+  }
+
   const params = new URLSearchParams(location.search);
   const returnUrl = params.get('returnUrl') || '/k8s/all-namespaces/brokers';
   const handleRedirect = () => {
     navigate(returnUrl);
-  };
-  const k8sUpdateBroker = (content: BrokerCR) => {
-    k8sUpdate({
-      model: AMQBrokerModel,
-      data: content,
-      ns: namespace,
-      name: name,
-    })
-      .then(
-        () => {
-          setAlert('');
-          setHasBrokerUpdated(true);
-        },
-        (reason: Error) => {
-          setAlert(reason.message);
-        },
-      )
-      .catch((e: Error) => {
-        setAlert(e.message);
-      });
   };
 
   const k8sGetBroker = () => {
@@ -68,7 +103,7 @@ export const UpdateBrokerPage: FC = () => {
 
         // If this is a restricted broker, initialize UI-only fields with defaults
         // These fields are used by the UI to know which secrets to validate
-        if (broker.spec.restricted) {
+        if (broker.spec?.restricted) {
           dispatch({
             operation:
               ArtemisReducerOperationsRestricted.setACTIVEMQ_ARTEMIS_MANAGER_CA_SECRET_NAME,
@@ -97,13 +132,27 @@ export const UpdateBrokerPage: FC = () => {
       });
   };
 
-  useEffect(() => {
-    if (name) k8sGetBroker();
-  }, [name]);
+  const k8sUpdateBroker = (content: BrokerCR) => {
+    k8sUpdate({
+      model: AMQBrokerModel,
+      data: content,
+      ns: namespace,
+      name: name,
+    })
+      .then(
+        () => {
+          setAlert('');
+          setHasBrokerUpdated(true);
+        },
+        (reason: Error) => {
+          setAlert(reason.message);
+        },
+      )
+      .catch((e: Error) => {
+        setAlert(e.message);
+      });
+  };
 
-  const { clusterDomain, isLoading: isLoadingClusterDomain } =
-    useGetIngressDomain();
-  const [isDomainSet, setIsDomainSet] = useState(false);
   if (!loadingBrokerCR && !isLoadingClusterDomain && !isDomainSet) {
     dispatch({
       operation: ArtemisReducerOperations712.setIngressDomain,

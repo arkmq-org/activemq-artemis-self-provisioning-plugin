@@ -227,57 +227,57 @@ export const reducerRestricted: React.Reducer<
       return formState;
     case ArtemisReducerOperationsRestricted.setRestrictedDataPlaneAcceptorEnabled:
       ensureRestrictedDataPlane(formState);
-      formState.restrictedDataPlane.securedAcceptor.enabled = action.payload;
+      formState.restrictedDataPlane!.securedAcceptor.enabled = action.payload;
       applyRestrictedDataPlaneConfig(formState);
       return formState;
     case ArtemisReducerOperationsRestricted.setRestrictedDataPlaneAcceptorPort:
       ensureRestrictedDataPlane(formState);
-      formState.restrictedDataPlane.securedAcceptor.port = action.payload;
+      formState.restrictedDataPlane!.securedAcceptor.port = action.payload;
       applyRestrictedDataPlaneConfig(formState);
       return formState;
     case ArtemisReducerOperationsRestricted.setRestrictedDataPlaneAcceptorSecurityDomain:
       ensureRestrictedDataPlane(formState);
-      formState.restrictedDataPlane.securedAcceptor.securityDomain =
+      formState.restrictedDataPlane!.securedAcceptor.securityDomain =
         action.payload;
       applyRestrictedDataPlaneConfig(formState);
       return formState;
     case ArtemisReducerOperationsRestricted.setRestrictedDataPlaneAddressName:
       ensureRestrictedDataPlane(formState);
-      formState.restrictedDataPlane.address.name = action.payload;
+      formState.restrictedDataPlane!.address.name = action.payload;
       applyRestrictedDataPlaneConfig(formState);
       return formState;
     case ArtemisReducerOperationsRestricted.setRestrictedDataPlaneAddressRoutingType:
       ensureRestrictedDataPlane(formState);
-      formState.restrictedDataPlane.address.routingType = action.payload;
+      formState.restrictedDataPlane!.address.routingType = action.payload;
       applyRestrictedDataPlaneConfig(formState);
       return formState;
     case ArtemisReducerOperationsRestricted.setRestrictedDataPlaneRoleName:
       ensureRestrictedDataPlane(formState);
-      formState.restrictedDataPlane.role.name = action.payload;
+      formState.restrictedDataPlane!.role.name = action.payload;
       applyRestrictedDataPlaneConfig(formState);
       return formState;
     case ArtemisReducerOperationsRestricted.setRestrictedDataPlaneRolePermission:
       ensureRestrictedDataPlane(formState);
-      formState.restrictedDataPlane.role.permissions[
+      formState.restrictedDataPlane!.role.permissions[
         action.payload.permission
       ] = action.payload.value;
       applyRestrictedDataPlaneConfig(formState);
       return formState;
     case ArtemisReducerOperationsRestricted.setRestrictedDataPlaneClientCN:
       ensureRestrictedDataPlane(formState);
-      formState.restrictedDataPlane.clientCN = action.payload;
+      formState.restrictedDataPlane!.clientCN = action.payload;
       return formState;
     case ArtemisReducerOperationsRestricted.setRestrictedDataPlaneConsent:
       ensureRestrictedDataPlane(formState);
-      formState.restrictedDataPlane.consent = action.payload;
+      formState.restrictedDataPlane!.consent = action.payload;
       return formState;
     case ArtemisReducerOperationsRestricted.setRestrictedDataPlaneJaasStatus:
       ensureRestrictedDataPlane(formState);
-      formState.restrictedDataPlane.jaasSecretStatus = action.payload;
+      formState.restrictedDataPlane!.jaasSecretStatus = action.payload;
       return formState;
     case ArtemisReducerOperationsRestricted.setRestrictedDataPlaneAmqpsStatus:
       ensureRestrictedDataPlane(formState);
-      formState.restrictedDataPlane.amqpsSecretStatus = action.payload;
+      formState.restrictedDataPlane!.amqpsSecretStatus = action.payload;
       return formState;
     default:
       return reducer713(
@@ -289,9 +289,11 @@ export const reducerRestricted: React.Reducer<
 
 export const areMandatoryValuesSetRestricted = (
   formState: FormStateRestricted,
-) => {
+): boolean => {
+  const spec = formState.cr.spec;
+  if (!spec) return false;
   // if the user wants restricted mode, ensure everything is correctly defined
-  if (formState.cr.spec.restricted) {
+  if (spec.restricted) {
     // Check that all mandatory operator configuration fields are set
     if (!formState.ACTIVEMQ_ARTEMIS_MANAGER_CA_SECRET_NAME) {
       return false;
@@ -395,7 +397,7 @@ const applyRestrictedDataPlaneConfig = (formState: FormStateRestricted) => {
     return;
   }
 
-  const existingBrokerProperties = formState.cr.spec.brokerProperties || [];
+  const existingBrokerProperties = formState.cr.spec?.brokerProperties || [];
   const filteredBrokerProperties = existingBrokerProperties.filter(
     (property) => !isRestrictedDataPlaneProperty(property),
   );
@@ -481,6 +483,8 @@ const applyRestrictedDataPlaneConfig = (formState: FormStateRestricted) => {
       );
     }
   }
+
+  if (!formState.cr.spec) return;
 
   if (newBrokerProperties.length > 0) {
     formState.cr.spec.brokerProperties = [
