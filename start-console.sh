@@ -3,10 +3,10 @@
 set -euo pipefail
 
 # Check for a version argument, otherwise default to "latest"
-CONSOLE_TAG=${1:-"latest"}
+CONSOLE_TAG=${1:-"dev-profile"}
 echo "Using OpenShift Console version: $CONSOLE_TAG"
 
-CONSOLE_IMAGE="quay.io/openshift/origin-console:$CONSOLE_TAG"
+CONSOLE_IMAGE="quay.io/tlavocat/origin-console:$CONSOLE_TAG"
 CONSOLE_PORT=${CONSOLE_PORT:=9000}
 CONSOLE_IMAGE_PLATFORM=${CONSOLE_IMAGE_PLATFORM:="linux/amd64"}
 
