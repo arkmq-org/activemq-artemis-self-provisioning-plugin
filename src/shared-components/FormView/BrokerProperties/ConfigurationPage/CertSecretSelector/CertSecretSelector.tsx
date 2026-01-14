@@ -329,9 +329,9 @@ const useCreateSecretOptions = ({
 }: CreateSecretOptionsPropTypes): TypeaheadSelectOption[] => {
   const nonptlsSecrets = certManagerSecrets
     .filter((secret) => {
-      return !secret.metadata.name.endsWith('-ptls');
+      return !!secret.metadata?.name && !secret.metadata.name.endsWith('-ptls');
     })
-    .map((option) => option.metadata.name);
+    .map((option) => option.metadata!.name);
   const filteredCustomOptions = customOptions.filter(
     (option) =>
       !nonptlsSecrets.find((s) => s === option) &&

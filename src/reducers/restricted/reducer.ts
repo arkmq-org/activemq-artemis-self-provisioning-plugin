@@ -45,8 +45,10 @@ export const reducerRestricted: React.Reducer<
 export const areMandatoryValuesSetRestricted = (
   formState: FormStateRestricted,
 ) => {
+  const spec = formState.cr.spec;
+  if (!spec) return;
   // if the user wants restricted mode, ensure everything is correctly defined
-  if (formState.cr.spec.restricted) {
+  if (spec.restricted) {
     // for now, forbid a restricted deployment
     return false;
   }

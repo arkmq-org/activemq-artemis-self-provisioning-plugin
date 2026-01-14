@@ -21,7 +21,9 @@ describe('Restricted reducer tests', () => {
 
   it('should return false for areMandatoryValuesSetRestricted when restricted mode is enabled', () => {
     const initialState = newArtemisCR('namespace') as FormStateRestricted;
-    initialState.cr.spec.restricted = true;
+    const spec = initialState.cr.spec;
+    if (!spec) return;
+    spec.restricted = true;
 
     const result = areMandatoryValuesSetRestricted(initialState);
     expect(result).toBe(false);
@@ -29,7 +31,9 @@ describe('Restricted reducer tests', () => {
 
   it('should return true for areMandatoryValuesSetRestricted when restricted mode is disabled', () => {
     const initialState = newArtemisCR('namespace') as FormStateRestricted;
-    delete initialState.cr.spec.restricted;
+    const spec = initialState.cr.spec;
+    if (!spec) return;
+    delete spec.restricted;
 
     const result = areMandatoryValuesSetRestricted(initialState);
     expect(result).toBe(true);
