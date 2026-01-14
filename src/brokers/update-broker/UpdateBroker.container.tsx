@@ -14,6 +14,7 @@ import {
   newArtemisCR,
 } from '@app/reducers/reducer';
 import { ArtemisReducerOperations712 } from '@app/reducers/7.12/reducer';
+import { ArtemisReducerOperationsRestricted } from '@app/reducers/restricted/reducer';
 import { useNavigate, useParams } from 'react-router-dom-v5-compat';
 
 export const UpdateBrokerPage: FC = () => {
@@ -64,6 +65,25 @@ export const UpdateBrokerPage: FC = () => {
           operation: ArtemisReducerGlobalOperations.setModel,
           payload: { model: broker, isSetByUser: false },
         });
+
+        // If this is a restricted broker, initialize UI-only fields with defaults
+        // These fields are used by the UI to know which secrets to validate
+        if (broker.spec.restricted) {
+          dispatch({
+            operation:
+              ArtemisReducerOperationsRestricted.setACTIVEMQ_ARTEMIS_MANAGER_CA_SECRET_NAME,
+            payload: 'activemq-artemis-manager-ca',
+          });
+          dispatch({
+            operation:
+              ArtemisReducerOperationsRestricted.setBASE_PROMETHEUS_CERT_SECRET_NAME,
+            payload: 'prometheus-cert',
+          });
+          dispatch({
+            operation: ArtemisReducerOperationsRestricted.setOPERATOR_NAMESPACE,
+            payload: 'default',
+          });
+        }
       })
       .catch((e) => {
         setAlert(e.message);

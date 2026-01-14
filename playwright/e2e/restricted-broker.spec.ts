@@ -184,17 +184,68 @@ test.describe('Restricted Broker End-to-End', () => {
 
     console.log('✅ Broker is ready with 5 OK / 5 status');
 
-    // Step 6: Delete the broker (from the list page)
-    console.log(`Looking for broker row: ${brokerName}`);
+    // Step 6: Edit the broker to verify operator config fields are populated
+    console.log('Testing broker edit page...');
     const brokerRow = page.locator(`tr:has-text("${brokerName}")`);
     await expect(brokerRow).toBeVisible({ timeout: 10000 });
 
     // Wait a moment for any UI updates to settle
     await page.waitForTimeout(2000);
 
+    // Find the kebab menu (actions menu) in the broker row
+    console.log('Opening kebab menu for edit...');
+    const kebabMenuForEdit = brokerRow.locator('button').last();
+    await kebabMenuForEdit.scrollIntoViewIfNeeded();
+    await kebabMenuForEdit.click({ timeout: 10000 });
+
+    // Wait for dropdown menu to appear
+    await page.waitForTimeout(1000);
+
+    console.log('Clicking Edit broker option...');
+    const editOption = page
+      .locator('a, button')
+      .filter({ hasText: /^Edit broker$/i });
+    await expect(editOption).toBeVisible({ timeout: 10000 });
+    await editOption.click();
+
+    // Wait for edit form to load
+    await page.waitForLoadState('domcontentloaded');
+    await expect(
+      page.locator('label:has-text("Restricted mode")').first(),
+    ).toBeVisible({ timeout: 10000 });
+
+    // Verify that the Apply button is enabled
+    // If operator config fields are not populated, form validation would fail
+    // and the Apply button would be disabled
+    console.log('Verifying Apply button is enabled (form is valid)...');
+    const applyButton = page
+      .locator('button')
+      .filter({ hasText: /^Apply$/i })
+      .first();
+    await expect(applyButton).toBeEnabled({ timeout: 10000 });
+
+    console.log(
+      '✅ Apply button is enabled - operator config fields are properly populated!',
+    );
+
+    // Navigate back to broker list
+    console.log('Returning to broker list...');
+    await page.goto(`/k8s/ns/${testNamespace}/brokers`, {
+      waitUntil: 'load',
+    });
+    await page.waitForLoadState('domcontentloaded');
+
+    // Step 7: Delete the broker (from the list page)
+    console.log(`Looking for broker row for deletion: ${brokerName}`);
+    const brokerRowForDelete = page.locator(`tr:has-text("${brokerName}")`);
+    await expect(brokerRowForDelete).toBeVisible({ timeout: 10000 });
+
+    // Wait a moment for any UI updates to settle
+    await page.waitForTimeout(2000);
+
     // Find the kebab menu - it's the last button in the row (actions menu)
-    console.log('Clicking kebab menu...');
-    const kebabMenu = brokerRow.locator('button').last();
+    console.log('Clicking kebab menu for deletion...');
+    const kebabMenu = brokerRowForDelete.locator('button').last();
     await kebabMenu.scrollIntoViewIfNeeded();
     await kebabMenu.click({ timeout: 10000 });
 
@@ -219,7 +270,7 @@ test.describe('Restricted Broker End-to-End', () => {
 
     // Verify the broker is no longer in the list
     console.log('Waiting for broker to be deleted...');
-    await expect(brokerRow).not.toBeVisible({
+    await expect(brokerRowForDelete).not.toBeVisible({
       timeout: 60000,
     });
 
