@@ -5,9 +5,37 @@ import {
   areMandatoryValuesSetRestricted,
   MandatorySecretsToWatchFor,
 } from './reducer';
-import { FormStateRestricted } from './import-types';
+import { FormStateRestricted, RestrictedDataPlaneState } from './import-types';
 
 describe('Restricted reducer tests', () => {
+  const getValidRestrictedDataPlane = (): RestrictedDataPlaneState => ({
+    securedAcceptor: {
+      enabled: true,
+      port: '61617',
+      securityDomain: 'activemq',
+    },
+    address: {
+      name: 'APP_JOBS',
+      routingType: 'ANYCAST',
+    },
+    role: {
+      name: 'messaging',
+      permissions: {
+        browse: true,
+        consume: true,
+        send: true,
+        view: true,
+      },
+    },
+    clientCN: 'messaging-client',
+    consent: true,
+    jaasSecretStatus: {
+      status: 'ready',
+    },
+    amqpsSecretStatus: {
+      status: 'ready',
+    },
+  });
   it('should throw an error when setIsRestrited is called directly on restricted reducer', () => {
     const initialState = newArtemisCR('namespace') as FormStateRestricted;
     expect(() => {
@@ -165,6 +193,29 @@ describe('Restricted reducer tests', () => {
     initialState.ACTIVEMQ_ARTEMIS_MANAGER_CA_SECRET_NAME =
       'activemq-artemis-manager-ca';
     initialState.BASE_PROMETHEUS_CERT_SECRET_NAME = 'prometheus-cert';
+    initialState.restrictedDataPlane = getValidRestrictedDataPlane();
+    initialState.secretValidationResults = {
+      [MandatorySecretsToWatchFor.OPERATOR_CA]: 'activemq-artemis-manager-ca',
+      [MandatorySecretsToWatchFor.BROKER_CERT]: 'my-broker-broker-cert',
+    };
+
+    const result = areMandatoryValuesSetRestricted(initialState);
+    expect(result).toBe(true);
+  });
+
+  it('should return true when data plane is disabled but control plane is valid', () => {
+    const initialState = newArtemisCR('namespace') as FormStateRestricted;
+    initialState.cr.spec.restricted = true;
+    initialState.ACTIVEMQ_ARTEMIS_MANAGER_CA_SECRET_NAME =
+      'activemq-artemis-manager-ca';
+    initialState.BASE_PROMETHEUS_CERT_SECRET_NAME = 'prometheus-cert';
+    initialState.restrictedDataPlane = {
+      ...getValidRestrictedDataPlane(),
+      securedAcceptor: {
+        ...getValidRestrictedDataPlane().securedAcceptor,
+        enabled: false,
+      },
+    };
     initialState.secretValidationResults = {
       [MandatorySecretsToWatchFor.OPERATOR_CA]: 'activemq-artemis-manager-ca',
       [MandatorySecretsToWatchFor.BROKER_CERT]: 'my-broker-broker-cert',
@@ -180,6 +231,7 @@ describe('Restricted reducer tests', () => {
     initialState.ACTIVEMQ_ARTEMIS_MANAGER_CA_SECRET_NAME =
       'activemq-artemis-manager-ca';
     initialState.BASE_PROMETHEUS_CERT_SECRET_NAME = 'prometheus-cert';
+    initialState.restrictedDataPlane = getValidRestrictedDataPlane();
     initialState.secretValidationResults = {
       [MandatorySecretsToWatchFor.OPERATOR_CA]: 'activemq-artemis-manager-ca',
       // BROKER_CERT is missing
@@ -195,6 +247,7 @@ describe('Restricted reducer tests', () => {
     initialState.ACTIVEMQ_ARTEMIS_MANAGER_CA_SECRET_NAME =
       'activemq-artemis-manager-ca';
     initialState.BASE_PROMETHEUS_CERT_SECRET_NAME = 'prometheus-cert';
+    initialState.restrictedDataPlane = getValidRestrictedDataPlane();
     initialState.secretValidationResults = {
       [MandatorySecretsToWatchFor.OPERATOR_CA]: '', // Empty string = not found
       [MandatorySecretsToWatchFor.BROKER_CERT]: 'broker-cert',

@@ -15,6 +15,7 @@ import {
   ArtemisReducerActionsRestricted,
   ArtemisReducerOperationsRestricted,
   areMandatoryValuesSetRestricted,
+  getRestrictedDataPlaneDefaults,
   reducerRestricted,
 } from './restricted/reducer';
 import { FormState712 } from './7.12/import-types';
@@ -150,6 +151,8 @@ export const artemisCrReducer: React.Reducer<FormState, ReducerActions> = (
         (formState as FormStateRestricted).BASE_PROMETHEUS_CERT_SECRET_NAME =
           'prometheus-cert';
         (formState as FormStateRestricted).OPERATOR_NAMESPACE = 'default';
+        (formState as FormStateRestricted).restrictedDataPlane =
+          getRestrictedDataPlaneDefaults();
       }
       formState.cr.spec.restricted = action.payload;
       return formState;

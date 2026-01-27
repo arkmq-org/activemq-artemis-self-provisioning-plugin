@@ -83,6 +83,10 @@ export const UpdateBrokerPage: FC = () => {
             operation: ArtemisReducerOperationsRestricted.setOPERATOR_NAMESPACE,
             payload: 'default',
           });
+          dispatch({
+            operation:
+              ArtemisReducerOperationsRestricted.initRestrictedDataPlaneState,
+          });
         }
       })
       .catch((e) => {
