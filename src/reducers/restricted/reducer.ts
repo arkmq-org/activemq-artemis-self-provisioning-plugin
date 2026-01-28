@@ -31,6 +31,7 @@ export enum ArtemisReducerOperationsRestricted {
   secretsWatchingResult,
   // Initialize UI-only restricted data plane state with defaults.
   initRestrictedDataPlaneState,
+  setRestrictedMonitoringEnabled,
   setRestrictedDataPlaneAcceptorEnabled,
   setRestrictedDataPlaneAcceptorPort,
   setRestrictedDataPlaneAcceptorSecurityDomain,
@@ -83,6 +84,11 @@ interface SecretsWatchingResult extends ReducerActionBase {
 
 interface InitRestrictedDataPlaneState extends ReducerActionBase {
   operation: ArtemisReducerOperationsRestricted.initRestrictedDataPlaneState;
+}
+
+interface SetRestrictedMonitoringEnabled extends ReducerActionBase {
+  operation: ArtemisReducerOperationsRestricted.setRestrictedMonitoringEnabled;
+  payload: boolean;
 }
 
 interface SetRestrictedDataPlaneAcceptorEnabled extends ReducerActionBase {
@@ -159,6 +165,7 @@ export type ArtemisReducerActionsRestricted =
   | SetOPERATOR_NAMESPACE
   | SecretsWatchingResult
   | InitRestrictedDataPlaneState
+  | SetRestrictedMonitoringEnabled
   | SetRestrictedDataPlaneAcceptorEnabled
   | SetRestrictedDataPlaneAcceptorPort
   | SetRestrictedDataPlaneAcceptorSecurityDomain
@@ -214,6 +221,9 @@ export const reducerRestricted: React.Reducer<
       return formState;
     case ArtemisReducerOperationsRestricted.initRestrictedDataPlaneState:
       formState.restrictedDataPlane = getRestrictedDataPlaneDefaults();
+      return formState;
+    case ArtemisReducerOperationsRestricted.setRestrictedMonitoringEnabled:
+      formState.restrictedMonitoringEnabled = action.payload;
       return formState;
     case ArtemisReducerOperationsRestricted.setRestrictedDataPlaneAcceptorEnabled:
       ensureRestrictedDataPlane(formState);
@@ -526,6 +536,7 @@ const updateExtraMountSecrets = (
     };
   } else if (Object.keys(existingExtraMounts).length > 0) {
     const { secrets: _secrets, ...rest } = existingExtraMounts;
+    void _secrets;
     if (Object.keys(rest).length > 0) {
       deploymentPlan.extraMounts = rest;
     } else {

@@ -1,6 +1,7 @@
 import { FunctionComponent } from 'react';
 import {
   EmptyState,
+  EmptyStateBody,
   EmptyStateIcon,
   EmptyStateVariant,
   EmptyStateHeader,
@@ -22,6 +23,11 @@ export const EmptyStateNoMetricsData: FunctionComponent = () => {
         }
         headingLevel="h3"
       />
+      <EmptyStateBody>
+        {t(
+          'Waiting for the first scrape. This can take up to a minute after enabling monitoring.',
+        )}
+      </EmptyStateBody>
     </EmptyState>
   );
 };

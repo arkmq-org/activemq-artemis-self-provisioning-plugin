@@ -40,6 +40,7 @@ export interface FormStateRestricted extends FormState713 {
   BASE_PROMETHEUS_CERT_SECRET_NAME?: string;
   OPERATOR_NAMESPACE?: string;
   restrictedDataPlane?: RestrictedDataPlaneState;
+  restrictedMonitoringEnabled?: boolean;
   // Map of validation flag to found secret name
   // Empty string or undefined = not found
   secretValidationResults?: Record<string, string>;

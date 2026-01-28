@@ -5,6 +5,8 @@ import {
   CERT_ISSUER_VERSION,
   CERT_MANAGER_APIGROUP,
   CERT_VERSION,
+  MONITORING_APIGROUP,
+  MONITORING_VERSION,
   SECRET_APIGROUP,
   SECRET_VERSION,
   TRUST_MANAGER_APIGROUP,
@@ -139,6 +141,36 @@ export const ServiceModel: K8sModel = {
   id: 'service',
   abbr: 'SVC',
   namespaced: true,
+  crd: false,
+};
+
+export const ServiceMonitorModel: K8sModel = {
+  apiGroup: MONITORING_APIGROUP,
+  apiVersion: MONITORING_VERSION,
+  kind: 'ServiceMonitor',
+  label: 'ServiceMonitor',
+  labelKey: 'ServiceMonitor',
+  labelPlural: 'ServiceMonitors',
+  labelPluralKey: 'ServiceMonitors',
+  plural: 'servicemonitors',
+  id: 'servicemonitor',
+  abbr: 'SM',
+  namespaced: true,
+  crd: true,
+};
+
+export const NamespaceModel: K8sModel = {
+  apiGroup: 'core',
+  apiVersion: 'v1',
+  kind: 'Namespace',
+  label: 'Namespace',
+  labelKey: 'Namespace',
+  labelPlural: 'Namespaces',
+  labelPluralKey: 'Namespaces',
+  plural: 'namespaces',
+  id: 'namespace',
+  abbr: 'NS',
+  namespaced: false,
   crd: false,
 };
 

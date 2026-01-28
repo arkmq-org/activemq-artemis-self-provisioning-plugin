@@ -160,6 +160,9 @@ export const QueryBrowser: FC<QueryBrowserProps> = ({
                 label = `${datum?.style?.labels?.name}: ${yTickFormat(
                   datum.y,
                 )} at ${time}`;
+              } else {
+                const seriesName = datum?.style?.labels?.name ?? '';
+                label = `${seriesName}: ${yTickFormat(datum.y)} at ${time}`;
               }
               return label;
             };

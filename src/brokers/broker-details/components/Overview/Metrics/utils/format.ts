@@ -23,7 +23,7 @@ const formatValue = (v: number): string =>
   (v < 0 ? '-' : '') + formatPositiveValue(Math.abs(v));
 
 export const valueFormatter = (units: string): ((v: number) => string) =>
-  ['ms', 's', 'bytes', 'Bps', 'pps', 'm'].includes(units)
+  ['ms', 's', 'bytes', 'Bps', 'pps', 'mps', 'm'].includes(units)
     ? (v: number) => formatNumber(String(v), undefined, units)
     : formatValue;
 
@@ -49,6 +49,7 @@ export const formatNumber = (
     case 'Bps':
       return humanizeDecimalBytesPerSec(value).string;
     case 'pps':
+    case 'mps':
       return humanizePacketsPerSec(value).string;
     case 'ms':
       return humanizeSeconds(value, 'ms').string;

@@ -55,7 +55,7 @@ const types: TypesMap = {
     divisor: 1000,
   },
   packetsPerSec: {
-    units: ['pps', 'kpps'],
+    units: ['mps', 'kmps'],
     space: true,
     divisor: 1000,
   },

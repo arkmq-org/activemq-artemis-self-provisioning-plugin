@@ -48,12 +48,14 @@ export enum MetricsType {
   AllMetrics = 'all',
   MemoryUsage = 'memory',
   CPUUsage = 'cpu',
+  BrokerMetrics = 'broker',
 }
 
 export const metricsOptions = [
   MetricsType.AllMetrics,
   MetricsType.MemoryUsage,
   MetricsType.CPUUsage,
+  MetricsType.BrokerMetrics,
 ] as const;
 
 export const pollTimeOptions = [

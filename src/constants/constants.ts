@@ -10,6 +10,9 @@ export const TRUST_MANAGER_VERSION = 'v1alpha1';
 export const SECRET_APIGROUP = 'core';
 export const SECRET_VERSION = 'v1';
 
+export const MONITORING_APIGROUP = 'monitoring.coreos.com';
+export const MONITORING_VERSION = 'v1';
+
 export const chartHeight = 400;
 export const chartPadding = {
   bottom: 110, // Adjusted to accomodate legend

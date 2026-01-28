@@ -2,6 +2,9 @@ import { FC, useReducer } from 'react';
 import { CardBrokerMemoryUsageMetricsContainer } from './components/CardBrokerMemoryUsageMetrics/CardBrokerMemoryUsageMetrics.container';
 import { MetricsActions } from './components/MetricsActions/MetricsActions';
 import { CardBrokerCPUUsageMetricsContainer } from './components/CardBrokerCPUUsageMetrics/CardBrokerCPUUsageMetrics.container';
+import { CardBrokerPendingMessagesMetricsContainer } from './components/CardBrokerPendingMessagesMetrics/CardBrokerPendingMessagesMetrics.container';
+import { CardBrokerTotalProducedMetricsContainer } from './components/CardBrokerTotalProducedMetrics/CardBrokerTotalProducedMetrics.container';
+import { CardBrokerThroughputMetricsContainer } from './components/CardBrokerThroughputMetrics/CardBrokerThroughputMetrics.container';
 import { MetricsType, MetricsState, MetricsAction } from './utils/types';
 import { MetricsLayout } from './components/MetricsLayout/MetricsLayout';
 
@@ -44,6 +47,13 @@ export const Metrics: FC<{ name: string; namespace: string; size: number }> = ({
         <CardBrokerMemoryUsageMetricsContainer state={state} />
       }
       metricsCPUUsage={<CardBrokerCPUUsageMetricsContainer state={state} />}
+      metricsPendingMessages={
+        <CardBrokerPendingMessagesMetricsContainer state={state} />
+      }
+      metricsTotalProduced={
+        <CardBrokerTotalProducedMetricsContainer state={state} />
+      }
+      metricsThroughput={<CardBrokerThroughputMetricsContainer state={state} />}
       metricsActions={<MetricsActions state={state} dispatch={dispatch} />}
     />
   );

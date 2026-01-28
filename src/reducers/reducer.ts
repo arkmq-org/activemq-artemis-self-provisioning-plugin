@@ -153,6 +153,7 @@ export const artemisCrReducer: React.Reducer<FormState, ReducerActions> = (
         (formState as FormStateRestricted).OPERATOR_NAMESPACE = 'default';
         (formState as FormStateRestricted).restrictedDataPlane =
           getRestrictedDataPlaneDefaults();
+        (formState as FormStateRestricted).restrictedMonitoringEnabled = false;
       }
       formState.cr.spec.restricted = action.payload;
       return formState;

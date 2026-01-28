@@ -53,7 +53,9 @@ export const MetricsActions: FC<MetricsActionProps> = ({ state, dispatch }) => {
           ? t('All Metrics')
           : metric === MetricsType.MemoryUsage
           ? t('Memory Usage Metrics')
-          : t('CPU Usage Metrics'),
+          : metric === MetricsType.CPUUsage
+          ? t('CPU Usage Metrics')
+          : t('Broker Metrics'),
       isDisabled: false,
     }));
 

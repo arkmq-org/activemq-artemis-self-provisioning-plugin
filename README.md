@@ -10,6 +10,7 @@ This project is a ActiveMQ Artemis Self Provisioning Plugin to the Administrator
   - [Installing the cert-manager operator](#installing-the-cert-manager-operator)
   - [Installing trust-manager](#installing-trust-manager)
   - [Setting up Chain of Trust](#setting-up-chain-of-trust)
+  - [Metrics (User Workload Monitoring)](#metrics-user-workload-monitoring)
   - [Running the plugin](#running-the-plugin)
   - [Trusting Self-Signed Certificates](#trusting-self-signed-certificates-for-websocket-hot-reloading)
 - [PKI Setup and Cleanup Scripts](#pki-setup-and-cleanup-scripts)
@@ -119,6 +120,30 @@ yarn chain-of-trust setup
 ```
 
 For detailed options, cleanup procedures, and manual commands, see the [PKI Setup and Cleanup Scripts](#pki-setup-and-cleanup-scripts) section.
+
+### Metrics (User Workload Monitoring)
+
+Broker metrics in user namespaces require OpenShift user workload monitoring.
+Enable it with the following ConfigMap:
+
+```bash
+cat <<'EOF' | kubectl apply -f -
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-monitoring-config
+  namespace: openshift-monitoring
+data:
+  config.yaml: |
+    enableUserWorkload: true
+EOF
+```
+
+Verify:
+
+```bash
+kubectl get pods -n openshift-user-workload-monitoring
+```
 
 ### Running the plugin
 

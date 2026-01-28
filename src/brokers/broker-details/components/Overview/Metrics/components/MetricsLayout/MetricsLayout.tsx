@@ -6,6 +6,9 @@ import { useTranslation } from '@app/i18n/i18n';
 export type MetricsLayoutProps = {
   metricsMemoryUsage?: ReactElement;
   metricsCPUUsage?: ReactElement;
+  metricsPendingMessages?: ReactElement;
+  metricsTotalProduced?: ReactElement;
+  metricsThroughput?: ReactElement;
   metricsActions: ReactElement;
   metricsType: MetricsType;
 };
@@ -13,6 +16,9 @@ export type MetricsLayoutProps = {
 export const MetricsLayout: FC<MetricsLayoutProps> = ({
   metricsMemoryUsage,
   metricsCPUUsage,
+  metricsPendingMessages,
+  metricsTotalProduced,
+  metricsThroughput,
   metricsActions,
   metricsType,
 }) => {
@@ -24,6 +30,9 @@ export const MetricsLayout: FC<MetricsLayoutProps> = ({
         <>
           <GridItem sm={6}>{metricsMemoryUsage}</GridItem>
           <GridItem sm={6}>{metricsCPUUsage}</GridItem>
+          <GridItem sm={6}>{metricsPendingMessages}</GridItem>
+          <GridItem sm={6}>{metricsTotalProduced}</GridItem>
+          <GridItem sm={6}>{metricsThroughput}</GridItem>
         </>
       );
     }
@@ -34,6 +43,16 @@ export const MetricsLayout: FC<MetricsLayoutProps> = ({
 
     if (metricsType === MetricsType.CPUUsage) {
       return <GridItem>{metricsCPUUsage}</GridItem>;
+    }
+
+    if (metricsType === MetricsType.BrokerMetrics) {
+      return (
+        <>
+          <GridItem sm={6}>{metricsPendingMessages}</GridItem>
+          <GridItem sm={6}>{metricsTotalProduced}</GridItem>
+          <GridItem sm={6}>{metricsThroughput}</GridItem>
+        </>
+      );
     }
 
     return null;
