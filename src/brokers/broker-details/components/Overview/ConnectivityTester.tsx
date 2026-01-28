@@ -612,7 +612,7 @@ export const ConnectivityTester: FC<ConnectivityTesterProps> = ({ cr }) => {
       name: t('Required secrets'),
       footer: { isNextDisabled: !hasClientCert },
       component: (
-        <Form>
+        <Form data-test="connectivity-required-secrets-step">
           <FormSection title={t('PEMCFG')}>
             {existingPemcfgSecret && pemcfgStatus?.status !== 'ready' && (
               <Alert
@@ -715,6 +715,7 @@ export const ConnectivityTester: FC<ConnectivityTesterProps> = ({ cr }) => {
               isDisabled={
                 !selectedIssuer || clientCertStatus.status === 'working'
               }
+              data-test="connectivity-generate-client-cert"
             >
               {clientCertStatus.status === 'working' && <Spinner size="sm" />}{' '}
               {t('Generate client certificate')}
@@ -727,7 +728,7 @@ export const ConnectivityTester: FC<ConnectivityTesterProps> = ({ cr }) => {
       name: t('Broker endpoint'),
       isDisabled: !hasClientCert,
       component: (
-        <Form>
+        <Form data-test="connectivity-broker-endpoint-step">
           <FormGroup label={t('Broker endpoint')} isRequired>
             <TextInput
               value={brokerEndpoint}
@@ -761,8 +762,8 @@ export const ConnectivityTester: FC<ConnectivityTesterProps> = ({ cr }) => {
       name: t('Run jobs'),
       isDisabled: !hasClientCert,
       component: (
-        <Form>
-          <FormSection title={t('Producer')}>
+        <Form data-test="connectivity-run-jobs-step">
+          <FormSection title={t('Producer')} data-test="connectivity-producer">
             <CodeBlock>
               <CodeBlockCode>{producerCommand}</CodeBlockCode>
             </CodeBlock>
@@ -799,12 +800,13 @@ export const ConnectivityTester: FC<ConnectivityTesterProps> = ({ cr }) => {
               variant={ButtonVariant.primary}
               onClick={handleRunProducer}
               isDisabled={producerStatus.status === 'working'}
+              data-test="connectivity-run-producer"
             >
               {producerStatus.status === 'working' && <Spinner size="sm" />}{' '}
               {t('Run producer job')}
             </Button>
           </FormSection>
-          <FormSection title={t('Consumer')}>
+          <FormSection title={t('Consumer')} data-test="connectivity-consumer">
             <CodeBlock>
               <CodeBlockCode>{consumerCommand}</CodeBlockCode>
             </CodeBlock>
@@ -841,6 +843,7 @@ export const ConnectivityTester: FC<ConnectivityTesterProps> = ({ cr }) => {
               variant={ButtonVariant.primary}
               onClick={handleRunConsumer}
               isDisabled={consumerStatus.status === 'working'}
+              data-test="connectivity-run-consumer"
             >
               {consumerStatus.status === 'working' && <Spinner size="sm" />}{' '}
               {t('Run consumer job')}
@@ -890,6 +893,7 @@ export const ConnectivityTester: FC<ConnectivityTesterProps> = ({ cr }) => {
                 <Button
                   variant={ButtonVariant.primary}
                   onClick={() => setIsOpen(true)}
+                  data-test="open-connectivity-tester"
                 >
                   {t('Open connectivity tester')}
                 </Button>
@@ -904,8 +908,13 @@ export const ConnectivityTester: FC<ConnectivityTesterProps> = ({ cr }) => {
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         hasNoBodyWrapper
+        data-test="connectivity-tester-modal"
       >
-        <Wizard onClose={() => setIsOpen(false)} isVisitRequired>
+        <Wizard
+          onClose={() => setIsOpen(false)}
+          isVisitRequired
+          data-test="connectivity-tester-wizard"
+        >
           {wizardSteps.map((step, index) => (
             <WizardStep
               key={step.name}

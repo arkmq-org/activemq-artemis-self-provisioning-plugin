@@ -155,7 +155,38 @@ test.describe('Restricted Broker End-to-End', () => {
       expect(brokerCertValue).toBe(`${brokerName}-broker-cert`);
     }).toPass({ timeout: 30000 });
 
-    // Step 4: Create the broker
+    // Step 4: Enable data plane configuration
+    const dataPlaneTab = page
+      .locator('button, a')
+      .filter({ hasText: /^Data plane$/i });
+    await expect(dataPlaneTab).toBeVisible({ timeout: 10000 });
+    await dataPlaneTab.click();
+
+    // Enable secured acceptor
+    const acceptorSwitch = page.locator('input#restricted-acceptor-enabled');
+    await expect(acceptorSwitch).toBeVisible({ timeout: 10000 });
+    const acceptorLabel = page.locator(
+      'label[for="restricted-acceptor-enabled"]',
+    );
+    await expect(acceptorLabel).toBeVisible({ timeout: 10000 });
+    await acceptorLabel.click();
+    await expect(acceptorSwitch).toBeChecked({ timeout: 10000 });
+
+    // Acknowledge JAAS secret management warning
+    const consentCheckbox = page.locator('input#restricted-jaas-consent');
+    await expect(consentCheckbox).toBeVisible({ timeout: 10000 });
+    await consentCheckbox.scrollIntoViewIfNeeded();
+    await consentCheckbox.check();
+
+    // Wait for data plane secrets to be ready
+    await expect(page.locator('text=amqps-pem secret is ready.')).toBeVisible({
+      timeout: 60000,
+    });
+    await expect(page.locator('text=JAAS BP secret is ready.')).toBeVisible({
+      timeout: 60000,
+    });
+
+    // Step 5: Create the broker
     const createButton = page
       .locator('button')
       .filter({ hasText: /^Create$/i })
@@ -175,7 +206,7 @@ test.describe('Restricted Broker End-to-End', () => {
     // Wait a moment for the broker to appear in the list
     await page.waitForTimeout(2000);
 
-    // Step 5: Wait for broker to be ready (stay on the list page)
+    // Step 6: Wait for broker to be ready (stay on the list page)
     // The broker should show "5 ok / 5" in the Conditions column
     // Brokers can take 3-5 minutes to fully start up
     await expect(page.locator('text=/5\\s+ok\\s*\\/\\s*5/i')).toBeVisible({
@@ -184,49 +215,140 @@ test.describe('Restricted Broker End-to-End', () => {
 
     console.log('✅ Broker is ready with 5 OK / 5 status');
 
-    // Step 6: Edit the broker to verify operator config fields are populated
-    console.log('Testing broker edit page...');
-    const brokerRow = page.locator(`tr:has-text("${brokerName}")`);
-    await expect(brokerRow).toBeVisible({ timeout: 10000 });
-
-    // Wait a moment for any UI updates to settle
-    await page.waitForTimeout(2000);
-
-    // Find the kebab menu (actions menu) in the broker row
-    console.log('Opening kebab menu for edit...');
-    const kebabMenuForEdit = brokerRow.locator('button').last();
-    await kebabMenuForEdit.scrollIntoViewIfNeeded();
-    await kebabMenuForEdit.click({ timeout: 10000 });
-
-    // Wait for dropdown menu to appear
-    await page.waitForTimeout(1000);
-
-    console.log('Clicking Edit broker option...');
-    const editOption = page
-      .locator('a, button')
-      .filter({ hasText: /^Edit broker$/i });
-    await expect(editOption).toBeVisible({ timeout: 10000 });
-    await editOption.click();
-
-    // Wait for edit form to load
-    await page.waitForLoadState('domcontentloaded');
-    await expect(
-      page.locator('label:has-text("Restricted mode")').first(),
-    ).toBeVisible({ timeout: 10000 });
-
-    // Verify that the Apply button is enabled
-    // If operator config fields are not populated, form validation would fail
-    // and the Apply button would be disabled
-    console.log('Verifying Apply button is enabled (form is valid)...');
-    const applyButton = page
-      .locator('button')
-      .filter({ hasText: /^Apply$/i })
+    // Step 7: Go to broker details page
+    console.log('Navigating to broker details...');
+    const brokerLink = page
+      .locator('a')
+      .filter({ hasText: brokerName })
       .first();
-    await expect(applyButton).toBeEnabled({ timeout: 10000 });
+    await expect(brokerLink).toBeVisible({ timeout: 10000 });
+    await brokerLink.click();
+    await page.waitForLoadState('domcontentloaded');
 
-    console.log(
-      '✅ Apply button is enabled - operator config fields are properly populated!',
+    // Step 8: Open connectivity tester and create client cert + pemcfg
+    console.log('Opening connectivity tester...');
+    const openTesterButton = page.locator(
+      '[data-test="open-connectivity-tester"]',
     );
+    await expect(openTesterButton).toBeVisible({ timeout: 20000 });
+    await openTesterButton.click();
+
+    const connectivityModal = page.getByRole('dialog', {
+      name: /Connectivity tester/i,
+    });
+    await expect(connectivityModal).toBeVisible({ timeout: 10000 });
+    const connectivityWizard = connectivityModal.locator(
+      '[data-test="connectivity-tester-wizard"]',
+    );
+    await expect(connectivityWizard).toBeVisible({ timeout: 10000 });
+
+    const issuerInput = connectivityWizard
+      .locator(
+        'input[placeholder="Select issuer"], input[aria-label="Type to filter"]',
+      )
+      .first();
+    await expect(issuerInput).toBeVisible({ timeout: 10000 });
+
+    console.log('Selecting issuer and generating client cert...');
+    await issuerInput.click();
+    await issuerInput.fill('e2e-ca-issuer');
+    await page.waitForTimeout(2000);
+    const issuerOptionConnectivity = connectivityModal
+      .locator('button:has-text("e2e-ca-issuer")')
+      .first();
+    await expect(issuerOptionConnectivity).toBeVisible({ timeout: 10000 });
+    await issuerOptionConnectivity.click();
+
+    const generateClientCertButton = connectivityWizard.locator(
+      '[data-test="connectivity-generate-client-cert"]',
+    );
+    await expect(generateClientCertButton).toBeEnabled({ timeout: 10000 });
+    await generateClientCertButton.click();
+
+    await expect(
+      connectivityModal.locator(
+        'text=messaging-client-cert certificate created.',
+      ),
+    ).toBeVisible({ timeout: 60000 });
+    await expect(
+      connectivityModal.locator('text=cert-pemcfg secret created.'),
+    ).toBeVisible({ timeout: 60000 });
+    console.log('Client cert and pemcfg created.');
+
+    // Step 9: Move to broker endpoint step
+    console.log('Advancing to broker endpoint step...');
+    const nextButton = connectivityWizard.getByRole('button', {
+      name: /^Next$/i,
+    });
+    await expect(nextButton).toBeEnabled({ timeout: 10000 });
+    await nextButton.click();
+
+    // Step 10: Move to run jobs step
+    console.log('Advancing to run jobs step...');
+    await expect(nextButton).toBeEnabled({ timeout: 10000 });
+    await nextButton.click();
+
+    // Run producer job and wait for success
+    const runJobsStepButton = connectivityWizard.getByRole('button', {
+      name: /^Run jobs$/i,
+    });
+    const runJobsRegion = connectivityWizard.locator(
+      '[data-test="connectivity-run-jobs-step"]',
+    );
+    await runJobsStepButton.click();
+    await expect(runJobsRegion).toBeVisible({ timeout: 10000 });
+
+    const producerGroup = runJobsRegion.locator(
+      '[data-test="connectivity-producer"]',
+    );
+    const runProducerButton = runJobsRegion.locator(
+      '[data-test="connectivity-run-producer"]',
+    );
+    await expect(runProducerButton).toBeEnabled({ timeout: 10000 });
+    console.log('Running producer job...');
+    await runProducerButton.click();
+    await expect(producerGroup).toBeVisible({ timeout: 10000 });
+    await expect
+      .poll(async () => await producerGroup.innerText(), { timeout: 300000 })
+      .toContain('Job status: succeeded');
+    console.log('Producer job succeeded.');
+
+    // Run consumer job and wait for success
+    const consumerGroup = runJobsRegion.locator(
+      '[data-test="connectivity-consumer"]',
+    );
+    const runConsumerButton = runJobsRegion.locator(
+      '[data-test="connectivity-run-consumer"]',
+    );
+    await expect(runConsumerButton).toBeEnabled({ timeout: 10000 });
+    console.log('Running consumer job...');
+    await runConsumerButton.click();
+    await expect(consumerGroup).toBeVisible({ timeout: 10000 });
+    await expect
+      .poll(async () => await consumerGroup.innerText(), { timeout: 300000 })
+      .toContain('Job status: succeeded');
+    console.log('Consumer job succeeded.');
+
+    // Step 11: Cleanup resources
+    console.log('Cleaning up connectivity test resources...');
+    await expect(nextButton).toBeEnabled({ timeout: 10000 });
+    await nextButton.click();
+    const cleanupButton = connectivityWizard.getByRole('button', {
+      name: /^Delete test resources$/i,
+    });
+    await expect(cleanupButton).toBeEnabled({ timeout: 10000 });
+    await cleanupButton.click();
+    await expect(
+      connectivityWizard.locator('text=Connectivity test resources deleted.'),
+    ).toBeVisible({ timeout: 60000 });
+    console.log('Connectivity test resources deleted.');
+
+    // Close the wizard
+    console.log('Closing connectivity tester...');
+    const cancelButton = connectivityWizard.getByRole('button', {
+      name: /^Cancel$/i,
+    });
+    await cancelButton.click();
 
     // Navigate back to broker list
     console.log('Returning to broker list...');
@@ -235,7 +357,7 @@ test.describe('Restricted Broker End-to-End', () => {
     });
     await page.waitForLoadState('domcontentloaded');
 
-    // Step 7: Delete the broker (from the list page)
+    // Step 12: Delete the broker (from the list page)
     console.log(`Looking for broker row for deletion: ${brokerName}`);
     const brokerRowForDelete = page.locator(`tr:has-text("${brokerName}")`);
     await expect(brokerRowForDelete).toBeVisible({ timeout: 10000 });
