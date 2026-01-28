@@ -40,6 +40,7 @@ import {
   SecretResource,
 } from '@app/k8s/types';
 import { Metrics } from './Metrics/Metrics';
+import { ConnectivityTester } from './ConnectivityTester';
 import { useTranslation } from '@app/i18n/i18n';
 import { ConditionsContainer } from '@app/brokers/broker-details/components/Overview/Conditions/Conditions.container';
 import { useNavigate, useParams } from 'react-router-dom-v5-compat';
@@ -379,7 +380,11 @@ export const OverviewContainer: FC = () => {
         size={cr.spec?.deploymentPlan?.size}
       />
       <Divider />
-      <ConnectivityHelper cr={cr} />
+      {cr.spec?.restricted ? (
+        <ConnectivityTester cr={cr} />
+      ) : (
+        <ConnectivityHelper cr={cr} />
+      )}
       <ConditionsContainer cr={cr} />
     </PageSection>
   );

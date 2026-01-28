@@ -126,3 +126,33 @@ export const BundleModel: K8sModel = {
   namespaced: false,
   crd: true,
 };
+
+export const ServiceModel: K8sModel = {
+  apiGroup: 'core',
+  apiVersion: 'v1',
+  kind: 'Service',
+  label: 'Service',
+  labelKey: 'Service',
+  labelPlural: 'Services',
+  labelPluralKey: 'Services',
+  plural: 'services',
+  id: 'service',
+  abbr: 'SVC',
+  namespaced: true,
+  crd: false,
+};
+
+export const JobModel: K8sModel = {
+  apiGroup: 'batch',
+  apiVersion: 'v1',
+  kind: 'Job',
+  label: 'Job',
+  labelKey: 'Job',
+  labelPlural: 'Jobs',
+  labelPluralKey: 'Jobs',
+  plural: 'jobs',
+  id: 'job',
+  abbr: 'J',
+  namespaced: true,
+  crd: false,
+};
