@@ -47,20 +47,22 @@ export const RestrictedConfiguration: FC = () => {
     [ConfigEntry.operatorConfiguration]: t('Operator configuration'),
   };
 
+  const namespace = formState.cr.metadata?.namespace;
+  const brokerName = formState.cr.metadata?.name;
+
   // Watch for required secrets - hooks return the found secret name or empty string
   // These are calculated during render, no cascading updates!
   // Note: Trust-manager Bundles automatically create secrets in namespaces, so we just watch for the secret itself
-  const operatorCaSecret = useSecretWatcher(formState.cr.metadata.namespace, [
+  const operatorCaSecret = useSecretWatcher(namespace ?? '', [
     formState.ACTIVEMQ_ARTEMIS_MANAGER_CA_SECRET_NAME,
   ]);
-  const brokerCertSecret = useSecretWatcher(formState.cr.metadata.namespace, [
-    `${formState.cr.metadata.name}-broker-cert`,
+  const brokerCertSecret = useSecretWatcher(namespace ?? '', [
+    `${brokerName ?? ''}-broker-cert`,
     'broker-cert',
   ]);
-  const prometheusCertSecret = useSecretWatcher(
-    formState.cr.metadata.namespace,
-    [formState.BASE_PROMETHEUS_CERT_SECRET_NAME],
-  );
+  const prometheusCertSecret = useSecretWatcher(namespace ?? '', [
+    formState.BASE_PROMETHEUS_CERT_SECRET_NAME,
+  ]);
 
   const [prevOperatorCaSecret, setPrevOperatorCaSecret] =
     useState(operatorCaSecret);
@@ -99,6 +101,10 @@ export const RestrictedConfiguration: FC = () => {
         actualSecretName: prometheusCertSecret,
       },
     });
+  }
+
+  if (!namespace || !brokerName) {
+    return null;
   }
 
   return (

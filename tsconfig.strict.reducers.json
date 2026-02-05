@@ -1,0 +1,12 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+      "strict": true,
+      "noEmit": true
+    },
+    "include": [
+      "src/reducers/**/*.ts",
+      "src/reducers/**/*.tsx"
+    ]
+  }
+  

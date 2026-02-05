@@ -42,7 +42,7 @@ export const PodsContainer: FC = () => {
   };
 
   useEffect(() => {
-    if (loaded && !loadError) {
+    if (loaded && !loadError && name) {
       setLoading(false);
       const filteredPods = filterBrokerPods(pods, name);
       setBrokerPods(filteredPods);

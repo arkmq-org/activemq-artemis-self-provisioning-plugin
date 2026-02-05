@@ -194,7 +194,11 @@ const deleteResource = async (
       json: deleteOptions,
     });
   } catch (error) {
-    const statusCode = error?.code || error?.response?.status;
+    const err = error as {
+      code?: number;
+      response?: { status?: number };
+    } | null;
+    const statusCode = err?.code || err?.response?.status;
     if (statusCode !== 404) {
       throw error;
     }
@@ -203,8 +207,8 @@ const deleteResource = async (
 
 export const ConnectivityTester: FC<ConnectivityTesterProps> = ({ cr }) => {
   const { t } = useTranslation();
-  const brokerName = cr.metadata.name;
-  const namespace = cr.metadata.namespace;
+  const brokerName = cr.metadata?.name;
+  const namespace = cr.metadata?.namespace;
   const jaasSecretName = `${brokerName}-jaas-config-bp`;
   const producerJobName = `${brokerName}-producer`;
   const consumerJobName = `${brokerName}-consumer`;
@@ -295,23 +299,30 @@ export const ConnectivityTester: FC<ConnectivityTesterProps> = ({ cr }) => {
   });
 
   const issuerOptions = useMemo<IssuerOption[]>(() => {
-    const issuerEntries =
-      issuers?.map((issuer) => ({
-        value: `Issuer:${issuer.metadata.name}`,
-        name: issuer.metadata.name,
-        label: `${issuer.metadata.name} (Issuer)`,
-        kind: 'Issuer' as const,
-      })) || [];
-    const clusterIssuerEntries =
-      clusterIssuers?.map((issuer) => ({
-        value: `ClusterIssuer:${issuer.metadata.name}`,
-        name: issuer.metadata.name,
-        label: `${issuer.metadata.name} (ClusterIssuer)`,
-        kind: 'ClusterIssuer' as const,
-      })) || [];
-    return [...issuerEntries, ...clusterIssuerEntries].sort((a, b) =>
-      a.label.localeCompare(b.label),
-    );
+    const issuerEntries: IssuerOption[] = [];
+    for (const issuer of issuers || []) {
+      const name = issuer.metadata?.name;
+      if (name) {
+        issuerEntries.push({
+          value: `Issuer:${name}`,
+          name,
+          label: `${name} (Issuer)`,
+          kind: 'Issuer',
+        });
+      }
+    }
+    for (const issuer of clusterIssuers || []) {
+      const name = issuer.metadata?.name;
+      if (name) {
+        issuerEntries.push({
+          value: `ClusterIssuer:${name}`,
+          name,
+          label: `${name} (ClusterIssuer)`,
+          kind: 'ClusterIssuer',
+        });
+      }
+    }
+    return issuerEntries.sort((a, b) => a.label.localeCompare(b.label));
   }, [clusterIssuers, issuers]);
 
   const [selectedIssuer, setSelectedIssuer] = useState<
@@ -380,6 +391,9 @@ export const ConnectivityTester: FC<ConnectivityTesterProps> = ({ cr }) => {
     : '';
 
   const handleCreateClientCert = async () => {
+    if (!namespace) {
+      return;
+    }
     if (!selectedIssuer) {
       setClientCertStatus({
         status: 'error',
@@ -425,9 +439,10 @@ export const ConnectivityTester: FC<ConnectivityTesterProps> = ({ cr }) => {
         message: t('messaging-client-cert certificate created.'),
       });
     } catch (error) {
+      const err = error as { message?: string } | null;
       setClientCertStatus({
         status: 'error',
-        message: error?.message || t('Failed to create messaging-client-cert.'),
+        message: err?.message || t('Failed to create messaging-client-cert.'),
       });
     }
 
@@ -457,9 +472,10 @@ export const ConnectivityTester: FC<ConnectivityTesterProps> = ({ cr }) => {
         message: t('cert-pemcfg secret created.'),
       });
     } catch (error) {
+      const err = error as { message?: string } | null;
       setPemcfgStatus({
         status: 'error',
-        message: error?.message || t('Failed to create cert-pemcfg secret.'),
+        message: err?.message || t('Failed to create cert-pemcfg secret.'),
       });
     }
   };
@@ -520,6 +536,9 @@ export const ConnectivityTester: FC<ConnectivityTesterProps> = ({ cr }) => {
     command: string,
     setStatus: (s: ActionState) => void,
   ) => {
+    if (!namespace) {
+      return;
+    }
     if (!brokerVersion) {
       setStatus({
         status: 'error',
@@ -541,10 +560,11 @@ export const ConnectivityTester: FC<ConnectivityTesterProps> = ({ cr }) => {
         message: t('{{job}} job started.', { job: name }),
       });
     } catch (error) {
+      const err = error as { message?: string } | null;
       setStatus({
         status: 'error',
         message:
-          error?.message || t('Failed to start {{job}} job.', { job: name }),
+          err?.message || t('Failed to start {{job}} job.', { job: name }),
       });
     }
   };
@@ -574,6 +594,9 @@ export const ConnectivityTester: FC<ConnectivityTesterProps> = ({ cr }) => {
   };
 
   const handleCleanup = async () => {
+    if (!namespace) {
+      return;
+    }
     setCleanupStatus({ status: 'working' });
     try {
       await deleteResource(JobModel, producerJobName, namespace, {
@@ -594,9 +617,10 @@ export const ConnectivityTester: FC<ConnectivityTesterProps> = ({ cr }) => {
         message: t('Connectivity test resources deleted.'),
       });
     } catch (error) {
+      const err = error as { message?: string } | null;
       setCleanupStatus({
         status: 'error',
-        message: error?.message || t('Failed to clean up resources.'),
+        message: err?.message || t('Failed to clean up resources.'),
       });
     }
   };

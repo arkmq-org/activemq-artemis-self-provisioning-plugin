@@ -109,7 +109,7 @@ export const AddBroker: FC<AddBrokerPropTypes> = ({
   }
 
   const { t } = useTranslation();
-  const namespace = formValues.cr.metadata.namespace;
+  const namespace = formValues.cr?.metadata?.namespace;
   const [canCreateBroker, loadingAccessReview] = useAccessReview({
     group: AMQBrokerModel.apiGroup,
     resource: AMQBrokerModel.plural,
@@ -220,7 +220,7 @@ export const AddBroker: FC<AddBrokerPropTypes> = ({
                   if (formValues.hasChanges) {
                     setUserWantsToReload(true);
                   } else {
-                    reloadExisting();
+                    reloadExisting?.();
                   }
                 }}
               >

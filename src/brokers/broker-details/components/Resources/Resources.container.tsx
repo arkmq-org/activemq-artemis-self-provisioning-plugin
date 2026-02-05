@@ -68,6 +68,22 @@ export const ResourcesContainer: FC = () => {
     });
   const [prevStatefulStes, setPrevStatefulSets] = useState(statefulsets);
 
+  // Early return if required params are missing
+  if (!namespace || !name) {
+    return (
+      <EmptyState>
+        <EmptyStateHeader
+          titleText={t('Missing required parameters')}
+          icon={<EmptyStateIcon icon={ErrorCircleOIcon} />}
+          headingLevel="h4"
+        />
+        <EmptyStateBody>
+          {t('Namespace and broker name are required.')}
+        </EmptyStateBody>
+      </EmptyState>
+    );
+  }
+
   // Filter Resources
   const filterBrokerResources = (
     resources: K8sResourceCommon[],

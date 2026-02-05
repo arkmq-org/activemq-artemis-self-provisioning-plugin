@@ -1,6 +1,13 @@
 import { FC, useReducer, useState } from 'react';
 import { k8sCreate } from '@openshift-console/dynamic-plugin-sdk';
-import { Alert, AlertVariant } from '@patternfly/react-core';
+import {
+  Alert,
+  AlertVariant,
+  EmptyState,
+  EmptyStateBody,
+  EmptyStateHeader,
+  EmptyStateIcon,
+} from '@patternfly/react-core';
 import { AddBroker } from './AddBroker.component';
 import { AMQBrokerModel } from '@app/k8s/models';
 import { BrokerCR } from '@app/k8s/types';
@@ -15,19 +22,40 @@ import { FormState712 } from '@app/reducers/7.12/import-types';
 import { useNavigate, useParams } from 'react-router-dom-v5-compat';
 import { useGetIngressDomain } from '@app/k8s/customHooks';
 import { ArtemisReducerOperationsRestricted } from '@app/reducers/restricted/reducer';
+import { ErrorCircleOIcon } from '@patternfly/react-icons';
+import { useTranslation } from '@app/i18n/i18n';
 
 export interface AddBrokerProps {
   initialValues: FormState712;
 }
 
 export const AddBrokerPage: FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { ns: namespace } = useParams<{ ns?: string }>();
-
-  const initialValues = newArtemisCR(namespace);
+  const initialValues = newArtemisCR(namespace ?? '');
 
   //states
   const [brokerModel, dispatch] = useReducer(artemisCrReducer, initialValues);
+  const [_hasBrokerUpdated, setHasBrokerUpdated] = useState(false);
+  const [alert, setAlert] = useState('');
+  const [prevNamespace, setPrevNamespace] = useState(namespace);
+  const { clusterDomain, isLoading } = useGetIngressDomain();
+  const [isDomainSet, setIsDomainSet] = useState(false);
+
+  // Early return after all hooks
+  if (!namespace) {
+    return (
+      <EmptyState>
+        <EmptyStateHeader
+          titleText={t('Missing required parameters')}
+          icon={<EmptyStateIcon icon={ErrorCircleOIcon} />}
+          headingLevel="h4"
+        />
+        <EmptyStateBody>{t('Namespace is required.')}</EmptyStateBody>
+      </EmptyState>
+    );
+  }
 
   const params = new URLSearchParams(location.search);
   const returnUrl = params.get('returnUrl');
@@ -39,9 +67,6 @@ export const AddBrokerPage: FC = () => {
       navigate(-1);
     }
   };
-
-  const [_hasBrokerUpdated, setHasBrokerUpdated] = useState(false);
-  const [alert, setAlert] = useState('');
 
   const k8sCreateBroker = (content: BrokerCR) => {
     k8sCreate({ model: AMQBrokerModel, data: content })
@@ -60,7 +85,6 @@ export const AddBrokerPage: FC = () => {
       });
   };
 
-  const [prevNamespace, setPrevNamespace] = useState(namespace);
   if (prevNamespace !== namespace) {
     dispatch({
       operation: ArtemisReducerOperations712.setNamespace,
@@ -69,8 +93,6 @@ export const AddBrokerPage: FC = () => {
     setPrevNamespace(namespace);
   }
 
-  const { clusterDomain, isLoading } = useGetIngressDomain();
-  const [isDomainSet, setIsDomainSet] = useState(false);
   if (!isLoading && !isDomainSet) {
     dispatch({
       operation: ArtemisReducerOperations712.setIngressDomain,

@@ -12,7 +12,23 @@ const YamlContainer: FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { ns: namespace, name } = useParams<{ ns?: string; name?: string }>();
-  const { brokerCr, isLoading, error } = useGetBrokerCR(name, namespace);
+  const { brokerCr, isLoading, error } = useGetBrokerCR(
+    name ?? '',
+    namespace ?? '',
+  );
+
+  if (!name || !namespace) {
+    return (
+      <Alert
+        variant={AlertVariant.danger}
+        isInline
+        title={t('Missing required parameters')}
+      >
+        {t('namespace and broker name are required.')}
+      </Alert>
+    );
+  }
+
   if (isLoading) {
     return <Loading />;
   }
