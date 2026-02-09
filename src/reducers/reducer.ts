@@ -28,9 +28,30 @@ export enum EditorType {
   YAML = 'yaml',
 }
 
-export const BrokerCreationFormState = createContext<FormState>({});
+const initialFormState: FormState = {
+  editorType: EditorType.BROKER,
+  cr: {
+    apiVersion: 'broker.amq.io/v1beta1',
+    kind: 'ActiveMQArtemis',
+    metadata: {
+      name: '',
+      namespace: '',
+    },
+    spec: {},
+  },
+  hasChanges: false,
+  yamlHasUnsavedChanges: false,
+  brokerVersion: '7.12',
+};
+
+export const BrokerCreationFormState =
+  createContext<FormState>(initialFormState);
+const initialFormDispatch: React.Dispatch<ReducerActions> = () => {
+  // no-op placeholder for context default value
+};
+
 export const BrokerCreationFormDispatch =
-  createContext<React.Dispatch<ReducerActions>>(null);
+  createContext<React.Dispatch<ReducerActions>>(initialFormDispatch);
 
 export interface BaseFormState {
   brokerVersion?: '7.12' | '7.13';
@@ -107,9 +128,14 @@ export const artemisCrReducer: React.Reducer<FormState, ReducerActions> = (
   ) {
     formState.hasChanges = true;
   }
-  const ingressDomain = formState.cr.spec.ingressDomain;
+
+  const spec = formState.cr?.spec;
+  if (!spec) return formState;
+
+  const ingressDomain = spec.ingressDomain;
+
   switch (action.operation) {
-    case ArtemisReducerGlobalOperations.setBrokerVersion:
+    case ArtemisReducerGlobalOperations.setBrokerVersion: {
       formState.brokerVersion = action.payload;
       // when switching back to 7.12, we need to make sure we don't leave config
       // set for 7.13
@@ -120,29 +146,40 @@ export const artemisCrReducer: React.Reducer<FormState, ReducerActions> = (
         });
       }
       return formState;
-    case ArtemisReducerGlobalOperations.setYamlHasUnsavedChanges:
+    }
+    case ArtemisReducerGlobalOperations.setYamlHasUnsavedChanges: {
       formState.yamlHasUnsavedChanges = true;
       return formState;
-    case ArtemisReducerGlobalOperations.setEditorType:
+    }
+    case ArtemisReducerGlobalOperations.setEditorType: {
       formState.editorType = action.payload;
       if (formState.editorType === EditorType.BROKER) {
         formState.yamlHasUnsavedChanges = false;
       }
       return formState;
-    case ArtemisReducerGlobalOperations.setModel:
+    }
+    case ArtemisReducerGlobalOperations.setModel: {
       formState.cr = action.payload.model;
       formState.yamlHasUnsavedChanges = false;
       formState.hasChanges = action.payload.isSetByUser;
       return formState;
-    case ArtemisReducerOperationsRestricted.setIsRestrited:
-      formState.cr = newArtemisCR(formState.cr.metadata.namespace).cr;
-      formState.cr.spec.ingressDomain = ingressDomain;
+    }
+    case ArtemisReducerOperationsRestricted.setIsRestrited: {
+      const metadata = formState.cr?.metadata;
+      if (!metadata) return formState;
+      if (!metadata.namespace) return formState;
+      formState.cr = newArtemisCR(metadata.namespace).cr;
+      const spec = formState.cr?.spec;
+      if (!spec) return formState;
+      spec.ingressDomain = ingressDomain;
+      const deploymentPlan = spec.deploymentPlan;
+      if (!deploymentPlan) return formState;
       if (action.payload) {
-        delete formState.cr.spec.adminUser;
-        delete formState.cr.spec.adminPassword;
-        delete formState.cr.spec.console;
-        delete formState.cr.spec.deploymentPlan.image;
-        delete formState.cr.spec.deploymentPlan.requireLogin;
+        delete spec.adminUser;
+        delete spec.adminPassword;
+        delete spec.console;
+        delete deploymentPlan.image;
+        delete deploymentPlan.requireLogin;
         formState.brokerVersion = '7.13';
         (
           formState as FormStateRestricted
@@ -155,10 +192,11 @@ export const artemisCrReducer: React.Reducer<FormState, ReducerActions> = (
           getRestrictedDataPlaneDefaults();
         (formState as FormStateRestricted).restrictedMonitoringEnabled = false;
       }
-      formState.cr.spec.restricted = action.payload;
+      spec.restricted = action.payload;
       return formState;
+    }
   }
-  if (formState.cr.spec.restricted) {
+  if (spec.restricted) {
     return reducerRestricted(
       formState as FormStateRestricted,
       action as ArtemisReducerActionsRestricted,
@@ -184,7 +222,7 @@ export const getBrokerVersion = (formState: FormState) => {
 };
 
 export const areMandatoryValuesSet = (formState: FormState) => {
-  if (formState.cr.spec.restricted) {
+  if (formState.cr.spec?.restricted) {
     return areMandatoryValuesSetRestricted(formState);
   }
   switch (formState.brokerVersion) {
@@ -192,5 +230,7 @@ export const areMandatoryValuesSet = (formState: FormState) => {
       return areMandatoryValuesSet713(formState);
     case '7.12':
       return areMandatoryValuesSet712(formState);
+    default:
+      return false;
   }
 };
