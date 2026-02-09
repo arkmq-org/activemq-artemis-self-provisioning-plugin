@@ -72,6 +72,9 @@ jobs:
       - name: Extract translations
         run: yarn i18n && git diff --exit-code locales/en/plugin__activemq-artemis-self-provisioning-plugin.json
 
+      - name: check strict mode for reducers/7.12
+        run: yarn typecheck:7.12 2>&1 | grep "src/reducers/7.12/" && exit 1 || echo ok
+
       - name: Build project
         run: yarn run build
 

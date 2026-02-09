@@ -524,79 +524,116 @@ export const reducer712: React.Reducer<
   FormState712,
   ArtemisReducerActions712
 > = (prevFormState, action) => {
-  const formState = { ...prevFormState };
+  const formState: FormState712 = { ...prevFormState };
+  if (!formState.cr) throw new Error('cr should not be undefined');
   // set the individual fields
   switch (action.operation) {
-    case ArtemisReducerOperations712.updateAnnotationIssuer:
+    case ArtemisReducerOperations712.updateAnnotationIssuer: {
       updateAnnotationIssuer(
         formState.cr,
         action.payload.acceptorName,
         action.payload.newIssuer,
       );
       break;
-    case ArtemisReducerOperations712.setAcceptorIngressHost:
-      getAcceptor(formState.cr, action.payload.name).ingressHost =
-        action.payload.ingressHost;
-      break;
-    case ArtemisReducerOperations712.setAcceptorExposeMode:
-      if (action.payload) {
-        getAcceptor(formState.cr, action.payload.name).exposeMode =
-          action.payload.exposeMode;
-      } else {
-        delete getAcceptor(formState.cr, action.payload.name).exposeMode;
+    }
+    case ArtemisReducerOperations712.setAcceptorIngressHost: {
+      const acceptor = getAcceptor(formState.cr, action.payload.name);
+      if (acceptor) {
+        acceptor.ingressHost = action.payload.ingressHost;
       }
       break;
-    case ArtemisReducerOperations712.setIsAcceptorExposed:
-      getAcceptor(formState.cr, action.payload.name).expose =
-        action.payload.isExposed;
+    }
+    case ArtemisReducerOperations712.setAcceptorExposeMode: {
+      const acceptor = getAcceptor(formState.cr, action.payload.name);
+      if (acceptor) {
+        if (action.payload) {
+          acceptor.exposeMode = action.payload.exposeMode;
+        } else {
+          delete acceptor.exposeMode;
+        }
+      }
       break;
-    case ArtemisReducerOperations712.setNamespace:
+    }
+    case ArtemisReducerOperations712.setIsAcceptorExposed: {
+      const acceptor = getAcceptor(formState.cr, action.payload.name);
+      if (acceptor) {
+        acceptor.expose = action.payload.isExposed;
+      }
+      break;
+    }
+    case ArtemisReducerOperations712.setNamespace: {
       updateNamespace(formState.cr, action.payload);
       break;
-    case ArtemisReducerOperations712.setReplicasNumber:
+    }
+    case ArtemisReducerOperations712.setReplicasNumber: {
       updateDeploymentSize(formState.cr, action.payload);
       break;
-    case ArtemisReducerOperations712.incrementReplicas:
+    }
+    case ArtemisReducerOperations712.incrementReplicas: {
+      if (!formState.cr.spec) throw new Error('spec should not be undefined');
+      if (!formState.cr.spec.deploymentPlan) {
+        formState.cr.spec.deploymentPlan = {
+          image: 'placeholder',
+          requireLogin: false,
+          size: 1,
+        };
+      }
       updateDeploymentSize(
         formState.cr,
         formState.cr.spec.deploymentPlan.size + 1,
       );
       break;
-    case ArtemisReducerOperations712.decrementReplicas:
+    }
+    case ArtemisReducerOperations712.decrementReplicas: {
+      if (!formState.cr.spec) throw new Error('spec should not be undefined');
+      if (!formState.cr.spec.deploymentPlan) {
+        formState.cr.spec.deploymentPlan = {
+          image: 'placeholder',
+          requireLogin: false,
+          size: 1,
+        };
+      }
       updateDeploymentSize(
         formState.cr,
         formState.cr.spec.deploymentPlan.size - 1,
       );
       break;
-    case ArtemisReducerOperations712.setBrokerName:
+    }
+    case ArtemisReducerOperations712.setBrokerName: {
       updateBrokerName(formState.cr, action.payload);
       break;
-    case ArtemisReducerOperations712.activatePEMGenerationForAcceptor:
+    }
+    case ArtemisReducerOperations712.activatePEMGenerationForAcceptor: {
       activatePEMGenerationForAcceptor(formState.cr, action.payload.acceptor);
-      setIssuerForAcceptor(
-        formState.cr,
-        getAcceptor(formState.cr, action.payload.acceptor),
-        action.payload.issuer,
-      );
+      const acceptor = getAcceptor(formState.cr, action.payload.acceptor);
+      if (acceptor) {
+        setIssuerForAcceptor(formState.cr, acceptor, action.payload.issuer);
+      }
       break;
-    case ArtemisReducerOperations712.deletePEMGenerationForAcceptor:
+    }
+    case ArtemisReducerOperations712.deletePEMGenerationForAcceptor: {
       clearAcceptorCertManagerConfig(formState.cr, action.payload);
       break;
-    case ArtemisReducerOperations712.addAcceptor:
+    }
+    case ArtemisReducerOperations712.addAcceptor: {
       addConfig(formState.cr, ConfigType.acceptors);
       break;
-    case ArtemisReducerOperations712.addConnector:
+    }
+    case ArtemisReducerOperations712.addConnector: {
       addConfig(formState.cr, ConfigType.connectors);
       break;
-    case ArtemisReducerOperations712.deleteAcceptor:
+    }
+    case ArtemisReducerOperations712.deleteAcceptor: {
       // before deleting an acceptor, remove any linked annotations
       deleteCertManagerAnnotation(formState.cr, action.payload);
       deleteConfig(formState.cr, ConfigType.acceptors, action.payload);
       break;
-    case ArtemisReducerOperations712.deleteConnector:
+    }
+    case ArtemisReducerOperations712.deleteConnector: {
       deleteConfig(formState.cr, ConfigType.connectors, action.payload);
       break;
-    case ArtemisReducerOperations712.setAcceptorName:
+    }
+    case ArtemisReducerOperations712.setAcceptorName: {
       renameConfig(
         formState.cr,
         ConfigType.acceptors,
@@ -611,7 +648,8 @@ export const reducer712: React.Reducer<
         action.payload.newName,
       );
       break;
-    case ArtemisReducerOperations712.setConnectorName:
+    }
+    case ArtemisReducerOperations712.setConnectorName: {
       renameConfig(
         formState.cr,
         ConfigType.connectors,
@@ -619,7 +657,8 @@ export const reducer712: React.Reducer<
         action.payload.newName,
       );
       break;
-    case ArtemisReducerOperations712.setAcceptorSecret:
+    }
+    case ArtemisReducerOperations712.setAcceptorSecret: {
       // when the user sets the acceptor secret manually and that secret is not
       // a CA, remove any linked annotations
       if (!action.payload.isCa) {
@@ -642,7 +681,9 @@ export const reducer712: React.Reducer<
         action.payload.isCa,
       );
       break;
-    case ArtemisReducerOperations712.setConnectorSecret:
+    }
+
+    case ArtemisReducerOperations712.setConnectorSecret: {
       updateConfigSecret(
         formState.cr,
         ConfigType.connectors,
@@ -651,7 +692,8 @@ export const reducer712: React.Reducer<
         action.payload.isCa,
       );
       break;
-    case ArtemisReducerOperations712.setConsoleSecret:
+    }
+    case ArtemisReducerOperations712.setConsoleSecret: {
       updateConfigSecret(
         formState.cr,
         ConfigType.console,
@@ -660,23 +702,41 @@ export const reducer712: React.Reducer<
         action.payload.isCa,
       );
       break;
-    case ArtemisReducerOperations712.setConsoleSSLEnabled:
+    }
+    case ArtemisReducerOperations712.setConsoleSSLEnabled: {
+      if (!formState.cr.spec) throw new Error('spec should not be undefined');
+      if (!formState.cr.spec.console) {
+        formState.cr.spec.console = { expose: false };
+      }
       formState.cr.spec.console.sslEnabled = action.payload;
       if (!action.payload) {
         delete formState.cr.spec.console.useClientAuth;
       }
       break;
-    case ArtemisReducerOperations712.setConsoleExposeMode:
+    }
+    case ArtemisReducerOperations712.setConsoleExposeMode: {
+      if (!formState.cr.spec) throw new Error('spec should not be undefined');
+      if (!formState.cr.spec.console) {
+        formState.cr.spec.console = { expose: false };
+      }
       formState.cr.spec.console.exposeMode = action.payload;
       break;
-    case ArtemisReducerOperations712.setConsoleExpose:
+    }
+    case ArtemisReducerOperations712.setConsoleExpose: {
+      if (!formState.cr.spec) throw new Error('spec should not be undefined');
+      if (!formState.cr.spec.console) {
+        formState.cr.spec.console = { expose: false };
+      }
       formState.cr.spec.console.expose = action.payload;
       break;
-    case ArtemisReducerOperations712.setConsoleCredentials:
+    }
+    case ArtemisReducerOperations712.setConsoleCredentials: {
+      if (!formState.cr.spec) throw new Error('spec should not be undefined');
       formState.cr.spec.adminUser = action.payload.adminUser;
       formState.cr.spec.adminPassword = action.payload.adminPassword;
       break;
-    case ArtemisReducerOperations712.setAcceptorPort:
+    }
+    case ArtemisReducerOperations712.setAcceptorPort: {
       updateConfigPort(
         formState.cr,
         ConfigType.acceptors,
@@ -684,7 +744,8 @@ export const reducer712: React.Reducer<
         action.payload.port,
       );
       break;
-    case ArtemisReducerOperations712.setConnectorPort:
+    }
+    case ArtemisReducerOperations712.setConnectorPort: {
       updateConfigPort(
         formState.cr,
         ConfigType.connectors,
@@ -692,14 +753,16 @@ export const reducer712: React.Reducer<
         action.payload.port,
       );
       break;
-    case ArtemisReducerOperations712.setConnectorHost:
+    }
+    case ArtemisReducerOperations712.setConnectorHost: {
       updateConnectorHost(
         formState.cr,
         action.payload.connectorName,
         action.payload.host,
       );
       break;
-    case ArtemisReducerOperations712.setAcceptorBindToAllInterfaces:
+    }
+    case ArtemisReducerOperations712.setAcceptorBindToAllInterfaces: {
       updateConfigBindToAllInterfaces(
         formState.cr,
         ConfigType.acceptors,
@@ -707,7 +770,8 @@ export const reducer712: React.Reducer<
         action.payload.bindToAllInterfaces,
       );
       break;
-    case ArtemisReducerOperations712.setConnectorBindToAllInterfaces:
+    }
+    case ArtemisReducerOperations712.setConnectorBindToAllInterfaces: {
       updateConfigBindToAllInterfaces(
         formState.cr,
         ConfigType.connectors,
@@ -715,7 +779,8 @@ export const reducer712: React.Reducer<
         action.payload.bindToAllInterfaces,
       );
       break;
-    case ArtemisReducerOperations712.setAcceptorProtocols:
+    }
+    case ArtemisReducerOperations712.setAcceptorProtocols: {
       updateConfigProtocols(
         formState.cr,
         ConfigType.acceptors,
@@ -723,7 +788,8 @@ export const reducer712: React.Reducer<
         action.payload.protocols,
       );
       break;
-    case ArtemisReducerOperations712.setConnectorProtocols:
+    }
+    case ArtemisReducerOperations712.setConnectorProtocols: {
       updateConfigProtocols(
         formState.cr,
         ConfigType.connectors,
@@ -731,7 +797,8 @@ export const reducer712: React.Reducer<
         action.payload.protocols,
       );
       break;
-    case ArtemisReducerOperations712.setAcceptorOtherParams:
+    }
+    case ArtemisReducerOperations712.setAcceptorOtherParams: {
       updateConfigOtherParams(
         formState.cr,
         ConfigType.acceptors,
@@ -739,7 +806,8 @@ export const reducer712: React.Reducer<
         action.payload.otherParams,
       );
       break;
-    case ArtemisReducerOperations712.setConnectorOtherParams:
+    }
+    case ArtemisReducerOperations712.setConnectorOtherParams: {
       updateConfigOtherParams(
         formState.cr,
         ConfigType.connectors,
@@ -747,7 +815,8 @@ export const reducer712: React.Reducer<
         action.payload.otherParams,
       );
       break;
-    case ArtemisReducerOperations712.setAcceptorSSLEnabled:
+    }
+    case ArtemisReducerOperations712.setAcceptorSSLEnabled: {
       updateConfigSSLEnabled(
         formState.cr,
         ConfigType.acceptors,
@@ -755,7 +824,8 @@ export const reducer712: React.Reducer<
         action.payload.sslEnabled,
       );
       break;
-    case ArtemisReducerOperations712.setConnectorSSLEnabled:
+    }
+    case ArtemisReducerOperations712.setConnectorSSLEnabled: {
       updateConfigSSLEnabled(
         formState.cr,
         ConfigType.connectors,
@@ -763,7 +833,8 @@ export const reducer712: React.Reducer<
         action.payload.sslEnabled,
       );
       break;
-    case ArtemisReducerOperations712.updateAcceptorFactoryClass:
+    }
+    case ArtemisReducerOperations712.updateAcceptorFactoryClass: {
       updateConfigFactoryClass(
         formState.cr,
         ConfigType.acceptors,
@@ -771,7 +842,8 @@ export const reducer712: React.Reducer<
         action.payload.class,
       );
       break;
-    case ArtemisReducerOperations712.updateConnectorFactoryClass:
+    }
+    case ArtemisReducerOperations712.updateConnectorFactoryClass: {
       updateConfigFactoryClass(
         formState.cr,
         ConfigType.connectors,
@@ -779,7 +851,8 @@ export const reducer712: React.Reducer<
         action.payload.class,
       );
       break;
-    case ArtemisReducerOperations712.setIngressDomain:
+    }
+    case ArtemisReducerOperations712.setIngressDomain: {
       if (typeof action.payload === 'string') {
         updateIngressDomain(formState.cr, action.payload);
       } else {
@@ -787,6 +860,7 @@ export const reducer712: React.Reducer<
         formState.hasChanges = action.payload.isSetByUser;
       }
       break;
+    }
     default:
       throw Error('Unknown action: ' + action);
   }
@@ -801,31 +875,38 @@ const updateAnnotationIssuer = (
   acceptorName: string,
   newIssuer: string,
 ) => {
+  if (!cr.spec) throw new Error('spec should not be undefined');
   if (!cr.spec.resourceTemplates) {
     return;
   }
   const acceptor = getAcceptor(cr, acceptorName);
+  if (!acceptor) return;
   const selector = certManagerSelector(cr, acceptor.name);
   const rt = cr.spec.resourceTemplates.find(
     (rt) => rt.selector?.name === selector,
   );
   if (rt) {
+    if (!rt.annotations) {
+      rt.annotations = {};
+    }
     rt.annotations['cert-manager.io/issuer'] = newIssuer;
   }
 };
 
 const updateIngressDomain = (cr: BrokerCR, newName: string) => {
+  if (!cr.spec) throw new Error('spec should not be undefined');
   cr.spec.ingressDomain = newName;
   // when the namespace changes, some annotations will need an update to
   // stay in sync
   if (!cr.spec.acceptors || !cr.spec.resourceTemplates) {
     return;
   }
+  const resourceTemplates = cr.spec.resourceTemplates;
   cr.spec.acceptors.forEach((acceptor) => {
-    const rt = cr.spec.resourceTemplates.find(
-      (rt) => rt.selector.name === certManagerSelector(cr, acceptor.name),
+    const rt = resourceTemplates.find(
+      (rt) => rt.selector?.name === certManagerSelector(cr, acceptor.name),
     );
-    if (!rt) {
+    if (!rt?.patch?.spec?.tls?.[0]) {
       return;
     }
     rt.patch.spec.tls[0].hosts = certManagerTlsHosts(cr, acceptor.name);
@@ -833,6 +914,14 @@ const updateIngressDomain = (cr: BrokerCR, newName: string) => {
 };
 
 const updateDeploymentSize = (cr: BrokerCR, newSize: number) => {
+  if (!cr.spec) throw new Error('spec should not be undefined');
+  if (!cr.spec.deploymentPlan) {
+    cr.spec.deploymentPlan = {
+      image: 'placeholder',
+      requireLogin: false,
+      size: 1,
+    };
+  }
   cr.spec.deploymentPlan.size = newSize;
   if (cr.spec.deploymentPlan.size < 1) {
     cr.spec.deploymentPlan.size = 0;
@@ -845,11 +934,12 @@ const updateDeploymentSize = (cr: BrokerCR, newSize: number) => {
   if (!cr.spec.resourceTemplates) {
     return;
   }
+  const resourceTemplates = cr.spec.resourceTemplates;
   cr.spec.acceptors.forEach((acceptor) => {
-    const rt = cr.spec.resourceTemplates.find(
-      (rt) => rt.selector.name === certManagerSelector(cr, acceptor.name),
+    const rt = resourceTemplates.find(
+      (rt) => rt.selector?.name === certManagerSelector(cr, acceptor.name),
     );
-    if (!rt) {
+    if (!rt?.patch?.spec?.tls?.[0]) {
       return;
     }
     rt.patch.spec.tls[0].hosts = certManagerTlsHosts(cr, acceptor.name);
@@ -857,6 +947,10 @@ const updateDeploymentSize = (cr: BrokerCR, newSize: number) => {
 };
 
 const updateNamespace = (cr: BrokerCR, newName: string) => {
+  if (!cr.metadata) {
+    cr.metadata = {};
+  }
+  if (!cr.spec) throw new Error('spec should not be undefined');
   cr.metadata.namespace = newName;
   // when the namespace changes, some annotations will need an update to
   // stay in sync
@@ -866,11 +960,12 @@ const updateNamespace = (cr: BrokerCR, newName: string) => {
   if (!cr.spec.resourceTemplates) {
     return;
   }
+  const resourceTemplates = cr.spec.resourceTemplates;
   cr.spec.acceptors.forEach((acceptor) => {
-    const rt = cr.spec.resourceTemplates.find(
-      (rt) => rt.selector.name === certManagerSelector(cr, acceptor.name),
+    const rt = resourceTemplates.find(
+      (rt) => rt.selector?.name === certManagerSelector(cr, acceptor.name),
     );
-    if (!rt) {
+    if (!rt?.patch?.spec?.tls?.[0]) {
       return;
     }
     rt.patch.spec.tls[0].hosts = certManagerTlsHosts(cr, acceptor.name);
@@ -878,6 +973,10 @@ const updateNamespace = (cr: BrokerCR, newName: string) => {
 };
 
 const updateBrokerName = (cr: BrokerCR, newName: string) => {
+  if (!cr.metadata) {
+    cr.metadata = {};
+  }
+  if (!cr.spec) throw new Error('spec should not be undefined');
   const prevBrokerName = cr.metadata.name;
   cr.metadata.name = newName;
   // when the broker name changes, some acceptors & annotations will need an
@@ -889,15 +988,18 @@ const updateBrokerName = (cr: BrokerCR, newName: string) => {
     if (acceptor.sslSecret && acceptor.sslSecret.endsWith('-ptls')) {
       acceptor.sslSecret = certManagerSecret(cr, acceptor.name);
     }
-    if (!cr.spec.resourceTemplates) {
-      return;
-    }
+  });
+  if (!cr.spec.resourceTemplates) {
+    return;
+  }
+  const resourceTemplates = cr.spec.resourceTemplates;
+  cr.spec.acceptors.forEach((acceptor) => {
     const outdatedSelector =
       prevBrokerName + '-' + acceptor.name + '-0-svc-ing';
-    const rt = cr.spec.resourceTemplates.find(
+    const rt = resourceTemplates.find(
       (rt) => rt.selector?.name === outdatedSelector,
     );
-    if (!rt) {
+    if (!rt?.selector || !rt?.patch?.spec?.tls?.[0]) {
       return;
     }
     rt.selector.name = certManagerSelector(cr, acceptor.name);
@@ -918,7 +1020,7 @@ const activatePEMGenerationForAcceptor = (
   acceptorName: string,
 ) => {
   const acceptor = getAcceptor(cr, acceptorName);
-  if (acceptor) {
+  if (acceptor && acceptor.name) {
     acceptor.sslEnabled = true;
     acceptor.expose = true;
     acceptor.exposeMode = ExposeMode.ingress;
@@ -940,6 +1042,7 @@ const setIssuerForAcceptor = (
   if (!acceptor) {
     return;
   }
+  if (!cr.spec) throw new Error('spec should not be undefined');
   // in case there are no resource templates in the CR
   if (!cr.spec.resourceTemplates) {
     cr.spec.resourceTemplates = [];
@@ -951,6 +1054,9 @@ const setIssuerForAcceptor = (
   );
   // either update the existing one or create a new annotation
   if (rt) {
+    if (!rt.annotations) {
+      rt.annotations = {};
+    }
     rt.annotations['cert-manager.io/issuer'] = issuerName;
   } else {
     cr.spec.resourceTemplates.push(
@@ -960,6 +1066,11 @@ const setIssuerForAcceptor = (
 };
 
 const certManagerTlsHosts = (cr: BrokerCR, acceptor: string): string[] => {
+  if (!cr.spec) throw new Error('spec should not be undefined');
+  if (!cr.metadata) throw new Error('metadata should not be undefined');
+  if (!cr.spec.deploymentPlan) {
+    return [];
+  }
   const ret: string[] = [];
   for (let i = 0; i < cr.spec.deploymentPlan.size; i++) {
     ret.push(
@@ -979,11 +1090,15 @@ const certManagerTlsHosts = (cr: BrokerCR, acceptor: string): string[] => {
   return ret;
 };
 
-const certManagerSelector = (cr: BrokerCR, acceptor: string) =>
-  cr.metadata.name + '-' + acceptor + '-0-svc-ing';
+const certManagerSelector = (cr: BrokerCR, acceptor: string): string => {
+  if (!cr.metadata) throw new Error('metadata should not be undefined');
+  return cr.metadata.name + '-' + acceptor + '-0-svc-ing';
+};
 
-const certManagerSecret = (cr: BrokerCR, acceptor: string) =>
-  cr.metadata.name + '-' + acceptor + '-0-svc-ing-ptls';
+const certManagerSecret = (cr: BrokerCR, acceptor: string): string => {
+  if (!cr.metadata) throw new Error('metadata should not be undefined');
+  return cr.metadata.name + '-' + acceptor + '-0-svc-ing-ptls';
+};
 
 /**
  * Updates the acceptor name in the various fields of the annotation matching
@@ -994,6 +1109,7 @@ const updateAcceptorNameInResourceTemplate = (
   prevName: string,
   newName: string,
 ) => {
+  if (!cr.spec) throw new Error('spec should not be undefined');
   // early return if there's no resource template to work on
   if (!cr.spec.resourceTemplates) {
     return;
@@ -1003,7 +1119,7 @@ const updateAcceptorNameInResourceTemplate = (
     (rt) => rt.selector?.name === certManagerSelector(cr, prevName),
   );
   // if there's a match update the required fields
-  if (rt) {
+  if (rt?.selector && rt?.patch?.spec?.tls?.[0]) {
     rt.selector.name = certManagerSelector(cr, newName);
     rt.patch.spec.tls[0].hosts = certManagerTlsHosts(cr, newName);
     rt.patch.spec.tls[0].secretName = certManagerSecret(cr, newName);
@@ -1046,17 +1162,19 @@ const createCertManagerResourceTemplate = (
  * remove the cert manager annotation for a given acceptor if one is found
  */
 const deleteCertManagerAnnotation = (cr: BrokerCR, acceptor: string) => {
+  if (!cr.spec) throw new Error('spec should not be undefined');
+
   if (!cr.spec.resourceTemplates) {
     return;
   }
   cr.spec.resourceTemplates = cr.spec.resourceTemplates.filter(
-    (rt) => rt.selector.name !== certManagerSelector(cr, acceptor),
+    (rt) => rt.selector?.name !== certManagerSelector(cr, acceptor),
   );
 };
 
 const generateUniqueName = (prefix: string, existing: Set<string>): string => {
   const limit = existing.size + 1;
-  let newName;
+  let newName = '';
   for (let i = 0; i < limit; i++) {
     newName = prefix + i;
     if (!existing.has(newName)) {
@@ -1119,6 +1237,8 @@ const addConfig = (cr: BrokerCR, configType: ConfigType) => {
 
   const newName = generateUniqueName(configType, acceptorSet);
 
+  if (!cr.spec) throw new Error('spec should not be undefined');
+
   if (configType === ConfigType.connectors) {
     const connector = {
       name: newName,
@@ -1169,20 +1289,24 @@ const deleteConfig = (
     configType === ConfigType.connectors
       ? 'connectorConfigurations.'
       : 'acceptorConfigurations.';
-  if (brokerModel.spec?.brokerProperties?.length > 0) {
+
+  if (!brokerModel.spec) throw new Error('spec should not be undefined');
+  if (!brokerModel.spec.brokerProperties) return;
+
+  if (brokerModel.spec.brokerProperties?.length > 0) {
     const configKey = prefix + configName + '.';
     brokerModel.spec.brokerProperties =
       brokerModel.spec.brokerProperties.filter((x: string) => {
         return !x.startsWith(configKey);
       });
     if (configType === ConfigType.connectors) {
-      if (brokerModel.spec?.connectors) {
+      if (brokerModel.spec.connectors) {
         brokerModel.spec.connectors = brokerModel.spec.connectors.filter(
           (connector) => connector.name !== configName,
         );
       }
     } else {
-      if (brokerModel.spec?.acceptors) {
+      if (brokerModel.spec.acceptors) {
         brokerModel.spec.acceptors = brokerModel.spec.acceptors.filter(
           (acceptor) => acceptor.name !== configName,
         );
@@ -1214,7 +1338,11 @@ const renameConfig = (
     configType === ConfigType.connectors
       ? 'connectorConfigurations.'
       : 'acceptorConfigurations.';
-  if (brokerModel.spec?.brokerProperties?.length > 0) {
+
+  if (!brokerModel.spec) throw new Error('spec should not be undefined');
+  if (!brokerModel.spec.brokerProperties) return;
+
+  if (brokerModel.spec.brokerProperties?.length > 0) {
     const configKey = prefix + previousName + '.';
     const newKey = prefix + newName + '.';
     brokerModel.spec.brokerProperties = brokerModel.spec.brokerProperties.map(
@@ -1227,15 +1355,16 @@ const renameConfig = (
     );
 
     if (configType === ConfigType.connectors) {
-      if (brokerModel.spec?.connectors?.length > 0) {
-        brokerModel.spec.connectors = brokerModel.spec.connectors.map(
-          (o: { name: string }) => {
-            if (o.name === previousName) {
-              return { ...o, name: newName };
-            }
-            return o;
-          },
-        );
+      if (
+        brokerModel.spec.connectors &&
+        brokerModel.spec.connectors.length > 0
+      ) {
+        brokerModel.spec.connectors = brokerModel.spec.connectors.map((o) => {
+          if (o.name === previousName) {
+            return { ...o, name: newName };
+          }
+          return o;
+        });
       }
     }
     if (configType === ConfigType.acceptors) {
@@ -1256,12 +1385,14 @@ const renameConfig = (
 const updateConfigSecret = (
   brokerModel: BrokerCR,
   configType: ConfigType,
-  secret: string,
+  secret: string | undefined,
   configName: string,
   isCa: boolean,
 ) => {
+  if (!brokerModel.spec) throw new Error('spec should not be undefined');
+
   if (configType === ConfigType.connectors) {
-    if (brokerModel.spec?.connectors?.length > 0) {
+    if (brokerModel.spec.connectors && brokerModel.spec.connectors.length > 0) {
       for (let i = 0; i < brokerModel.spec.connectors.length; i++) {
         if (brokerModel.spec.connectors[i].name === configName) {
           if (isCa) {
@@ -1287,7 +1418,7 @@ const updateConfigSecret = (
       }
     }
   } else if (configType === ConfigType.acceptors) {
-    if (brokerModel.spec?.acceptors?.length > 0) {
+    if (brokerModel.spec.acceptors && brokerModel.spec.acceptors.length > 0) {
       for (let i = 0; i < brokerModel.spec.acceptors.length; i++) {
         if (brokerModel.spec.acceptors[i].name === configName) {
           if (isCa) {
@@ -1313,7 +1444,7 @@ const updateConfigSecret = (
       }
     }
   } else {
-    if (brokerModel.spec?.console) {
+    if (brokerModel.spec.console) {
       if (isCa) {
         if (secret) {
           if (!brokerModel.spec.console.trustSecret) {
@@ -1341,8 +1472,10 @@ const updateConfigPort = (
   configName: string,
   port: number,
 ): void => {
+  if (!brokerModel.spec) throw new Error('spec should not be undefined');
+
   if (configType === ConfigType.connectors) {
-    if (brokerModel.spec?.connectors?.length > 0) {
+    if (brokerModel.spec.connectors && brokerModel.spec.connectors.length > 0) {
       for (let i = 0; i < brokerModel.spec.connectors.length; i++) {
         if (brokerModel.spec.connectors[i].name === configName) {
           brokerModel.spec.connectors[i].port = port;
@@ -1350,7 +1483,7 @@ const updateConfigPort = (
       }
     }
   } else {
-    if (brokerModel.spec?.acceptors?.length > 0) {
+    if (brokerModel.spec.acceptors && brokerModel.spec.acceptors.length > 0) {
       for (let i = 0; i < brokerModel.spec.acceptors.length; i++) {
         if (brokerModel.spec.acceptors[i].name === configName) {
           brokerModel.spec.acceptors[i].port = port;
@@ -1365,7 +1498,10 @@ const updateConnectorHost = (
   connectorName: string,
   host: string,
 ): void => {
-  if (brokerModel.spec?.connectors?.length > 0) {
+  if (!brokerModel.spec) throw new Error('spec should not be undefined');
+  if (!brokerModel.spec.connectors) return;
+
+  if (brokerModel.spec.connectors.length > 0) {
     for (let i = 0; i < brokerModel.spec.connectors.length; i++) {
       if (brokerModel.spec.connectors[i].name === connectorName) {
         brokerModel.spec.connectors[i].host = host;
@@ -1380,9 +1516,11 @@ const updateConfigBindToAllInterfaces = (
   configName: string,
   bindToAllInterfaces: boolean,
 ): void => {
+  if (!brokerModel.spec) throw new Error('spec should not be undefined');
   if (
     configType === ConfigType.acceptors &&
-    brokerModel.spec?.acceptors?.length > 0
+    brokerModel.spec.acceptors &&
+    brokerModel.spec.acceptors.length > 0
   ) {
     for (let i = 0; i < brokerModel.spec.acceptors.length; i++) {
       if (brokerModel.spec.acceptors[i].name === configName) {
@@ -1392,7 +1530,8 @@ const updateConfigBindToAllInterfaces = (
   }
   if (
     configType === ConfigType.connectors &&
-    brokerModel.spec?.connectors?.length > 0
+    brokerModel.spec.connectors &&
+    brokerModel.spec.connectors.length > 0
   ) {
     for (let i = 0; i < brokerModel.spec.connectors.length; i++) {
       if (brokerModel.spec.connectors[i].name === configName) {
@@ -1409,8 +1548,9 @@ const updateConfigProtocols = (
   configName: string,
   protocols: string,
 ): void => {
+  if (!brokerModel.spec) throw new Error('spec should not be undefined');
   if (configType === ConfigType.connectors) {
-    if (brokerModel.spec?.connectors?.length > 0) {
+    if (brokerModel.spec.connectors && brokerModel.spec.connectors.length > 0) {
       for (let i = 0; i < brokerModel.spec.connectors.length; i++) {
         if (brokerModel.spec.connectors[i].name === configName) {
           brokerModel.spec.connectors[i].protocols = protocols;
@@ -1418,7 +1558,7 @@ const updateConfigProtocols = (
       }
     }
   } else {
-    if (brokerModel.spec?.acceptors?.length > 0) {
+    if (brokerModel.spec.acceptors && brokerModel.spec.acceptors.length > 0) {
       for (let i = 0; i < brokerModel.spec.acceptors.length; i++) {
         if (brokerModel.spec.acceptors[i].name === configName) {
           brokerModel.spec.acceptors[i].protocols = protocols;
@@ -1446,7 +1586,11 @@ const updateConfigOtherParams = (
   };
   //const paramSet = new Set<string>(otherParams.split(','));
   const paramPrefix = getConfigParamKey(configType, configName);
-  if (brokerModel.spec?.brokerProperties?.length > 0) {
+  if (!brokerModel.spec) throw new Error('spec should not be undefined');
+  if (!brokerModel.spec.brokerProperties) {
+    brokerModel.spec.brokerProperties = [];
+  }
+  if (brokerModel.spec.brokerProperties.length > 0) {
     //update
     for (let i = 0; i < brokerModel.spec.brokerProperties.length; i++) {
       if (brokerModel.spec.brokerProperties[i].startsWith(paramPrefix)) {
@@ -1475,7 +1619,7 @@ const updateConfigOtherParams = (
   }
   //now new params
   paramMap.forEach((v, k) => {
-    brokerModel.spec.brokerProperties.push(paramPrefix + k + '=' + v);
+    brokerModel.spec!.brokerProperties!.push(paramPrefix + k + '=' + v);
   });
 };
 
@@ -1485,8 +1629,9 @@ const updateConfigSSLEnabled = (
   configName: string,
   isSSLEnabled: boolean,
 ): void => {
+  if (!brokerModel.spec) throw new Error('spec should not be undefined');
   if (configType === ConfigType.connectors) {
-    if (brokerModel.spec?.connectors?.length > 0) {
+    if (brokerModel.spec.connectors && brokerModel.spec.connectors.length > 0) {
       for (let i = 0; i < brokerModel.spec.connectors.length; i++) {
         if (brokerModel.spec.connectors[i].name === configName) {
           brokerModel.spec.connectors[i].sslEnabled = isSSLEnabled;
@@ -1518,7 +1663,9 @@ const updateConfigSSLEnabled = (
 
 const clearAcceptorCertManagerConfig = (cr: BrokerCR, name: string) => {
   const acceptor = getAcceptor(cr, name);
-  if (acceptor.sslSecret && acceptor.sslSecret.endsWith('-ptls')) {
+  if (!acceptor) return;
+
+  if (acceptor.sslSecret?.endsWith('-ptls')) {
     deleteCertManagerAnnotation(cr, acceptor.name);
     delete acceptor.sslEnabled;
     delete acceptor.sslSecret;
@@ -1526,9 +1673,9 @@ const clearAcceptorCertManagerConfig = (cr: BrokerCR, name: string) => {
     delete acceptor.exposeMode;
     delete acceptor.ingressHost;
   }
-  if (!cr.spec.resourceTemplates) {
-    return;
-  }
+  if (!cr.spec) throw new Error('spec should not be undefined');
+  if (!cr.spec.resourceTemplates) return;
+
   if (cr.spec.resourceTemplates.length === 0) {
     delete cr.spec.resourceTemplates;
   }
@@ -1546,6 +1693,10 @@ const updateConfigFactoryClass = (
     }
     return 'acceptorConfigurations.';
   };
+
+  if (!brokerModel.spec) throw new Error('spec should not be undefined');
+  if (!brokerModel.spec.brokerProperties) return;
+
   for (let i = 0; i < brokerModel.spec.brokerProperties.length; i++) {
     const configPrefix = getConfigPrefix(configType);
     if (brokerModel.spec.brokerProperties[i].startsWith(configPrefix)) {
@@ -1605,6 +1756,10 @@ export const getConfigSecret = (
     }
   }
   if (configType === ConfigType.console) {
+    if (!brokerModel.spec) throw new Error('spec should not be undefined');
+    if (!brokerModel.spec.console)
+      throw new Error('console should not be undefined');
+
     if (isCa) {
       if (brokerModel.spec.console.trustSecret) {
         return brokerModel.spec.console.trustSecret;
@@ -1621,7 +1776,12 @@ export const getConfigFactoryClass = (
   configType: ConfigType,
   configName: string,
 ): string => {
-  if (brokerModel.spec?.brokerProperties?.length > 0) {
+  if (!brokerModel.spec) throw new Error('spec should not be undefined');
+
+  if (
+    brokerModel.spec.brokerProperties &&
+    brokerModel.spec.brokerProperties.length > 0
+  ) {
     for (let i = 0; i < brokerModel.spec.brokerProperties.length; i++) {
       const prefix =
         configType === ConfigType.connectors
@@ -1667,7 +1827,7 @@ export const getAcceptorFromCertManagerResourceTemplate = (
 ) => {
   if (cr.spec?.acceptors) {
     return cr.spec.acceptors.find((acceptor) => {
-      if (acceptor.sslSecret === rt.patch.spec.tls[0].secretName) {
+      if (acceptor.sslSecret === rt.patch?.spec?.tls?.[0]?.secretName) {
         return acceptor;
       }
       return undefined;
@@ -1685,7 +1845,7 @@ export const getCertManagerResourceTemplateFromAcceptor = (
   }
   if (cr.spec?.resourceTemplates) {
     return cr.spec.resourceTemplates.find((rt) => {
-      if (rt.patch.spec.tls[0].secretName === acceptor.sslSecret) {
+      if (rt.patch?.spec?.tls?.[0]?.secretName === acceptor.sslSecret) {
         return acceptor;
       }
       return undefined;
@@ -1722,7 +1882,7 @@ export const getConfigPort = (
       return connector.port;
     }
   }
-  return undefined;
+  throw new Error(`port not found for ${configType} config '${configName}'`);
 };
 
 export const getConfigHost = (
@@ -1799,7 +1959,11 @@ export const getConfigOtherParams = (
   configName: string,
 ): Map<string, string> => {
   const ret = new Map<string, string>();
-  if (cr.spec?.brokerProperties?.length > 0) {
+  if (
+    cr.spec &&
+    cr.spec.brokerProperties &&
+    cr.spec.brokerProperties.length > 0
+  ) {
     const paramKey = getConfigParamKey(configType, configName);
     const portKey = paramKey + 'port=';
     const protocolsKey = paramKey + 'protocols=';
@@ -1825,16 +1989,19 @@ export const listConfigs = (
   resultType?: 'set' | 'list',
 ): { name: string }[] | Set<string> => {
   const acceptors = new Set<string>();
+  if (!brokerModel.spec) throw new Error('spec should not be undefined');
   if (configType === ConfigType.connectors) {
-    if (brokerModel.spec?.connectors?.length > 0) {
+    if (brokerModel.spec.connectors && brokerModel.spec.connectors.length > 0) {
       for (let i = 0; i < brokerModel.spec.connectors.length; i++) {
-        acceptors.add(brokerModel.spec.connectors[i].name);
+        const name = brokerModel.spec.connectors[i].name;
+        if (name) acceptors.add(name);
       }
     }
   } else {
-    if (brokerModel.spec?.acceptors?.length > 0) {
+    if (brokerModel.spec.acceptors && brokerModel.spec.acceptors.length > 0) {
       for (let i = 0; i < brokerModel.spec.acceptors.length; i++) {
-        acceptors.add(brokerModel.spec.acceptors[i].name);
+        const name = brokerModel.spec.acceptors[i].name;
+        if (name) acceptors.add(name);
       }
     }
   }
@@ -1874,6 +2041,7 @@ export const getIssuerForAcceptor = (cr: BrokerCR, acceptor: Acceptor) => {
   if (!acceptor) {
     return '';
   }
+  if (!cr.spec) throw new Error('spec should not be undefined');
   // in case there are no resource templates in the CR
   if (!cr.spec.resourceTemplates) {
     cr.spec.resourceTemplates = [];
@@ -1884,7 +2052,7 @@ export const getIssuerForAcceptor = (cr: BrokerCR, acceptor: Acceptor) => {
     (rt) => rt.selector?.name === selector,
   );
   if (rt) {
-    return rt.annotations['cert-manager.io/issuer'];
+    return rt.annotations?.['cert-manager.io/issuer'] ?? '';
   }
   return '';
 };
@@ -1896,6 +2064,7 @@ export const isMissingIssuer = (cr: BrokerCR, acceptor: Acceptor) => {
   if (!acceptor) {
     return false;
   }
+  if (!cr.spec) throw new Error('spec should not be undefined');
   // in case there are no resource templates in the CR
   if (!cr.spec.resourceTemplates) {
     return false;
@@ -1906,7 +2075,7 @@ export const isMissingIssuer = (cr: BrokerCR, acceptor: Acceptor) => {
     (rt) => rt.selector?.name === selector,
   );
   if (rt) {
-    return !rt.annotations['cert-manager.io/issuer'];
+    return !rt.annotations?.['cert-manager.io/issuer'];
   }
   return false;
 };
@@ -1919,6 +2088,7 @@ export const getIssuerIngressHostForAcceptor = (
   if (!acceptor) {
     return '';
   }
+  if (!cr.spec) throw new Error('spec should not be undefined');
   // in case there are no resource templates in the CR
   if (!cr.spec.resourceTemplates) {
     cr.spec.resourceTemplates = [];
@@ -1928,7 +2098,7 @@ export const getIssuerIngressHostForAcceptor = (
   const rt = cr.spec.resourceTemplates.find(
     (rt) => rt.selector?.name === selector,
   );
-  if (rt) {
+  if (rt?.patch?.spec?.tls?.[0]?.hosts) {
     return rt.patch.spec.tls[0].hosts[podOrdinal];
   }
   return '';
@@ -1938,16 +2108,15 @@ export const areMandatoryValuesSet712 = (formState: FormState712) => {
   if (!formState.cr?.metadata?.name) {
     return false;
   }
+  const cr = formState.cr;
   // check that every acceptor sets the required fields
-  if (formState.cr.spec?.acceptors && formState.cr.spec.acceptors.length > 0) {
-    const allAceptorOk = formState.cr.spec.acceptors
+  if (cr.spec?.acceptors && cr.spec.acceptors.length > 0) {
+    const allAceptorOk = cr.spec.acceptors
       .map((acceptor) => {
         const missingPort = !acceptor.port;
         const missingProtocols = !acceptor.protocols;
         return (
-          !missingPort &&
-          !missingProtocols &&
-          !isMissingIssuer(formState.cr, acceptor)
+          !missingPort && !missingProtocols && !isMissingIssuer(cr, acceptor)
         );
       })
       .reduce((acc, next) => acc && next);
@@ -1956,11 +2125,8 @@ export const areMandatoryValuesSet712 = (formState: FormState712) => {
     }
   }
   // check that every connector sets the required fields
-  if (
-    formState.cr.spec?.connectors &&
-    formState.cr.spec.connectors.length > 0
-  ) {
-    const allConnectorOk = formState.cr.spec.connectors
+  if (cr.spec?.connectors && cr.spec.connectors.length > 0) {
+    const allConnectorOk = cr.spec.connectors
       .map((connector) => {
         const missingHostname = !connector.host;
         const missingPort = !connector.port;

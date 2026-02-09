@@ -21,7 +21,7 @@ export type Acceptor = {
   expose?: boolean;
   exposeMode?: ExposeMode;
   ingressHost?: string;
-  name?: string;
+  name: string;
   port?: number;
   protocols?: string;
   sslEnabled?: boolean;
@@ -37,7 +37,7 @@ export type Connector = {
   exposeMode?: ExposeMode;
   host?: string;
   ingressHost?: string;
-  name?: string;
+  name: string;
   port?: number;
   protocols?: string;
   sslEnabled?: boolean;
