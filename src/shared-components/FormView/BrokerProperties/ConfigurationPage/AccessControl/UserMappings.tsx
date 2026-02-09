@@ -44,7 +44,10 @@ import {
 import { HelpIcon } from '@patternfly/react-icons';
 import styles from '@patternfly/react-styles/css/components/Form/form';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { TypeaheadSelect } from '@patternfly/react-templates';
+import {
+  TypeaheadSelect,
+  TypeaheadSelectOption,
+} from '@patternfly/react-templates';
 
 const createJaasConfig = async (
   name: string,
@@ -103,7 +106,7 @@ export const SelectUserMappings: FC = () => {
       kind: 'Secret',
     },
     isList: true,
-    namespace: cr.metadata.namespace,
+    namespace: cr?.metadata?.namespace,
   });
   const [alertSecret, setAlertSecret] = useState<Error>();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -127,12 +130,14 @@ export const SelectUserMappings: FC = () => {
     );
   }, [secrets]);
 
-  const selectOptions = useMemo(() => {
+  const selectOptions = useMemo<TypeaheadSelectOption[]>(() => {
     return validSecrets
-      .map((jaasConfig) => ({
-        value: jaasConfig.metadata.name,
-        content: jaasConfig.metadata.name,
-      }))
+      .flatMap((jaasConfig) => {
+        const name = jaasConfig.metadata?.name;
+
+        // Return an array with the object if it's valid, or an empty array to filter it out
+        return name ? [{ value: name, content: name }] : [];
+      })
       .sort((a, b) => String(a.content).localeCompare(String(b.content)));
   }, [validSecrets]);
 
@@ -147,18 +152,18 @@ export const SelectUserMappings: FC = () => {
     );
   }
 
-  const selectedSecret =
-    cr.spec?.deploymentPlan?.extraMounts?.secrets[0] !== undefined
-      ? validSecrets.filter(
-          (secret) =>
-            secret.metadata?.name ===
-            cr.spec.deploymentPlan.extraMounts.secrets[0],
-        )[0]
-      : undefined;
+  const secretNames = cr?.spec?.deploymentPlan?.extraMounts?.secrets;
+  const selectedSecretName = secretNames?.[0];
+
+  const selectedSecret = selectedSecretName
+    ? validSecrets.find(
+        (secret) => secret.metadata?.name === selectedSecretName,
+      )
+    : undefined;
 
   // if the user just selected a jaas config, override the previous security
   // roles
-  if (needsInitializingSR && selectedSecret?.data['extra-roles.properties']) {
+  if (needsInitializingSR && selectedSecret?.data?.['extra-roles.properties']) {
     setNeedsInitializingSR(false);
     dispatch({
       operation: ArtemisReducerOperations713.setSecurityRoles,
@@ -185,12 +190,15 @@ export const SelectUserMappings: FC = () => {
   };
 
   const triggerJaasConfigCreation = () => {
+    const namespace = cr?.metadata?.namespace;
+    if (!namespace) {
+      setAlertSecret(
+        new Error(t('Namespace is not available. Cannot create jaas config.')),
+      );
+      return;
+    }
     setAlertSecret(undefined);
-    createJaasConfig(
-      newJaasConfigName,
-      newJaasConfigAdmin,
-      cr.metadata.namespace,
-    )
+    createJaasConfig(newJaasConfigName, newJaasConfigAdmin, namespace)
       .then(() => {
         setIsExpanded(false);
         dispatch({
@@ -203,6 +211,19 @@ export const SelectUserMappings: FC = () => {
         setAlertSecret(reason);
       });
   };
+
+  const handleRebuildSecurityRoles = () => {
+    const encodedRoles = selectedSecret?.data?.['extra-roles.properties'];
+
+    if (!encodedRoles) {
+      return;
+    }
+    dispatch({
+      operation: ArtemisReducerOperations713.setSecurityRoles,
+      payload: getInitSecurityRoles(atob(encodedRoles).split('\n')),
+    });
+  };
+
   return (
     <FormGroup
       label={t('Jaas login module')}
@@ -292,7 +313,7 @@ export const SelectUserMappings: FC = () => {
                     const selection = String(selectedValue);
                     onSelectSecret(selection);
                   }}
-                  selected={cr.spec?.deploymentPlan?.extraMounts?.secrets[0]}
+                  selected={cr?.spec?.deploymentPlan?.extraMounts?.secrets?.[0]}
                 />
               </SplitItem>
               <SplitItem>
@@ -308,9 +329,9 @@ export const SelectUserMappings: FC = () => {
                         onClick={() =>
                           window.open(
                             'ns/' +
-                              selectedSecret.metadata.namespace +
+                              selectedSecret.metadata?.namespace +
                               '/secrets/' +
-                              selectedSecret.metadata.name +
+                              selectedSecret.metadata?.name +
                               '/edit',
                           )
                         }
@@ -326,17 +347,7 @@ export const SelectUserMappings: FC = () => {
                     >
                       <Button
                         variant="link"
-                        onClick={() =>
-                          dispatch({
-                            operation:
-                              ArtemisReducerOperations713.setSecurityRoles,
-                            payload: getInitSecurityRoles(
-                              atob(
-                                selectedSecret.data['extra-roles.properties'],
-                              ).split('\n'),
-                            ),
-                          })
-                        }
+                        onClick={handleRebuildSecurityRoles}
                       >
                         {t('rebuild security roles')}
                       </Button>
@@ -380,21 +391,27 @@ export const SelectUserMappings: FC = () => {
                           </Tr>
                         </Thead>
                         <Tbody>
-                          {atob(
-                            selectedSecret.data[
-                              'k8s-users-to-roles-mapping.properties'
-                            ],
-                          )
-                            .split('\n')
-                            .filter((line) => line.match('.+=.+'))
-                            .map((line, index) => {
-                              return (
+                          {selectedSecret.data?.[
+                            'k8s-users-to-roles-mapping.properties'
+                          ] ? (
+                            atob(
+                              selectedSecret.data[
+                                'k8s-users-to-roles-mapping.properties'
+                              ],
+                            )
+                              .split('\n')
+                              .filter((line) => line.match('.+=.+'))
+                              .map((line, index) => (
                                 <Tr key={index}>
                                   <Td> {line.split('=')[0]} </Td>
                                   <Td> {line.split('=')[1]} </Td>
                                 </Tr>
-                              );
-                            })}
+                              ))
+                          ) : (
+                            <Tr>
+                              <Td colSpan={2}>{t('No data available')}</Td>
+                            </Tr>
+                          )}
                         </Tbody>
                       </Table>
                       {}
@@ -413,17 +430,21 @@ export const SelectUserMappings: FC = () => {
                           </Tr>
                         </Thead>
                         <Tbody>
-                          {atob(selectedSecret.data['extra-users.properties'])
-                            .split('\n')
-                            .filter((line) => line.match('.+=.+'))
-                            .map((line, index) => {
-                              return (
+                          {selectedSecret.data?.['extra-users.properties'] ? (
+                            atob(selectedSecret.data['extra-users.properties'])
+                              .split('\n')
+                              .filter((line) => line.match('.+=.+'))
+                              .map((line, index) => (
                                 <Tr key={index}>
                                   <Td> {line.split('=')[0]} </Td>
                                   <Td> {line.split('=')[1]} </Td>
                                 </Tr>
-                              );
-                            })}
+                              ))
+                          ) : (
+                            <Tr>
+                              <Td colSpan={2}>{t('No data available')}</Td>
+                            </Tr>
+                          )}
                         </Tbody>
                       </Table>
                       {}
@@ -442,17 +463,21 @@ export const SelectUserMappings: FC = () => {
                           </Tr>
                         </Thead>
                         <Tbody>
-                          {atob(selectedSecret.data['extra-roles.properties'])
-                            .split('\n')
-                            .filter((line) => line.match('.+=.+'))
-                            .map((line, index) => {
-                              return (
+                          {selectedSecret.data?.['extra-roles.properties'] ? (
+                            atob(selectedSecret.data['extra-roles.properties'])
+                              .split('\n')
+                              .filter((line) => line.match('.+=.+'))
+                              .map((line, index) => (
                                 <Tr key={index}>
                                   <Td> {line.split('=')[0]} </Td>
                                   <Td> {line.split('=')[1]} </Td>
                                 </Tr>
-                              );
-                            })}
+                              ))
+                          ) : (
+                            <Tr>
+                              <Td colSpan={2}>{t('No data available')}</Td>
+                            </Tr>
+                          )}
                         </Tbody>
                       </Table>
                       {}

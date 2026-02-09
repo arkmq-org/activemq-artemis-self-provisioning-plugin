@@ -55,7 +55,7 @@ export const YamlEditorView: FC<YamlEditorViewPropTypes> = ({
   };
   useInterval(removeLastAlert, alerts.length > 0 ? 2000 : null);
 
-  const [currentYaml, setCurrentYaml] = useState<string>();
+  const [currentYaml, setCurrentYaml] = useState<string>('');
   const [yamlParseError, setYamlParserError] = useState<YAMLParseError>();
 
   const getUniqueId = () => new Date().getTime();
@@ -106,13 +106,15 @@ export const YamlEditorView: FC<YamlEditorViewPropTypes> = ({
       <AlertGroup isToast isLiveRegion>
         {alerts.map(({ key, variant, title }) => (
           <Alert
-            variant={AlertVariant[variant]}
+            variant={variant}
             title={title}
             actionClose={
               <AlertActionCloseButton
                 title={title as string}
                 variantLabel={`${variant} alert`}
-                onClose={() => removeAlert(key)}
+                onClose={() =>
+                  key !== undefined && key !== null && removeAlert(key)
+                }
               />
             }
             key={key}

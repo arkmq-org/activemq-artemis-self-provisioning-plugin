@@ -17,6 +17,7 @@ import { useParams } from 'react-router-dom-v5-compat';
 import { ResourcesList } from './components/ResourcesList';
 import { ErrorCircleOIcon, SearchIcon } from '@patternfly/react-icons';
 import { K8sResourceCommonWithData } from '@app/k8s/types';
+import { GenericError } from '@app/shared-components/GenericError/GenericError';
 
 export const ResourcesContainer: FC = () => {
   //states
@@ -67,6 +68,13 @@ export const ResourcesContainer: FC = () => {
       namespace: namespace,
     });
   const [prevStatefulStes, setPrevStatefulSets] = useState(statefulsets);
+
+  // Early return if required params are missing
+  if (!namespace || !name) {
+    return (
+      <GenericError message={t('Namespace and broker name are required.')} />
+    );
+  }
 
   // Filter Resources
   const filterBrokerResources = (

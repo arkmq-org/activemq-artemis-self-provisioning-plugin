@@ -16,6 +16,7 @@ import {
 import { ArtemisReducerOperations712 } from '@app/reducers/7.12/reducer';
 import { ArtemisReducerOperationsRestricted } from '@app/reducers/restricted/reducer';
 import { useNavigate, useParams } from 'react-router-dom-v5-compat';
+import { GenericError } from '@app/shared-components/GenericError/GenericError';
 
 export const UpdateBrokerPage: FC = () => {
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ export const UpdateBrokerPage: FC = () => {
 
   const [brokerModel, dispatch] = useReducer(
     artemisCrReducer,
-    newArtemisCR(namespace),
+    newArtemisCR(namespace ?? ''),
   );
 
   const [hasBrokerUpdated, setHasBrokerUpdated] = useState(false);
@@ -68,7 +69,7 @@ export const UpdateBrokerPage: FC = () => {
 
         // If this is a restricted broker, initialize UI-only fields with defaults
         // These fields are used by the UI to know which secrets to validate
-        if (broker.spec.restricted) {
+        if (broker.spec?.restricted) {
           dispatch({
             operation:
               ArtemisReducerOperationsRestricted.setACTIVEMQ_ARTEMIS_MANAGER_CA_SECRET_NAME,
@@ -125,6 +126,9 @@ export const UpdateBrokerPage: FC = () => {
     handleRedirect();
   }
 
+  const { cr } = brokerModel;
+  if (!cr) return <GenericError />;
+
   return (
     <BrokerCreationFormState.Provider value={brokerModel}>
       <BrokerCreationFormDispatch.Provider value={dispatch}>
@@ -138,7 +142,7 @@ export const UpdateBrokerPage: FC = () => {
           />
         )}
         <AddBroker
-          onSubmit={() => k8sUpdateBroker(brokerModel.cr)}
+          onSubmit={() => k8sUpdateBroker(cr)}
           onCancel={handleRedirect}
           isUpdatingExisting
           reloadExisting={k8sGetBroker}

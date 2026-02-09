@@ -7,12 +7,23 @@ import { useTranslation } from '@app/i18n/i18n';
 import { useNavigate, useParams } from 'react-router-dom-v5-compat';
 import { useGetBrokerCR } from '@app/k8s/customHooks';
 import { ErrorState } from '@app/shared-components/ErrorState/ErrorState';
+import { GenericError } from '@app/shared-components/GenericError/GenericError';
 
 const YamlContainer: FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { ns: namespace, name } = useParams<{ ns?: string; name?: string }>();
-  const { brokerCr, isLoading, error } = useGetBrokerCR(name, namespace);
+  const { brokerCr, isLoading, error } = useGetBrokerCR(
+    name ?? '',
+    namespace ?? '',
+  );
+
+  if (!name || !namespace) {
+    return (
+      <GenericError message={t('Namespace and broker name are required.')} />
+    );
+  }
+
   if (isLoading) {
     return <Loading />;
   }

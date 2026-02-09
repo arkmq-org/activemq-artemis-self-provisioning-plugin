@@ -15,6 +15,7 @@ import {
 import { YamlContainer } from './components/yaml/Yaml.container';
 import { ErrorState } from '@app/shared-components/ErrorState/ErrorState';
 import { Loading } from '@app/shared-components/Loading/Loading';
+import { GenericError } from '@app/shared-components/GenericError/GenericError';
 
 type AuthenticatedPageContentPropType = {
   brokerCr: BrokerCR;
@@ -65,9 +66,18 @@ const AuthenticatedPageContent: FC<AuthenticatedPageContentPropType> = ({
 };
 
 export const BrokerDetailsPage: FC = () => {
+  const { t } = useTranslation();
   const { ns: namespace, name } = useParams<{ ns?: string; name?: string }>();
+  const { brokerCr, isLoading, error } = useGetBrokerCR(
+    name ?? '',
+    namespace ?? '',
+  );
 
-  const { brokerCr, isLoading, error } = useGetBrokerCR(name, namespace);
+  if (!name || !namespace) {
+    return (
+      <GenericError message={t('Namespace and broker name are required.')} />
+    );
+  }
 
   if (isLoading) {
     return <Loading />;
@@ -81,8 +91,8 @@ export const BrokerDetailsPage: FC = () => {
     <>
       <AuthenticatedPageContent
         brokerCr={brokerCr}
-        name={name}
-        namespace={namespace}
+        name={name || ''}
+        namespace={namespace || ''}
       />
     </>
   );

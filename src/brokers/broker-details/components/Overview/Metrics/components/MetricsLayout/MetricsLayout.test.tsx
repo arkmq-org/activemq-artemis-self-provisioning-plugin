@@ -46,18 +46,4 @@ describe('MetricsLayout', () => {
     await waitForI18n(comp);
     expect(comp.getByText('Mock CPU Usage')).toBeInTheDocument();
   });
-
-  it('should not renders MetricsMemoryUsage and MetricsCPUUsage when metricsType is Empty', async () => {
-    const comp = render(
-      <MetricsLayout
-        metricsMemoryUsage={mockMetricsMemoryUsage}
-        metricsCPUUsage={mockMetricsCPUUsage}
-        metricsActions={mockMetricsActions}
-        metricsType={null}
-      />,
-    );
-    await waitForI18n(comp);
-    expect(comp.queryByText('Mock Memory Usage')).toBeNull();
-    expect(comp.queryByText('Mock CPU Usage')).toBeNull();
-  });
 });

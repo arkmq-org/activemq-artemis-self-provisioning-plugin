@@ -16,6 +16,7 @@ import {
 } from '../../../../../../../reducers/7.12/reducer';
 import { useTranslation } from '../../../../../../../i18n/i18n';
 import { ConfigType, ConfigTypeContext } from '../../../ConfigurationPage';
+import { GenericError } from '@app/shared-components/GenericError/GenericError';
 export type ConfigRenamingModalProps = {
   initName: string;
 };
@@ -28,8 +29,12 @@ export const ConfigRenamingModal: FC<ConfigRenamingModalProps> = ({
   const dispatch = useContext(BrokerCreationFormDispatch);
   const [newName, setNewName] = useState(initName);
   const [toolTip, setTooltip] = useState('');
-  const [validateStatus, setValidateStatus] = useState(null);
+  const [validateStatus, setValidateStatus] = useState<ValidatedOptions>(
+    ValidatedOptions.default,
+  );
   const { cr } = useContext(BrokerCreationFormState);
+  const [isOpen, setIsOpen] = useState(false);
+  if (!cr) return <GenericError />;
   const uniqueSet = listConfigs(configType, cr, 'set') as Set<string>;
 
   const handleNewName = () => {
@@ -70,7 +75,6 @@ export const ConfigRenamingModal: FC<ConfigRenamingModalProps> = ({
     return true;
   };
 
-  const [isOpen, setIsOpen] = useState(false);
   return (
     <>
       <Modal

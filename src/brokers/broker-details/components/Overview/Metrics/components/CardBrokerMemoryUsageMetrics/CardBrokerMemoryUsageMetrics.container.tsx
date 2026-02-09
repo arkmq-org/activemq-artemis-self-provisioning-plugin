@@ -2,28 +2,32 @@ import { FC, useState, useMemo, useCallback } from 'react';
 import { parsePrometheusDuration } from '../../../Metrics/utils/prometheus';
 import { getMaxSamplesForSpan } from '../../utils/format';
 import { humanizeBinaryBytes } from '../../utils/units';
-import { ByteDataTypes, GraphSeries } from '../../utils/types';
+import {
+  ByteDataTypes,
+  GraphSeries,
+  MetricsState,
+  AxisDomain,
+  getDefaultXDomain,
+} from '../../utils/types';
 import { processFrame } from '../../utils/data-utils';
 import { memoryUsageQuery } from '../../utils/queries';
 import { MetricsPolling } from '../MetricsPolling/MetricsPolling';
 import { useTranslation } from '@app/i18n/i18n';
 import { CardQueryBrowser } from '../CardQueryBrowser/CardQueryBrowser';
 import { PrometheusResponse } from '@openshift-console/dynamic-plugin-sdk';
-import { MetricsState } from '../../utils/types';
 import { MetricsErrorBoundary } from '../../MetricsErrorBoundary';
 
 type CardBrokerMemoryUsageMetricsContainerProps = {
   state: MetricsState;
 };
 
-type AxisDomain = [number, number];
-
 export const CardBrokerMemoryUsageMetricsContainer: FC<
   CardBrokerMemoryUsageMetricsContainerProps
 > = ({ state }) => {
   const { t } = useTranslation();
+  const span = parsePrometheusDuration(state.span);
 
-  const [xDomain] = useState<AxisDomain>();
+  const [xDomain] = useState<AxisDomain>(() => getDefaultXDomain(span));
   // State to store the results from each MetricsPolling component.
   // The key is the index of the poller.
   const [results, setResults] = useState<{
@@ -78,7 +82,7 @@ export const CardBrokerMemoryUsageMetricsContainer: FC<
     return { metricsResult, loaded, errorObject };
   }, [results, queries]);
 
-  const samples = getMaxSamplesForSpan(parsePrometheusDuration(state.span));
+  const samples = getMaxSamplesForSpan(span);
 
   // Define this once for all queries so that they have exactly the same time range and X values
   const endTime = xDomain?.[1];
@@ -102,7 +106,7 @@ export const CardBrokerMemoryUsageMetricsContainer: FC<
           query={query}
           index={i}
           namespace={state.namespace}
-          span={parsePrometheusDuration(state.span)}
+          span={span}
           samples={samples}
           endTime={endTime}
           delay={parsePrometheusDuration(state.pollTime)}
@@ -114,7 +118,7 @@ export const CardBrokerMemoryUsageMetricsContainer: FC<
           isInitialLoading={false}
           backendUnavailable={false}
           allMetricsSeries={metricsResult}
-          span={parsePrometheusDuration(state.span)}
+          span={span}
           isLoading={!loaded}
           fixedXDomain={xDomain}
           samples={samples}

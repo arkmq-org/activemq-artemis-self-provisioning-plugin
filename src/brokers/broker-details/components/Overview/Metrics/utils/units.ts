@@ -175,8 +175,8 @@ export const units: Units = {
       value,
       type.units,
       type.divisor,
-      initialUnit,
-      preferredUnit,
+      initialUnit ?? '',
+      preferredUnit ?? '',
     );
 
     if (useRound) {
@@ -186,7 +186,7 @@ export const units: Units = {
         type.units,
         type.divisor,
         converted.unit,
-        preferredUnit,
+        preferredUnit ?? '',
       );
     }
 

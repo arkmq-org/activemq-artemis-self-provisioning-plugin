@@ -29,11 +29,13 @@ import {
   AxisDomain,
   FormatSeriesTitle,
   GraphSeries,
-  GraphDataPoint,
   Series,
+  isGraphPoint,
+  findMin,
+  findMax,
 } from '../../utils/types';
 
-const colors = chartTheme.line.colorScale;
+const colors = chartTheme.line?.colorScale;
 
 export type ChartCPUUsageProps = {
   allMetricsSeries: PrometheusResponse[];
@@ -82,36 +84,27 @@ export const ChartCPUUsage: FC<ChartCPUUsageProps> = ({
   // }, [allMetricsSeries, span, fixedXDomain]);
 
   const newGraphData = newResult.map((result: PrometheusResult[]) => {
-    return result.map(({ metric, values }): Series => {
+    return result.map(({ metric, values = [] }): Series => {
       return [metric, formatSeriesValues(values, samples, span)];
     });
   });
 
   newGraphData.forEach((series, i) => {
-    series.forEach(([metric, values]) => {
+    series.forEach(([metric, values = []]) => {
       data.push(values);
-      if (formatSeriesTitle) {
+      if (formatSeriesTitle && metric) {
         const name = formatSeriesTitle(metric, i);
         legendData.push({ name });
         tooltipSeriesNames.push(name);
-      } else {
+      } else if (metric) {
         tooltipSeriesLabels.push(metric);
       }
     });
   });
 
   // Set a reasonable Y-axis range based on the min and max values in the data
-  const findMin = (series: GraphSeries): GraphDataPoint | undefined => {
-    if (!series.length) return undefined;
-    return series.reduce((min, point) => (point.y < min.y ? point : min));
-  };
-  const findMax = (series: GraphSeries): GraphDataPoint => {
-    if (!series.length) return undefined;
-    return series.reduce((max, point) => (point.y > max.y ? point : max));
-  };
-
-  const minPoints = data.map(findMin).filter(Boolean);
-  const maxPoints = data.map(findMax).filter(Boolean);
+  const minPoints = data.map(findMin).filter(isGraphPoint);
+  const maxPoints = data.map(findMax).filter(isGraphPoint);
 
   let minY: number = findMin(minPoints)?.y ?? 0;
   let maxY: number = findMax(maxPoints)?.y ?? 0;
@@ -183,7 +176,11 @@ export const ChartCPUUsage: FC<ChartCPUUsageProps> = ({
                       return null;
                     }
 
-                    const color = colors[index % colors.length];
+                    const color =
+                      colors && colors.length > 0
+                        ? colors[index % colors.length]
+                        : undefined;
+
                     const style = {
                       data: { stroke: color },
                       labels: {

@@ -8,6 +8,7 @@ import {
 import { useTranslation } from '@app/i18n/i18n';
 import { Alert, Icon, Popover } from '@patternfly/react-core';
 import { BellIcon, WarningTriangleIcon } from '@patternfly/react-icons';
+import { GenericError } from '@app/shared-components/GenericError/GenericError';
 
 type PresetCautionProps = {
   configType: ConfigType;
@@ -22,16 +23,15 @@ export const PresetAlertPopover: FC<PresetCautionProps> = ({
 }) => {
   const { cr } = useContext(BrokerCreationFormState);
   const { t } = useTranslation();
-  const hasCertManagerPreset =
-    configType === ConfigType.acceptors
-      ? getCertManagerResourceTemplateFromAcceptor(
-          cr,
-          getAcceptor(cr, configName),
-        ) !== undefined
-      : false;
+  if (!cr) return <GenericError />;
 
-  if (!hasCertManagerPreset) {
-    return <></>;
+  const acceptor = getAcceptor(cr, configName);
+  if (
+    configType !== ConfigType.acceptors ||
+    !acceptor ||
+    !getCertManagerResourceTemplateFromAcceptor(cr, acceptor)
+  ) {
+    return null;
   }
 
   return (

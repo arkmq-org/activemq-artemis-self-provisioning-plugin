@@ -24,18 +24,15 @@ export const ResourcesTable: FC<ResourcesTableProps> = ({ data }) => {
     { title: t('Created'), id: 'created' },
   ];
 
-  const [activeSortIndex, setActiveSortIndex] = useState<number | null>(null);
+  const [activeSortIndex, setActiveSortIndex] = useState<number>(0);
   const [activeSortDirection, setActiveSortDirection] = useState<
-    'asc' | 'desc' | null
-  >(null);
+    'asc' | 'desc'
+  >('asc');
 
   const getSortableRowValues = (
     broker: BrokerCR,
   ): (string | number | undefined)[] => {
-    const {
-      metadata: { name, creationTimestamp },
-      kind,
-    } = broker;
+    const { metadata: { name, creationTimestamp } = {}, kind } = broker;
     const status = name && kind && creationTimestamp ? 'Created' : 'Loading';
     return [name, kind, status, creationTimestamp];
   };

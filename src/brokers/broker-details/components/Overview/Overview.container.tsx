@@ -47,6 +47,7 @@ import { useNavigate, useParams } from 'react-router-dom-v5-compat';
 import { Loading } from '@app/shared-components/Loading/Loading';
 import { ErrorState } from '@app/shared-components/ErrorState/ErrorState';
 import { useGetBrokerCR } from '@app/k8s/customHooks';
+import { GenericError } from '@app/shared-components/GenericError/GenericError';
 
 const useGetIssuerCa = (
   cr: BrokerCR,
@@ -60,7 +61,7 @@ const useGetIssuerCa = (
         version: 'v1',
         kind: 'Issuer',
       },
-      namespace: cr.metadata.namespace,
+      namespace: cr.metadata?.namespace,
       name: acceptorIssuer,
     });
   if (!loadedIssuers || loadErrorIssuers) {
@@ -79,7 +80,7 @@ const useGetTlsSecret = (cr: BrokerCR, acceptor: Acceptor) => {
     },
     name: secretName,
     isList: true,
-    namespace: cr.metadata.namespace,
+    namespace: cr.metadata?.namespace,
   });
 
   const secret = secrets.find((secret) => secret.metadata?.name === secretName);
@@ -103,11 +104,11 @@ const SecretDownloadLink: FC<SecretDownloadLinkProps> = ({ secret }) => {
     <a
       href={
         'data:application/pem-certificate-chain;base64,' +
-        secret.data['tls.crt']
+        secret.data?.['tls.crt']
       }
-      download={secret.metadata.name + '.pem'}
+      download={secret.metadata?.name + '.pem'}
     >
-      {secret.metadata.name + '.pem'}
+      {secret.metadata?.name + '.pem'}
     </a>
   );
 };
@@ -129,7 +130,7 @@ const HelpConnectAcceptor: FC<HelperConnectAcceptorProps> = ({
   const [secret, loaded, loadError] = useGetTlsSecret(cr, acceptor);
   const ingressHost = getIssuerIngressHostForAcceptor(cr, acceptor, 0);
   const [copied, setCopied] = useState(false);
-  const isSecuredByToken = cr.spec.adminUser === undefined;
+  const isSecuredByToken = cr.spec?.adminUser === undefined;
 
   const clipboardCopyFunc = (text: string) => {
     navigator.clipboard.writeText(text.toString());
@@ -180,9 +181,9 @@ const HelpConnectAcceptor: FC<HelperConnectAcceptorProps> = ({
                 onClick={() =>
                   window.open(
                     'ns/' +
-                      cr.metadata.namespace +
+                      cr.metadata?.namespace +
                       '/secrets/' +
-                      cr.spec.deploymentPlan.extraMounts.secrets[0],
+                      cr.spec?.deploymentPlan?.extraMounts?.secrets?.[0],
                   )
                 }
               >
@@ -257,7 +258,7 @@ const ConnectivityHelper: FC<IssuerSecretsDownloaderProps> = ({ cr }) => {
                   )}
                 </DescriptionListDescription>
               </DescriptionListGroup>
-              {cr.spec.acceptors.map((acceptor) => (
+              {cr.spec?.acceptors?.map((acceptor) => (
                 <HelpConnectAcceptor
                   cr={cr}
                   acceptor={acceptor}
@@ -287,7 +288,7 @@ const Annotations: FC<IssuerSecretsDownloaderProps> = ({ cr }) => {
             </Button>
           }
         >
-          {cr.metadata.annotations ? (
+          {cr.metadata?.annotations ? (
             Object.entries(cr.metadata.annotations).map(
               (annotations, index) => (
                 <Label key={index} variant="filled">
@@ -320,7 +321,7 @@ const Labels: FC<IssuerSecretsDownloaderProps> = ({ cr }) => {
             </Button>
           }
         >
-          {cr.metadata.labels ? (
+          {cr.metadata?.labels ? (
             Object.entries(cr.metadata.labels).map((label, index) => (
               <Label
                 key={index}
@@ -349,8 +350,18 @@ const Labels: FC<IssuerSecretsDownloaderProps> = ({ cr }) => {
 export const OverviewContainer: FC = () => {
   const { t } = useTranslation();
   const { ns: namespace, name } = useParams<{ ns?: string; name?: string }>();
+  const {
+    brokerCr: cr,
+    isLoading,
+    error,
+  } = useGetBrokerCR(name ?? '', namespace ?? '');
 
-  const { brokerCr: cr, isLoading, error } = useGetBrokerCR(name, namespace);
+  if (!name || !namespace) {
+    return (
+      <GenericError message={t('Namespace and broker name are required.')} />
+    );
+  }
+
   if (isLoading) {
     return <Loading />;
   }
@@ -377,7 +388,7 @@ export const OverviewContainer: FC = () => {
       <Metrics
         name={name}
         namespace={namespace}
-        size={cr.spec?.deploymentPlan?.size}
+        size={cr.spec?.deploymentPlan?.size ?? 0}
       />
       <Divider />
       {cr.spec?.restricted ? (

@@ -85,7 +85,8 @@ export const createClusterIssuerChainOfTrust = async (
       await k8sCreate({ model: ClusterIssuerModel, data: rootIssuer });
     } catch (error) {
       // If it already exists, that's fine
-      if (!error?.message?.includes('already exists')) {
+      const message = error instanceof Error ? error.message : '';
+      if (!message.includes('already exists')) {
         throw error;
       }
     }
@@ -94,7 +95,8 @@ export const createClusterIssuerChainOfTrust = async (
     try {
       await k8sCreate({ model: CertModel, data: rootCACert });
     } catch (error) {
-      if (!error?.message?.includes('already exists')) {
+      const message = error instanceof Error ? error.message : '';
+      if (!message.includes('already exists')) {
         throw error;
       }
     }
@@ -106,7 +108,7 @@ export const createClusterIssuerChainOfTrust = async (
   } catch (error) {
     throw new Error(
       `Failed to create ClusterIssuer chain of trust: ${
-        error?.message || error
+        error instanceof Error ? error.message : String(error)
       }`,
     );
   }
@@ -298,7 +300,9 @@ export const createTrustBundle = async (
     return trustBundle;
   } catch (error) {
     throw new Error(
-      `Failed to create Trust Bundle: ${error?.message || error}`,
+      `Failed to create Trust Bundle: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
     );
   }
 };
