@@ -72,41 +72,8 @@ jobs:
       - name: Extract translations
         run: yarn i18n && git diff --exit-code locales/en/plugin__activemq-artemis-self-provisioning-plugin.json
 
-      - name: check strict mode for reducers/7.12
-        run: |
-          OUTPUT=$(yarn typecheck:7.12 2>&1 || true)
-          if echo "$OUTPUT" | grep -Eq "src/reducers/7.12/.*\.(ts|tsx).*error"; then
-            echo "$OUTPUT" | grep -E "src/reducers/7.12/.*\.(ts|tsx).*error"
-            exit 1
-          fi
-          echo "✓ No type errors in src/reducers/7.12/"
-
-      - name: check strict mode for reducers/7.13
-        run: |
-          OUTPUT=$(yarn typecheck:7.13 2>&1 || true)
-          if echo "$OUTPUT" | grep -Eq "src/reducers/7.13/.*\.(ts|tsx).*error"; then
-            echo "$OUTPUT" | grep -E "src/reducers/7.13/.*\.(ts|tsx).*error"
-            exit 1
-          fi
-          echo "✓ No type errors in src/reducers/7.13/"
-
-      - name: check strict mode for reducers
-        run: |
-          OUTPUT=$(yarn typecheck:global-reducers 2>&1 || true)
-          if echo "$OUTPUT" | grep -Eq "src/reducers/.*\.(ts|tsx).*error"; then
-            echo "$OUTPUT" | grep -E "src/reducers/.*\.(ts|tsx).*error"
-            exit 1
-          fi
-          echo "✓ No type errors in src/reducers/"
-          
-      - name: check strict mode for reducers/restricted
-        run: |
-          OUTPUT=$(yarn typecheck:restricted 2>&1 || true)
-          if echo "$OUTPUT" | grep -Eq "src/reducers/restricted/.*\.(ts|tsx).*error"; then
-            echo "$OUTPUT" | grep -E "src/reducers/restricted/.*\.(ts|tsx).*error"
-            exit 1
-          fi
-          echo "✓ No type errors in src/reducers/restricted/"
+      - name: Typecheck
+        run: yarn typecheck
 
       - name: Build project
         run: yarn run build

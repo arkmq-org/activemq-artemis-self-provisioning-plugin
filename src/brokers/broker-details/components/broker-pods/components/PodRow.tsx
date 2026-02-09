@@ -13,10 +13,7 @@ export type PodRowProps = RowProps<BrokerCR> & {
 };
 
 export const PodRow: FC<PodRowProps> = ({ obj, activeColumnIDs, columns }) => {
-  const {
-    metadata: { name, creationTimestamp, namespace },
-    status,
-  } = obj;
+  const { metadata: { name, creationTimestamp, namespace } = {}, status } = obj;
 
   const readyCount = status?.containerStatuses
     ? status.containerStatuses.filter(
@@ -46,7 +43,7 @@ export const PodRow: FC<PodRowProps> = ({ obj, activeColumnIDs, columns }) => {
         {restarts}
       </TableData>
       <TableData id={columns[4].id} activeColumnIDs={activeColumnIDs}>
-        <Timestamp timestamp={creationTimestamp} />
+        {creationTimestamp ? <Timestamp timestamp={creationTimestamp} /> : '-'}
       </TableData>
     </>
   );

@@ -13,10 +13,7 @@ type ResourcesRowProps = {
 };
 
 export const ResourcesRow: FC<ResourcesRowProps> = ({ obj }) => {
-  const {
-    metadata: { name, creationTimestamp },
-    kind,
-  } = obj;
+  const { metadata: { name, creationTimestamp } = {}, kind } = obj;
   const isDataFetched = name && kind && creationTimestamp;
   const { t } = useTranslation();
 
@@ -33,7 +30,7 @@ export const ResourcesRow: FC<ResourcesRowProps> = ({ obj }) => {
     }
   };
 
-  const resourceBasePath = getResourceBasePath(kind);
+  const resourceBasePath = getResourceBasePath(kind ?? '');
 
   return (
     <Tr>
@@ -41,8 +38,8 @@ export const ResourcesRow: FC<ResourcesRowProps> = ({ obj }) => {
         {resourceBasePath ? (
           <ResourceLink
             kind={kind}
-            name={obj.metadata.name}
-            namespace={obj.metadata.namespace}
+            name={obj.metadata?.name}
+            namespace={obj.metadata?.namespace}
           />
         ) : (
           name
@@ -59,7 +56,7 @@ export const ResourcesRow: FC<ResourcesRowProps> = ({ obj }) => {
         )}
       </Td>
       <Td>
-        <Timestamp timestamp={creationTimestamp} />
+        {creationTimestamp ? <Timestamp timestamp={creationTimestamp} /> : '-'}
       </Td>
     </Tr>
   );

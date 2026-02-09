@@ -6,21 +6,20 @@ import { MetricsPolling } from '../MetricsPolling/MetricsPolling';
 import { useTranslation } from '@app/i18n/i18n';
 import { CardQueryBrowser } from '../CardQueryBrowser/CardQueryBrowser';
 import { PrometheusResponse } from '@openshift-console/dynamic-plugin-sdk';
-import { MetricsState } from '../../utils/types';
+import { MetricsState, AxisDomain, getDefaultXDomain } from '../../utils/types';
 import { MetricsErrorBoundary } from '../../MetricsErrorBoundary';
 
 type CardBrokerPendingMessagesMetricsContainerProps = {
   state: MetricsState;
 };
 
-type AxisDomain = [number, number];
-
 export const CardBrokerPendingMessagesMetricsContainer: FC<
   CardBrokerPendingMessagesMetricsContainerProps
 > = ({ state }) => {
   const { t } = useTranslation();
+  const span = parsePrometheusDuration(state.span);
 
-  const [xDomain] = useState<AxisDomain>();
+  const [xDomain] = useState<AxisDomain>(() => getDefaultXDomain(span));
   const [results, setResults] = useState<{
     [key: number]: {
       result: PrometheusResponse | null;

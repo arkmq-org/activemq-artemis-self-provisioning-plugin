@@ -17,6 +17,7 @@ import {
 import { TrashIcon } from '@patternfly/react-icons';
 import { ConfigType } from '../../../../ConfigurationPage';
 import { useTranslation } from '@app/i18n/i18n';
+import { GenericError } from '@app/shared-components/GenericError/GenericError';
 
 type ParamProps = {
   paramKey: string;
@@ -32,8 +33,11 @@ const Param: FC<ParamProps> = ({
   configName,
 }) => {
   const { cr } = useContext(BrokerCreationFormState);
-  const otherParams = getConfigOtherParams(cr, configType, configName);
   const dispatch = useContext(BrokerCreationFormDispatch);
+  const [newKey, setNewKey] = useState(key);
+  const [newValue, setNewValue] = useState(value);
+  if (!cr) return <GenericError />;
+  const otherParams = getConfigOtherParams(cr, configType, configName);
   const updateOtherParams = (prevKey: string, key: string, value: string) => {
     const params = new Map(otherParams);
     if (prevKey) {
@@ -64,8 +68,6 @@ const Param: FC<ParamProps> = ({
   const deleteOtherParam = (key: string) => {
     updateOtherParams(key, '', '');
   };
-  const [newKey, setNewKey] = useState(key);
-  const [newValue, setNewValue] = useState(value);
   return (
     <InputGroup>
       <InputGroupItem isFill>
@@ -111,13 +113,14 @@ export const OtherParameters: FC<OtherParametersProps> = ({
 }) => {
   const { t } = useTranslation();
   const { cr } = useContext(BrokerCreationFormState);
+  const dispatch = useContext(BrokerCreationFormDispatch);
+  if (!cr) return <GenericError />;
   const otherParams = getConfigOtherParams(cr, configType, configName);
   let newParamSuffix = 0;
   const newParamBaseName = 'key';
   while (otherParams.has(newParamBaseName + newParamSuffix)) {
     newParamSuffix += 1;
   }
-  const dispatch = useContext(BrokerCreationFormDispatch);
   const addNewParam = (key: string, value: string) => {
     const params = new Map(otherParams);
     params.set(key, value);

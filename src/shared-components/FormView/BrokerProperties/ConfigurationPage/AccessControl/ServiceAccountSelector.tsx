@@ -23,7 +23,7 @@ export const ServiceAccountSelector: React.FunctionComponent = () => {
   const dispatch = useContext(BrokerCreationFormDispatch);
 
   const { serviceAccounts, isLoading, error } = useGetServiceAccounts(
-    cr.metadata?.namespace,
+    cr?.metadata?.namespace ?? '',
   );
 
   return (
@@ -78,7 +78,7 @@ export const ServiceAccountSelector: React.FunctionComponent = () => {
 
         {!isLoading && !error && (
           <FormSelect
-            value={cr.spec?.deploymentPlan?.podSecurity?.serviceAccountName}
+            value={cr?.spec?.deploymentPlan?.podSecurity?.serviceAccountName}
             onChange={(_event, value) =>
               dispatch({
                 operation: ArtemisReducerOperations713.setServiceAccount,
@@ -95,8 +95,8 @@ export const ServiceAccountSelector: React.FunctionComponent = () => {
             {serviceAccounts.map((option, index) => (
               <FormSelectOption
                 key={index}
-                value={option.metadata.name}
-                label={option.metadata.name}
+                value={option.metadata?.name ?? ''}
+                label={option.metadata?.name ?? ''}
               />
             ))}
           </FormSelect>

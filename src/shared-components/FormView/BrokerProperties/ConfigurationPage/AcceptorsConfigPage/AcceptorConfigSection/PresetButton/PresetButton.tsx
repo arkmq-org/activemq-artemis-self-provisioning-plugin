@@ -31,12 +31,14 @@ import {
 import { SelectIssuerDrawer } from '../../../../../SelectIssuerDrawer/SelectIssuerDrawer';
 import { useHasCertManager } from '@app/k8s/customHooks';
 import { ExclamationTriangleIcon } from '@patternfly/react-icons';
+import { GenericError } from '@app/shared-components/GenericError/GenericError';
+
 type PreconfigurationButtonProps = {
   acceptor: Acceptor;
 };
 
 export type WithAcceptorProps = {
-  acceptor?: Acceptor;
+  acceptor: Acceptor;
 };
 
 interface AddIssuerAnnotationModalProps extends WithAcceptorProps {
@@ -56,12 +58,12 @@ const AddPresetModal: FC<AddIssuerAnnotationModalProps> = ({
   const dispatch = useContext(BrokerCreationFormDispatch);
   const [selectedIssuer, setSelectedIssuer] = useState<string>('');
   const [selectedAcceptor, setSelectedAcceptor] = useState<string>(
-    initialAcceptor ? initialAcceptor.name : '',
+    initialAcceptor?.name ?? '',
   );
   const [prevInitialAcceptor, setPrevInitialAcceptor] =
     useState(initialAcceptor);
   if (prevInitialAcceptor !== initialAcceptor) {
-    setSelectedAcceptor(initialAcceptor ? initialAcceptor.name : '');
+    setSelectedAcceptor(initialAcceptor?.name ?? '');
     setPrevInitialAcceptor(initialAcceptor);
   }
 
@@ -82,12 +84,13 @@ const AddPresetModal: FC<AddIssuerAnnotationModalProps> = ({
   };
 
   const { cr } = useContext(BrokerCreationFormState);
-  const hasACertManagerAnnotation =
-    getCertManagerResourceTemplateFromAcceptor(cr, initialAcceptor) !==
-    undefined;
   const [showCertManagerForm, setShowCertManagerForm] = useState(false);
   const { hasCertManager, isLoading: isLoadingCertManagerAvailability } =
     useHasCertManager();
+  if (!cr) return <GenericError />;
+  const hasACertManagerAnnotation =
+    getCertManagerResourceTemplateFromAcceptor(cr, initialAcceptor) !==
+    undefined;
   const isCertMangerDependencySatisfied =
     hasCertManager && !isLoadingCertManagerAvailability;
   const onChange = (event: React.FormEvent<HTMLInputElement>) => {
@@ -219,6 +222,7 @@ const AddPresetModal: FC<AddIssuerAnnotationModalProps> = ({
 export const PresetButton: FC<PreconfigurationButtonProps> = ({ acceptor }) => {
   const { t } = useTranslation();
   const [showPresetModal, setShowPresetModal] = useState(false);
+
   return (
     <>
       <AddPresetModal

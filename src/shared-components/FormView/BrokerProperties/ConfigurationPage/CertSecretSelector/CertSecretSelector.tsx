@@ -48,6 +48,7 @@ import {
   TypeaheadSelect,
   TypeaheadSelectOption,
 } from '@patternfly/react-templates';
+import { GenericError } from '@app/shared-components/GenericError/GenericError';
 
 /**
  * This function will generate a certificate for the targeted configType with
@@ -133,53 +134,63 @@ const GenerateCertificateModal: FC<GenerateCertificateModalProps> = ({
   const dispatch = useContext(BrokerCreationFormDispatch);
   const [selectedIssuer, setSelectedIssuer] = useState<string>('');
   const { cr } = useContext(BrokerCreationFormState);
+  if (!cr) return <GenericError />;
 
   const isConsole = !(
     configType === ConfigType.acceptors || configType === ConfigType.connectors
   );
-  const dnsNames = [].concat(
-    ...[...Array(cr.spec.deploymentPlan.size).keys()].map((i) =>
+  const dnsNames = [...Array(cr.spec?.deploymentPlan?.size).keys()].flatMap(
+    (i) =>
       isConsole
         ? [
-            cr.metadata.name +
+            cr.metadata?.name +
               '-wconsj-' +
               i +
               '-svc-rte-' +
-              cr.metadata.namespace +
+              cr.metadata?.namespace +
               '.' +
-              cr.spec.ingressDomain,
-            cr.metadata.name +
+              cr.spec?.ingressDomain,
+            cr.metadata?.name +
               '-wconsj-' +
               i +
               '-svc-ing-' +
-              cr.metadata.namespace +
+              cr.metadata?.namespace +
               '.' +
-              cr.spec.ingressDomain,
-            cr.metadata.name + '-wconsj-' + i + '-svc.' + cr.metadata.namespace,
+              cr.spec?.ingressDomain,
+            cr.metadata?.name +
+              '-wconsj-' +
+              i +
+              '-svc.' +
+              cr.metadata?.namespace,
           ]
         : [
-            cr.metadata.name +
+            cr.metadata?.name +
               '-ss-' +
               i +
               '.' +
-              cr.metadata.name +
+              cr.metadata?.name +
               '-hdls-svc.' +
-              cr.metadata.namespace +
+              cr.metadata?.namespace +
               '.svc.cluster.local',
           ],
-    ),
   );
-  const certName = cr.metadata.name + '-' + configType + '-cert';
-  const commonName = cr.metadata.name + '-' + configType;
-  const secretName = cr.metadata.name + '-' + configType + '-cert-secret';
+  const certName = cr.metadata?.name + '-' + configType + '-cert';
+  const commonName = cr.metadata?.name + '-' + configType;
+  const secretName = cr.metadata?.name + '-' + configType + '-cert-secret';
   const handleGenerateCertificate = () => {
     if (selectedIssuer === '') {
       return;
     }
+    const namespace = cr.metadata?.namespace;
+    if (!namespace) {
+      setError(t('Namespace is not available. Cannot generate certificate.'));
+      return;
+    }
+
     createCert(
       selectedIssuer,
       certName,
-      cr.metadata.namespace,
+      namespace,
       commonName,
       secretName,
       dnsNames,
@@ -196,7 +207,7 @@ const GenerateCertificateModal: FC<GenerateCertificateModalProps> = ({
           operation: operation,
           payload: {
             name: configName,
-            secret: cr.metadata.name + '-' + configType + '-cert-secret',
+            secret: cr.metadata?.name + '-' + configType + '-cert-secret',
             isCa: false,
           },
         });
@@ -245,7 +256,7 @@ const GenerateCertificateModal: FC<GenerateCertificateModalProps> = ({
           <DescriptionListGroup>
             <DescriptionListTerm>{t('namespace')}</DescriptionListTerm>
             <DescriptionListDescription>
-              {cr.metadata.namespace}
+              {cr.metadata?.namespace}
             </DescriptionListDescription>
           </DescriptionListGroup>
           <DescriptionListGroup>
@@ -324,25 +335,25 @@ type CreateSecretOptionsPropTypes = {
  * @returns A list of options for the typeahead select.
  */
 const useCreateSecretOptions = ({
-  customOptions,
+  customOptions = [],
   certManagerSecrets,
   legacySecrets,
 }: CreateSecretOptionsPropTypes): TypeaheadSelectOption[] => {
   const nonptlsSecrets = certManagerSecrets
     .filter((secret) => {
-      return !secret.metadata.name.endsWith('-ptls');
+      return !!secret.metadata?.name && !secret.metadata.name.endsWith('-ptls');
     })
-    .map((option) => option.metadata.name);
+    .map((option) => option.metadata!.name);
   const filteredCustomOptions = customOptions.filter(
     (option) =>
       !nonptlsSecrets.find((s) => s === option) &&
-      !legacySecrets.find((s) => s.metadata.name.startsWith(option)),
+      !legacySecrets.find((s) => s.metadata?.name?.startsWith(option)),
   );
   const options = [
     ...filteredCustomOptions,
     ...nonptlsSecrets,
-    ...legacySecrets.map((option) => option.metadata.name),
-  ];
+    ...legacySecrets.map((option) => option.metadata?.name),
+  ].filter((option): option is string => typeof option === 'string');
   return options.map((option) => {
     return { content: option, value: option };
   });
@@ -359,11 +370,12 @@ const useCreateSecretOptions = ({
  * otherwise.
  */
 const isLegacySecret = (secret: K8sResourceCommonWithData): boolean => {
-  return (
+  return !!(
     !(
       secret.metadata?.annotations &&
       'aa-spp-generated' in secret.metadata.annotations
     ) &&
+    secret.data &&
     hasKey(secret.data, 'broker.ks') &&
     hasKey(secret.data, 'keyStorePassword') &&
     hasKey(secret.data, 'client.ts') &&
@@ -416,7 +428,7 @@ const isKnownCertManagerSecret = (
   certManagerSecrets: K8sResourceCommonWithData[],
 ): boolean => {
   const theSecret = certManagerSecrets.filter((value) => {
-    return value.metadata.name === selectedSecret;
+    return value.metadata?.name === selectedSecret;
   });
   return theSecret.length === 1;
 };
@@ -563,7 +575,9 @@ export const CertSecretSelector: FC<CertSecretSelectorProps> = ({
    * Retrieves the currently selected secret name from the form state for the
    * given configuration.
    */
-  const selectedSecret = getConfigSecret(cr, configType, configName, isCa);
+  const selectedSecret = cr
+    ? getConfigSecret(cr, configType, configName, isCa)
+    : undefined;
   const customOptions = selectedSecret ? [selectedSecret] : [];
   /**
    * Generates the list of selectable options for the typeahead input by combining
@@ -590,6 +604,11 @@ export const CertSecretSelector: FC<CertSecretSelectorProps> = ({
         .sort((a, b) => String(a.content).localeCompare(String(b.content))),
     [options],
   );
+
+  const showCertTooltipRef = useRef<HTMLButtonElement>(null);
+  const [parseError, setParseError] = useState(null);
+
+  if (!cr) return <GenericError />;
 
   /**
    * Clears the selected secret for the current configuration in the form state.
@@ -667,32 +686,30 @@ export const CertSecretSelector: FC<CertSecretSelectorProps> = ({
   };
 
   /**
-   * A ref to the button that shows the certificate info, used for positioning the tooltip.
-   */
-  const showCertTooltipRef = useRef<HTMLButtonElement>(null);
-  /**
    * Fetches and parses the certificate details from the selected secret and opens
    * the details modal. It handles both CA and regular TLS secrets.
    */
-
-  const [parseError, setParseError] = useState(null);
   const showCertInfo = () => {
     setParseError(null);
     const theSecret = certManagerSecrets.filter((value) => {
-      return value.metadata.name === selectedSecret;
+      return value.metadata?.name === selectedSecret;
     });
     let pem: string;
     try {
-      if (theSecret.length !== 1) {
+      if (
+        theSecret.length !== 1 ||
+        !theSecret[0].data ||
+        !theSecret[0].metadata?.name
+      ) {
         setParseError(t('only support tls format secret from cert-manager'));
         // clear the message after 10 seconds
         setTimeout(() => setParseError(null), 10000);
         return;
       }
       if (isCa) {
-        Object.keys(theSecret[0].data).forEach((key) => {
-          pem = base64.decode(theSecret[0].data[key]);
-        });
+        const keys = Object.keys(theSecret[0].data);
+        if (keys.length === 0) return;
+        pem = base64.decode(theSecret[0].data[keys[keys.length - 1]]);
       } else {
         pem = base64.decode(theSecret[0].data['tls.crt']);
       }
@@ -717,8 +734,13 @@ export const CertSecretSelector: FC<CertSecretSelectorProps> = ({
    * Retrieves the cert-manager resource template from the acceptor configuration.
    * This is used to determine if a preset alert should be shown.
    */
-  const certManagerResourceTemplate =
-    getCertManagerResourceTemplateFromAcceptor(cr, getAcceptor(cr, configName));
+  const acceptor =
+    configType === ConfigType.acceptors
+      ? getAcceptor(cr, configName)
+      : undefined;
+  const certManagerResourceTemplate = acceptor
+    ? getCertManagerResourceTemplateFromAcceptor(cr, acceptor)
+    : undefined;
 
   return (
     <FormGroup
@@ -799,6 +821,7 @@ export const CertSecretSelector: FC<CertSecretSelectorProps> = ({
             ref={showCertTooltipRef}
             isDisabled={
               stringSelectedSecret === '' ||
+              !selectedSecret ||
               !isKnownCertManagerSecret(selectedSecret, certManagerSecrets)
             }
           >

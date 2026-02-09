@@ -19,6 +19,7 @@ import {
   ArtemisReducerOperations713,
   getSecurityRoles,
 } from '@app/reducers/7.13/reducer';
+import { GenericError } from '@app/shared-components/GenericError/GenericError';
 
 type SecurityRulesProps = {
   name: string;
@@ -27,8 +28,11 @@ type SecurityRulesProps = {
 
 const SecurityRule: FC<SecurityRulesProps> = ({ name: key, value: value }) => {
   const { cr } = useContext(BrokerCreationFormState);
-  const securityRoles = getSecurityRoles(cr);
   const dispatch = useContext(BrokerCreationFormDispatch);
+  const [newKey, setNewKey] = useState(key);
+  const [newValue, setNewValue] = useState(value);
+  if (!cr) return <GenericError />;
+  const securityRoles = getSecurityRoles(cr);
   const updateSecurityRole = (prevKey: string, key: string, value: string) => {
     // find the index of the prevKey
     let prevKeyIndex = 0;
@@ -60,8 +64,6 @@ const SecurityRule: FC<SecurityRulesProps> = ({ name: key, value: value }) => {
   const deleteSecurityRule = (key: string) => {
     updateSecurityRole(key, '', '');
   };
-  const [newKey, setNewKey] = useState(key);
-  const [newValue, setNewValue] = useState(value);
   return (
     <InputGroup>
       <InputGroupItem isFill>
@@ -99,10 +101,10 @@ const SecurityRule: FC<SecurityRulesProps> = ({ name: key, value: value }) => {
 export const SecurityRoles: FC = () => {
   const { t } = useTranslation();
   const { cr } = useContext(BrokerCreationFormState);
-  const securityRoles = getSecurityRoles(cr);
   const dispatch = useContext(BrokerCreationFormDispatch);
-
   const [filterValue, setFilterValue] = useState<string>('');
+  if (!cr) return <GenericError />;
+  const securityRoles = getSecurityRoles(cr);
 
   const addNewSecurityRule = (key: string, value: string) => {
     const newSecurityRoles = new Map([...securityRoles, [key, value]]);

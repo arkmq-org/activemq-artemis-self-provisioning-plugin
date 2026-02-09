@@ -36,10 +36,10 @@ export const AccessControlPage: FC = () => {
             id={'id-switch-console-auth-token'}
             label={t('RBAC enabled')}
             labelOff={t('RBAC disabled')}
-            isChecked={!cr.spec?.adminUser}
+            isChecked={!cr?.spec?.adminUser}
             onChange={(_event, value: boolean) => handleAuthChange(value)}
           />
-          {!cr.spec?.adminUser && (
+          {!cr?.spec?.adminUser && (
             <FormFieldGroup
               header={
                 <FormFieldGroupHeader

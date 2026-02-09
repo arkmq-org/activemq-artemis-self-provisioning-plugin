@@ -23,6 +23,7 @@ import { BrokerCR } from '@app/k8s/types';
 import { ConfigType } from '../ConfigurationPage';
 import { CertSecretSelector } from '../CertSecretSelector/CertSecretSelector';
 import { useTranslation } from '@app/i18n/i18n';
+import { GenericError } from '@app/shared-components/GenericError/GenericError';
 
 export type ConsoleConfigProps = {
   brokerId: number;
@@ -58,6 +59,8 @@ export const ConsoleConfigPage: FC<ConsoleConfigProps> = ({ brokerId }) => {
     return false;
   };
 
+  const [execOnlyOnce, setExecOnlyOnce] = useState(true);
+  if (!cr) return <GenericError />;
   const exposeConsole = GetConsoleExpose(cr);
   const exposeMode = GetConsoleExposeMode(cr);
   const isSSLEnabled = GetConsoleSSLEnabled(cr);
@@ -88,7 +91,6 @@ export const ConsoleConfigPage: FC<ConsoleConfigProps> = ({ brokerId }) => {
     { value: ExposeMode.ingress, label: 'Ingress', disabled: false },
   ];
 
-  const [execOnlyOnce, setExecOnlyOnce] = useState(true);
   if (execOnlyOnce) {
     setExecOnlyOnce(false);
     setConsoleExpose(exposeConsole);
@@ -128,8 +130,8 @@ export const ConsoleConfigPage: FC<ConsoleConfigProps> = ({ brokerId }) => {
           <FormSelect
             label={t('console expose mode')}
             value={exposeMode}
-            onChange={(_event, value: ExposeMode) =>
-              setConsoleExposeMode(value)
+            onChange={(_event, value: string) =>
+              setConsoleExposeMode(value as ExposeMode)
             }
             aria-label="formselect-expose-mode-aria-label"
           >
@@ -151,7 +153,7 @@ export const ConsoleConfigPage: FC<ConsoleConfigProps> = ({ brokerId }) => {
           ouiaId="BasicSwitch-console-ssl"
         />
       </FormFieldGroupExpandable>
-      {isSSLEnabled && (
+      {isSSLEnabled && cr.metadata?.namespace && (
         <FormFieldGroup
           header={
             <FormFieldGroupHeader
@@ -163,13 +165,13 @@ export const ConsoleConfigPage: FC<ConsoleConfigProps> = ({ brokerId }) => {
           }
         >
           <CertSecretSelector
-            namespace={cr.metadata.namespace}
+            namespace={cr.metadata?.namespace}
             isCa={false}
             configType={ConfigType.console}
             configName={'console'}
           />
           <CertSecretSelector
-            namespace={cr.metadata.namespace}
+            namespace={cr.metadata?.namespace}
             isCa={true}
             configType={ConfigType.console}
             configName={'console'}

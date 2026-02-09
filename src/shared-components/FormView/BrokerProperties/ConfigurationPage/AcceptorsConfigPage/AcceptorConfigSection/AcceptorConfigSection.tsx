@@ -16,6 +16,7 @@ import { AcceptorConfigPage } from './AcceptorConfigPage/AcceptorConfigPage';
 import { PresetButton } from './PresetButton/PresetButton';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal/ConfirmDeleteModal';
 import { ConfigRenamingModal } from './ConfigRenamingModal/ConfigRenamingModal';
+import { GenericError } from '@app/shared-components/GenericError/GenericError';
 
 export type AcceptorConfigSectionProps = {
   configType: ConfigType;
@@ -43,6 +44,8 @@ export const AcceptorConfigSection: FC<AcceptorConfigSectionProps> = ({
   };
 
   const { cr } = useContext(BrokerCreationFormState);
+  if (!cr) return <GenericError />;
+  const acceptor = getAcceptor(cr, configName);
   return (
     <FormFieldGroupExpandable
       isExpanded
@@ -56,8 +59,8 @@ export const AcceptorConfigSection: FC<AcceptorConfigSectionProps> = ({
           titleDescription={configName + "'s details"}
           actions={
             <>
-              {configType === ConfigType.acceptors && (
-                <PresetButton acceptor={getAcceptor(cr, configName)} />
+              {configType === ConfigType.acceptors && acceptor && (
+                <PresetButton acceptor={acceptor} />
               )}
               <ConfigRenamingModal initName={configName} />
               <ConfirmDeleteModal

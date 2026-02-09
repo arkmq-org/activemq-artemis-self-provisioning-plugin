@@ -32,6 +32,25 @@ export type FormatSeriesTitle = (
 ) => string;
 export type GraphSeries = GraphDataPoint[];
 export type AxisDomain = [number, number];
+
+export const isGraphPoint = (
+  point: GraphDataPoint | undefined,
+): point is GraphDataPoint => point !== undefined;
+
+export const findMin = (series: GraphSeries): GraphDataPoint | undefined => {
+  if (!series.length) return undefined;
+  return series.reduce((min, point) => (point.y < min.y ? point : min));
+};
+
+export const findMax = (series: GraphSeries): GraphDataPoint | undefined => {
+  if (!series.length) return undefined;
+  return series.reduce((max, point) => (point.y > max.y ? point : max));
+};
+
+export const getDefaultXDomain = (span: number): AxisDomain => {
+  const endTime = Date.now();
+  return [endTime - span, endTime];
+};
 export type Series = [PrometheusLabels, GraphDataPoint[]] | [];
 
 export type QueryInput = {

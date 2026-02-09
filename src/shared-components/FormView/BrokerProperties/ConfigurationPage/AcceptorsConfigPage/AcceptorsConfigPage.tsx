@@ -21,6 +21,7 @@ import {
 import { CubesIcon } from '@patternfly/react-icons';
 import { AcceptorConfigSection } from './AcceptorConfigSection/AcceptorConfigSection';
 import { useTranslation } from '@app/i18n/i18n';
+import { GenericError } from '@app/shared-components/GenericError/GenericError';
 
 type AcceptorsConfigProps = {
   brokerId: number;
@@ -30,10 +31,11 @@ export const AcceptorsConfigPage: FC<AcceptorsConfigProps> = ({ brokerId }) => {
   const { t } = useTranslation();
   const { cr } = useContext(BrokerCreationFormState);
   const configType = useContext(ConfigTypeContext);
+  const dispatch = useContext(BrokerCreationFormDispatch);
+  if (!cr) return <GenericError />;
   const configs = listConfigs(configType, cr) as {
     name: string;
   }[];
-  const dispatch = useContext(BrokerCreationFormDispatch);
 
   const addNewConfig = () => {
     if (configType === ConfigType.acceptors) {
