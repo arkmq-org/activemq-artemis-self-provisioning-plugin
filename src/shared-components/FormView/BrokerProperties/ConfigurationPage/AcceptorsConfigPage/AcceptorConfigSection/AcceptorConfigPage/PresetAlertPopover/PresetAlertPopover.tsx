@@ -22,13 +22,11 @@ export const PresetAlertPopover: FC<PresetCautionProps> = ({
 }) => {
   const { cr } = useContext(BrokerCreationFormState);
   const { t } = useTranslation();
+  const acceptor = getAcceptor(cr, configName);
   const hasCertManagerPreset =
-    configType === ConfigType.acceptors
-      ? getCertManagerResourceTemplateFromAcceptor(
-          cr,
-          getAcceptor(cr, configName),
-        ) !== undefined
-      : false;
+    configType === ConfigType.acceptors &&
+    acceptor !== undefined &&
+    getCertManagerResourceTemplateFromAcceptor(cr, acceptor) !== undefined;
 
   if (!hasCertManagerPreset) {
     return <></>;

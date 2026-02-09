@@ -32,11 +32,11 @@ import { SelectIssuerDrawer } from '../../../../../SelectIssuerDrawer/SelectIssu
 import { useHasCertManager } from '@app/k8s/customHooks';
 import { ExclamationTriangleIcon } from '@patternfly/react-icons';
 type PreconfigurationButtonProps = {
-  acceptor: Acceptor;
+  acceptor: Acceptor | undefined;
 };
 
 export type WithAcceptorProps = {
-  acceptor?: Acceptor;
+  acceptor: Acceptor;
 };
 
 interface AddIssuerAnnotationModalProps extends WithAcceptorProps {
@@ -56,12 +56,12 @@ const AddPresetModal: FC<AddIssuerAnnotationModalProps> = ({
   const dispatch = useContext(BrokerCreationFormDispatch);
   const [selectedIssuer, setSelectedIssuer] = useState<string>('');
   const [selectedAcceptor, setSelectedAcceptor] = useState<string>(
-    initialAcceptor ? initialAcceptor.name : '',
+    initialAcceptor?.name ?? '',
   );
   const [prevInitialAcceptor, setPrevInitialAcceptor] =
     useState(initialAcceptor);
   if (prevInitialAcceptor !== initialAcceptor) {
-    setSelectedAcceptor(initialAcceptor ? initialAcceptor.name : '');
+    setSelectedAcceptor(initialAcceptor?.name ?? '');
     setPrevInitialAcceptor(initialAcceptor);
   }
 
@@ -219,6 +219,11 @@ const AddPresetModal: FC<AddIssuerAnnotationModalProps> = ({
 export const PresetButton: FC<PreconfigurationButtonProps> = ({ acceptor }) => {
   const { t } = useTranslation();
   const [showPresetModal, setShowPresetModal] = useState(false);
+
+  if (!acceptor) {
+    return null;
+  }
+
   return (
     <>
       <AddPresetModal

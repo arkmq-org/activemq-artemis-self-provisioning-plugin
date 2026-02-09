@@ -18,12 +18,18 @@ type CardBrokerMemoryUsageMetricsContainerProps = {
 
 type AxisDomain = [number, number];
 
+const getDefaultXDomain = (span: number): AxisDomain => {
+  const endTime = Date.now();
+  return [endTime - span, endTime];
+};
+
 export const CardBrokerMemoryUsageMetricsContainer: FC<
   CardBrokerMemoryUsageMetricsContainerProps
 > = ({ state }) => {
   const { t } = useTranslation();
+  const span = parsePrometheusDuration(state.span);
 
-  const [xDomain] = useState<AxisDomain>();
+  const [xDomain] = useState<AxisDomain>(() => getDefaultXDomain(span));
   // State to store the results from each MetricsPolling component.
   // The key is the index of the poller.
   const [results, setResults] = useState<{
@@ -78,7 +84,7 @@ export const CardBrokerMemoryUsageMetricsContainer: FC<
     return { metricsResult, loaded, errorObject };
   }, [results, queries]);
 
-  const samples = getMaxSamplesForSpan(parsePrometheusDuration(state.span));
+  const samples = getMaxSamplesForSpan(span);
 
   // Define this once for all queries so that they have exactly the same time range and X values
   const endTime = xDomain?.[1];
@@ -102,7 +108,7 @@ export const CardBrokerMemoryUsageMetricsContainer: FC<
           query={query}
           index={i}
           namespace={state.namespace}
-          span={parsePrometheusDuration(state.span)}
+          span={span}
           samples={samples}
           endTime={endTime}
           delay={parsePrometheusDuration(state.pollTime)}
@@ -114,7 +120,7 @@ export const CardBrokerMemoryUsageMetricsContainer: FC<
           isInitialLoading={false}
           backendUnavailable={false}
           allMetricsSeries={metricsResult}
-          span={parsePrometheusDuration(state.span)}
+          span={span}
           isLoading={!loaded}
           fixedXDomain={xDomain}
           samples={samples}

@@ -60,7 +60,7 @@ export const MetricsPolling: React.FC<MetricsPollingProps> = ({
   });
 
   useEffect(() => {
-    onResult(index, result, loaded, loadError);
+    onResult(index, result ?? null, loaded, loadError);
   }, [index, result, loaded, loadError, onResult]);
 
   return null;

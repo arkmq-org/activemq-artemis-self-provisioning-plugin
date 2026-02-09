@@ -87,8 +87,8 @@ const convertBaseValueToUnits = (
   value: number,
   unitArray: string[],
   divisor: number,
-  initialUnit: string,
-  preferredUnit: string,
+  initialUnit?: string,
+  preferredUnit?: string,
 ): ConvertedValue => {
   const sliceIndex = initialUnit ? unitArray.indexOf(initialUnit) : 0;
   const units_ = unitArray.slice(sliceIndex);

@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { Title, Divider } from '@patternfly/react-core';
+import { Title, Divider, Alert, AlertVariant } from '@patternfly/react-core';
 import { useTranslation } from '@app/i18n/i18n';
 import { BrokerDetailsBreadcrumb } from './components/BrokerDetailsBreadcrumb/BrokerDetailsBreadcrumb';
 import { OverviewContainer } from './components/Overview/Overview.container';
@@ -65,9 +65,24 @@ const AuthenticatedPageContent: FC<AuthenticatedPageContentPropType> = ({
 };
 
 export const BrokerDetailsPage: FC = () => {
+  const { t } = useTranslation();
   const { ns: namespace, name } = useParams<{ ns?: string; name?: string }>();
+  const { brokerCr, isLoading, error } = useGetBrokerCR(
+    name ?? '',
+    namespace ?? '',
+  );
 
-  const { brokerCr, isLoading, error } = useGetBrokerCR(name, namespace);
+  if (!name || !namespace) {
+    return (
+      <Alert
+        variant={AlertVariant.danger}
+        isInline
+        title={t('Missing required parameters')}
+      >
+        {t('namespace and broker name are required.')}
+      </Alert>
+    );
+  }
 
   if (isLoading) {
     return <Loading />;
@@ -81,8 +96,8 @@ export const BrokerDetailsPage: FC = () => {
     <>
       <AuthenticatedPageContent
         brokerCr={brokerCr}
-        name={name}
-        namespace={namespace}
+        name={name || ''}
+        namespace={namespace || ''}
       />
     </>
   );

@@ -33,8 +33,8 @@ export const BrokersContainer: FC = () => {
   });
 
   const onEditBroker = (broker: BrokerCR) => {
-    const namespace = broker.metadata.namespace;
-    const name = broker.metadata.name;
+    const namespace = broker.metadata?.namespace;
+    const name = broker.metadata?.name;
     navigate(`/k8s/ns/${namespace}/edit-broker/${name}`);
   };
 
@@ -67,13 +67,13 @@ export const BrokersContainer: FC = () => {
         onDeleteButtonClick={onDeleteBroker}
         isModalOpen={isModalOpen}
         onOpenModal={onOpenModal}
-        name={selectedBroker?.metadata?.name}
+        name={selectedBroker?.metadata?.name ?? ''}
       />
       <BrokersList
         brokers={brokers}
         loadError={loadError}
         loaded={loaded}
-        namespace={namespace}
+        namespace={namespace ?? ''}
         onOpenModal={onOpenModal}
         onEditBroker={onEditBroker}
       />

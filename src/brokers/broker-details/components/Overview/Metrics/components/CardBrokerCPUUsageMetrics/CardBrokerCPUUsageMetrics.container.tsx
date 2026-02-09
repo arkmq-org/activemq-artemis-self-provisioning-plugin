@@ -15,12 +15,18 @@ type CardBrokerCPUUsageMetricsContainerProps = {
 
 type AxisDomain = [number, number];
 
+const getDefaultXDomain = (span: number): AxisDomain => {
+  const endTime = Date.now();
+  return [endTime - span, endTime];
+};
+
 export const CardBrokerCPUUsageMetricsContainer: FC<
   CardBrokerCPUUsageMetricsContainerProps
 > = ({ state }) => {
   const { t } = useTranslation();
+  const span = parsePrometheusDuration(state.span);
 
-  const [xDomain] = useState<AxisDomain>();
+  const [xDomain] = useState<AxisDomain>(() => getDefaultXDomain(span));
   // State to store the results from each MetricsPolling component.
   // The key is the index of the poller.
   const [results, setResults] = useState<{

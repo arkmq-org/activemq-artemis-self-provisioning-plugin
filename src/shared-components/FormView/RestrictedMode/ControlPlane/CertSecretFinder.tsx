@@ -82,7 +82,7 @@ export const CertSecretFinder: FC<CertSecretFinderProps> = ({
     certs: x509.X509Certificate[];
     pem: string;
   } | null>(null);
-  const namespace = formState.cr.metadata.namespace;
+  const namespace = formState.cr.metadata?.namespace;
 
   /**
    * Read the validation result from formState (set by useSecretWatcher at top level)
@@ -165,7 +165,7 @@ export const CertSecretFinder: FC<CertSecretFinderProps> = ({
     } catch (error) {
       setParseError(
         t('Failed to load certificate: {{error}}', {
-          error: error?.message || 'Unknown error',
+          error: error instanceof Error ? error.message : 'Unknown error',
         }),
       );
     }
@@ -287,11 +287,11 @@ export const CertSecretFinder: FC<CertSecretFinderProps> = ({
               {showGenerateButton
                 ? t(
                     'Required certificate missing in the {{namespace}} namespace. Either import or generate one.',
-                    { namespace: formState.cr.metadata.namespace },
+                    { namespace: formState.cr.metadata?.namespace },
                   )
                 : t(
                     'Required certificate missing in the {{namespace}} namespace. Please import one.',
-                    { namespace: formState.cr.metadata.namespace },
+                    { namespace: formState.cr.metadata?.namespace },
                   )}
             </HelperTextItem>
           </HelperText>

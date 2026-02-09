@@ -57,7 +57,7 @@ export const SelectIssuerDrawer: FC<SelectIssuerDrawerProps> = ({
       kind: isClusterIssuer ? 'ClusterIssuer' : 'Issuer',
     },
     isList: true,
-    namespace: isClusterIssuer ? '' : cr.metadata.namespace,
+    namespace: isClusterIssuer ? '' : cr.metadata?.namespace,
   });
   const [alertIssuer, setAlertIssuer] = useState<Error>();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -70,11 +70,12 @@ export const SelectIssuerDrawer: FC<SelectIssuerDrawerProps> = ({
 
   const selectOptions = useMemo(() => {
     return validIssuers
+      .filter((issuer) => issuer.metadata?.name !== null)
       .map((issuer) => ({
-        value: issuer.metadata.name,
-        content: issuer.metadata.name,
+        value: issuer.metadata!.name!,
+        content: issuer.metadata!.name!,
       }))
-      .sort((a, b) => String(a.content).localeCompare(String(b.content)));
+      .sort((a, b) => a.content.localeCompare(b.content));
   }, [validIssuers]);
 
   if (!loaded) {
@@ -99,14 +100,16 @@ export const SelectIssuerDrawer: FC<SelectIssuerDrawerProps> = ({
   };
 
   const triggerChainOfTrustCreation = () => {
+    const namespace = cr.metadata?.namespace;
+    const ingressDomain = cr.spec?.ingressDomain;
+    if (!namespace || !ingressDomain) {
+      setAlertIssuer(new Error('Namespace and ingress domain are required'));
+      return;
+    }
     setAlertIssuer(undefined);
     const createPromise = isClusterIssuer
-      ? createClusterIssuerChainOfTrust(newIssuer, cr.spec.ingressDomain)
-      : createIssuerChainOfTrust(
-          newIssuer,
-          cr.metadata.namespace,
-          cr.spec.ingressDomain,
-        );
+      ? createClusterIssuerChainOfTrust(newIssuer, ingressDomain)
+      : createIssuerChainOfTrust(newIssuer, namespace, ingressDomain);
 
     createPromise
       .then(() => {

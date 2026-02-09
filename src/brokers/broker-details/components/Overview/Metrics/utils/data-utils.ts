@@ -29,10 +29,13 @@ const bestUnit = (
 ) => {
   const flattenDataPoints = dataPoints.reduce(
     (acc, arr) => acc.concat(arr),
-    [],
+    [] as DataPoint[],
   );
 
   const bestLevel = flattenDataPoints.reduce((maxUnit, point) => {
+    if (point.y === undefined) {
+      return maxUnit;
+    }
     const index = Math.floor(log(type?.divisor ?? 1024, point.y));
     const unitIndex =
       index >= type.units.length ? type.units.length - 1 : index;
@@ -47,14 +50,16 @@ export const processFrame = (
   typeName: string,
 ): ProcessFrameResult => {
   const type = getType(typeName);
-  let unit = null;
+  let unit = type.units[0];
   if (dataPoints && dataPoints[0]) {
     // Get the appropriate unit and convert the dataset to that level
     unit = bestUnit(dataPoints, type);
     const frameLevel = type.units.indexOf(unit);
     dataPoints.forEach((arr) =>
       arr.forEach((point) => {
-        point.y /= type.divisor ** frameLevel;
+        if (typeof point.y === 'number') {
+          point.y /= type.divisor ** frameLevel;
+        }
       }),
     );
   }

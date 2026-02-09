@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 
 export const useChartWidth = () => {
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLDivElement | null>(null);
   const [width, setWidth] = useState<number>();
 
-  const setRef = useCallback((e: HTMLDivElement) => {
+  const setRef = useCallback((e: HTMLDivElement | null) => {
     const newWidth = e?.clientWidth;
     newWidth &&
       ref.current?.clientWidth !== newWidth &&

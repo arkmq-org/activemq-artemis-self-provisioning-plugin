@@ -47,6 +47,9 @@ export const useCreateAmqpsPemSecret = ({
   });
 
   const reconcileAmqps = async (runId: number) => {
+    if (!namespace || !brokerName) {
+      return;
+    }
     if (!amqpsEnabled) {
       updateAmqpsStatus(
         'idle',
@@ -71,7 +74,11 @@ export const useCreateAmqpsPemSecret = ({
           resource: { metadata: { name: 'amqps-pem', namespace } },
         });
       } catch (error) {
-        const statusCode = error?.code || error?.response?.status;
+        const err = error as {
+          code?: number;
+          response?: { status?: number };
+        } | null;
+        const statusCode = err?.code || err?.response?.status;
         if (statusCode !== 404) {
           throw error;
         }
@@ -98,9 +105,10 @@ export const useCreateAmqpsPemSecret = ({
       }
     } catch (error) {
       if (reconcileRunRef.current === runId) {
+        const err = error as { message?: string } | null;
         updateAmqpsStatus(
           'error',
-          error?.message || t('Failed to manage amqps-pem secret.'),
+          err?.message || t('Failed to manage amqps-pem secret.'),
         );
       }
     }
@@ -151,6 +159,9 @@ export const useCreateJaasConfigPropertiesSecret = ({
   });
 
   const reconcileJaas = async (runId: number) => {
+    if (!namespace) {
+      return;
+    }
     if (!jaasEnabled) {
       updateJaasStatus(
         'idle',
@@ -189,7 +200,11 @@ export const useCreateJaasConfigPropertiesSecret = ({
           resource: { metadata: { name: jaasSecretName, namespace } },
         });
       } catch (error) {
-        const statusCode = error?.code || error?.response?.status;
+        const err = error as {
+          code?: number;
+          response?: { status?: number };
+        } | null;
+        const statusCode = err?.code || err?.response?.status;
         if (statusCode !== 404) {
           throw error;
         }
@@ -218,9 +233,10 @@ export const useCreateJaasConfigPropertiesSecret = ({
       }
     } catch (error) {
       if (reconcileRunRef.current === runId) {
+        const err = error as { message?: string } | null;
         updateJaasStatus(
           'error',
-          error?.message || t('Failed to manage JAAS secret.'),
+          err?.message || t('Failed to manage JAAS secret.'),
         );
       }
     }

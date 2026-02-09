@@ -55,6 +55,6 @@ describe('PreConfirmDeleteModal', () => {
       fireEvent.click(selectDropdownItem);
     });
 
-    expect(onSelectOption).toHaveBeenCalledWith('15m', undefined);
+    expect(onSelectOption).toHaveBeenCalledWith('15m', '');
   });
 });
