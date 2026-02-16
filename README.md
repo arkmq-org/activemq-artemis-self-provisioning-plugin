@@ -57,7 +57,7 @@ Depending on the remote or local env:
 
 ### Installing the operator
 
-The plugin requires having access to the operator to function. You can either get the operator from the operatorHub or from the upstream repo.
+The plugin requires having access to the operator to function. You can either get the operator from the operatorHub or from the upstream repo (Using Helm).
 
 #### From the operatorHub
 
@@ -65,6 +65,14 @@ Navigate to the operatorHub on the console and search for: `Red Hat Integration 
 
 > [!WARNING]
 > If you're running into an issue where the operatorHub is not accessible, try to force its redeployment: `oc delete pods --all -n openshift-marketplace` (see https://github.com/crc-org/crc/issues/4109 for reference)
+
+#### From the upstream repository (Using Helm)
+
+You can install the operator directly using Helm, which is the recommended method.
+```bash
+helm install my-arkmq-org-broker-operator oci://quay.io/arkmq-org/helm-charts/arkmq-org-broker-operator --version 0.0.0-dev.latest
+```
+
 
 #### From the upstream repository
 
