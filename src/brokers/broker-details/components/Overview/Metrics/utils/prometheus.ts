@@ -46,11 +46,11 @@ export const parsePrometheusDuration = (duration: string): number => {
       .trim()
       .split(/\s+/)
       .map((p) => p.match(/^(\d+)([wdhms])$/));
-    return parts.reduce(
-      (sum, p: RegExpMatchArray | null) =>
-        sum + parseInt(p[1], 10) * units[p[2]],
-      0,
-    );
+
+    return parts.reduce((sum, p) => {
+      if (!p) return sum;
+      return sum + parseInt(p[1], 10) * units[p[2]];
+    }, 0);
   } catch (ignored) {
     // Invalid duration format
     return 0;

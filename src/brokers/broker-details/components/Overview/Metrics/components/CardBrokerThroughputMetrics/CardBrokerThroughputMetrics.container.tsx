@@ -15,12 +15,18 @@ type CardBrokerThroughputMetricsContainerProps = {
 
 type AxisDomain = [number, number];
 
+const getDefaultXDomain = (span: number): AxisDomain => {
+  const endTime = Date.now();
+  return [endTime - span, endTime];
+};
+
 export const CardBrokerThroughputMetricsContainer: FC<
   CardBrokerThroughputMetricsContainerProps
 > = ({ state }) => {
   const { t } = useTranslation();
+  const span = parsePrometheusDuration(state.span);
 
-  const [xDomain] = useState<AxisDomain>();
+  const [xDomain] = useState<AxisDomain>(() => getDefaultXDomain(span));
   const [results, setResults] = useState<{
     [key: number]: {
       result: PrometheusResponse | null;

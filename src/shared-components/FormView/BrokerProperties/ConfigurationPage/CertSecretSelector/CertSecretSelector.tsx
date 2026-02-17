@@ -136,49 +136,55 @@ const GenerateCertificateModal: FC<GenerateCertificateModalProps> = ({
   const isConsole = !(
     configType === ConfigType.acceptors || configType === ConfigType.connectors
   );
-  const dnsNames = [].concat(
-    ...[...Array(cr.spec.deploymentPlan.size).keys()].map((i) =>
+  const dnsNames = [...Array(cr.spec?.deploymentPlan?.size).keys()].flatMap(
+    (i) =>
       isConsole
         ? [
-            cr.metadata.name +
+            cr.metadata?.name +
               '-wconsj-' +
               i +
               '-svc-rte-' +
-              cr.metadata.namespace +
+              cr.metadata?.namespace +
               '.' +
-              cr.spec.ingressDomain,
-            cr.metadata.name +
+              cr.spec?.ingressDomain,
+            cr.metadata?.name +
               '-wconsj-' +
               i +
               '-svc-ing-' +
-              cr.metadata.namespace +
+              cr.metadata?.namespace +
               '.' +
-              cr.spec.ingressDomain,
-            cr.metadata.name + '-wconsj-' + i + '-svc.' + cr.metadata.namespace,
+              cr.spec?.ingressDomain,
+            cr.metadata?.name +
+              '-wconsj-' +
+              i +
+              '-svc.' +
+              cr.metadata?.namespace,
           ]
         : [
-            cr.metadata.name +
+            cr.metadata?.name +
               '-ss-' +
               i +
               '.' +
-              cr.metadata.name +
+              cr.metadata?.name +
               '-hdls-svc.' +
-              cr.metadata.namespace +
+              cr.metadata?.namespace +
               '.svc.cluster.local',
           ],
-    ),
   );
-  const certName = cr.metadata.name + '-' + configType + '-cert';
-  const commonName = cr.metadata.name + '-' + configType;
-  const secretName = cr.metadata.name + '-' + configType + '-cert-secret';
+  const certName = cr.metadata?.name + '-' + configType + '-cert';
+  const commonName = cr.metadata?.name + '-' + configType;
+  const secretName = cr.metadata?.name + '-' + configType + '-cert-secret';
   const handleGenerateCertificate = () => {
     if (selectedIssuer === '') {
       return;
     }
+    const namespace = cr.metadata?.namespace;
+    if (!namespace) return;
+
     createCert(
       selectedIssuer,
       certName,
-      cr.metadata.namespace,
+      namespace,
       commonName,
       secretName,
       dnsNames,
@@ -195,7 +201,7 @@ const GenerateCertificateModal: FC<GenerateCertificateModalProps> = ({
           operation: operation,
           payload: {
             name: configName,
-            secret: cr.metadata.name + '-' + configType + '-cert-secret',
+            secret: cr.metadata?.name + '-' + configType + '-cert-secret',
             isCa: false,
           },
         });
@@ -244,7 +250,7 @@ const GenerateCertificateModal: FC<GenerateCertificateModalProps> = ({
           <DescriptionListGroup>
             <DescriptionListTerm>{t('namespace')}</DescriptionListTerm>
             <DescriptionListDescription>
-              {cr.metadata.namespace}
+              {cr.metadata?.namespace}
             </DescriptionListDescription>
           </DescriptionListGroup>
           <DescriptionListGroup>
@@ -323,25 +329,25 @@ type CreateSecretOptionsPropTypes = {
  * @returns A list of options for the typeahead select.
  */
 const useCreateSecretOptions = ({
-  customOptions,
+  customOptions = [],
   certManagerSecrets,
   legacySecrets,
 }: CreateSecretOptionsPropTypes): TypeaheadSelectOption[] => {
   const nonptlsSecrets = certManagerSecrets
     .filter((secret) => {
-      return !secret.metadata.name.endsWith('-ptls');
+      return !!secret.metadata?.name && !secret.metadata.name.endsWith('-ptls');
     })
-    .map((option) => option.metadata.name);
+    .map((option) => option.metadata!.name);
   const filteredCustomOptions = customOptions.filter(
     (option) =>
       !nonptlsSecrets.find((s) => s === option) &&
-      !legacySecrets.find((s) => s.metadata.name.startsWith(option)),
+      !legacySecrets.find((s) => s.metadata?.name?.startsWith(option)),
   );
   const options = [
     ...filteredCustomOptions,
     ...nonptlsSecrets,
-    ...legacySecrets.map((option) => option.metadata.name),
-  ];
+    ...legacySecrets.map((option) => option.metadata?.name),
+  ].filter((option): option is string => typeof option === 'string');
   return options.map((option) => {
     return { content: option, value: option };
   });
@@ -358,11 +364,12 @@ const useCreateSecretOptions = ({
  * otherwise.
  */
 const isLegacySecret = (secret: K8sResourceCommonWithData): boolean => {
-  return (
+  return !!(
     !(
       secret.metadata?.annotations &&
       'aa-spp-generated' in secret.metadata.annotations
     ) &&
+    secret.data &&
     hasKey(secret.data, 'broker.ks') &&
     hasKey(secret.data, 'keyStorePassword') &&
     hasKey(secret.data, 'client.ts') &&
@@ -415,7 +422,7 @@ const isKnownCertManagerSecret = (
   certManagerSecrets: K8sResourceCommonWithData[],
 ): boolean => {
   const theSecret = certManagerSecrets.filter((value) => {
-    return value.metadata.name === selectedSecret;
+    return value.metadata?.name === selectedSecret;
   });
   return theSecret.length === 1;
 };
@@ -678,20 +685,24 @@ export const CertSecretSelector: FC<CertSecretSelectorProps> = ({
   const showCertInfo = () => {
     setParseError(null);
     const theSecret = certManagerSecrets.filter((value) => {
-      return value.metadata.name === selectedSecret;
+      return value.metadata?.name === selectedSecret;
     });
     let pem: string;
     try {
-      if (theSecret.length !== 1) {
+      if (
+        theSecret.length !== 1 ||
+        !theSecret[0].data ||
+        !theSecret[0].metadata?.name
+      ) {
         setParseError(t('only support tls format secret from cert-manager'));
         // clear the message after 10 seconds
         setTimeout(() => setParseError(null), 10000);
         return;
       }
       if (isCa) {
-        Object.keys(theSecret[0].data).forEach((key) => {
-          pem = base64.decode(theSecret[0].data[key]);
-        });
+        const keys = Object.keys(theSecret[0].data);
+        if (keys.length === 0) return;
+        pem = base64.decode(theSecret[0].data[keys[0]]);
       } else {
         pem = base64.decode(theSecret[0].data['tls.crt']);
       }
@@ -716,8 +727,13 @@ export const CertSecretSelector: FC<CertSecretSelectorProps> = ({
    * Retrieves the cert-manager resource template from the acceptor configuration.
    * This is used to determine if a preset alert should be shown.
    */
-  const certManagerResourceTemplate =
-    getCertManagerResourceTemplateFromAcceptor(cr, getAcceptor(cr, configName));
+  const acceptor =
+    configType === ConfigType.acceptors
+      ? getAcceptor(cr, configName)
+      : undefined;
+  const certManagerResourceTemplate = acceptor
+    ? getCertManagerResourceTemplateFromAcceptor(cr, acceptor)
+    : undefined;
 
   return (
     <FormGroup

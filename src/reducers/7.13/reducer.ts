@@ -33,7 +33,7 @@ interface SetServiceAccountAction extends ReducerActionBase {
 interface SetJaasExtraConfigAction extends ReducerActionBase {
   operation: ArtemisReducerOperations713.setJaasExtraConfig;
   /** The name of the secret for the jass login module*/
-  payload: string;
+  payload: string | undefined;
 }
 
 interface SetSecurityRolesAction extends ReducerActionBase {
@@ -57,46 +57,69 @@ export const reducer713: React.Reducer<
   const formState = { ...prevFormState };
 
   switch (action.operation) {
-    case ArtemisReducerOperations713.isUsingToken:
+    case ArtemisReducerOperations713.isUsingToken: {
+      const spec = formState.cr.spec;
+      if (!spec) return formState;
+
       if (action.payload) {
-        delete formState.cr.spec.adminPassword;
-        delete formState.cr.spec.adminUser;
+        delete spec.adminPassword;
+        delete spec.adminUser;
         setEnvForTokenAuth(formState.cr);
       } else {
-        formState.cr.spec.adminPassword = 'admin';
-        formState.cr.spec.adminUser = 'admin';
-        delete formState.cr.spec.deploymentPlan.extraMounts;
-        delete formState.cr.spec.deploymentPlan.podSecurity;
+        spec.adminPassword = 'admin';
+        spec.adminUser = 'admin';
+
+        const deploymentPlan = spec.deploymentPlan;
+        if (!deploymentPlan) return formState;
+
+        delete deploymentPlan.extraMounts;
+        delete deploymentPlan.podSecurity;
         // reinitialise the related fields
         deleteEnvForTokenAuth(formState.cr);
         // delete the security roles
         replaceSecurityRoles(formState.cr, new Map());
       }
       return formState;
-    case ArtemisReducerOperations713.setJaasExtraConfig:
+    }
+    case ArtemisReducerOperations713.setJaasExtraConfig: {
       // reset the security roles, they will be updated later when the secret is
       // known
+      const spec = formState.cr.spec;
+      if (!spec) return formState;
       replaceSecurityRoles(formState.cr, new Map());
+
+      const deploymentPlan = spec.deploymentPlan;
+      if (!deploymentPlan) return formState;
+
       if (!action.payload) {
-        delete formState.cr.spec.deploymentPlan.extraMounts;
+        delete deploymentPlan.extraMounts;
       } else {
-        formState.cr.spec.deploymentPlan.extraMounts = {
+        deploymentPlan.extraMounts = {
           secrets: [action.payload],
         };
       }
       return formState;
-    case ArtemisReducerOperations713.setSecurityRoles:
+    }
+    case ArtemisReducerOperations713.setSecurityRoles: {
       replaceSecurityRoles(formState.cr, action.payload);
       return formState;
-    case ArtemisReducerOperations713.setServiceAccount:
+    }
+    case ArtemisReducerOperations713.setServiceAccount: {
+      const spec = formState.cr.spec;
+      if (!spec) return formState;
+
+      const deploymentPlan = spec.deploymentPlan;
+      if (!deploymentPlan) return formState;
+
       if (!action.payload) {
-        delete formState.cr.spec.deploymentPlan.podSecurity;
+        delete deploymentPlan.podSecurity;
       } else {
-        formState.cr.spec.deploymentPlan.podSecurity = {
+        deploymentPlan.podSecurity = {
           serviceAccountName: action.payload,
         };
       }
       return formState;
+    }
     default:
       return reducer712(
         formState,
@@ -108,11 +131,18 @@ export const reducer713: React.Reducer<
 export const areMandatoryValuesSet713 = (formState: FormState713) => {
   // if the user wants to configure the token review and has not set the
   // required data, return false.
-  if (formState.cr.spec.adminUser === undefined) {
-    if (!formState.cr?.spec?.deploymentPlan?.extraMounts?.secrets[0]) {
+  const spec = formState.cr.spec;
+  if (!spec) return false;
+  if (spec.adminUser === undefined) {
+    const deploymentPlan = spec.deploymentPlan;
+    if (!deploymentPlan) return false;
+
+    const extraMounts = deploymentPlan.extraMounts;
+    if (!extraMounts || !extraMounts.secrets?.[0]) {
       return false;
     }
-    if (!formState.cr?.spec?.deploymentPlan?.podSecurity?.serviceAccountName) {
+    const podSecurity = deploymentPlan.podSecurity;
+    if (!podSecurity?.serviceAccountName) {
       return false;
     }
   }
@@ -129,16 +159,18 @@ const setEnvForTokenAuth = (cr: BrokerCR) => {
     name: 'JAVA_ARGS_APPEND',
     value: '-Dhawtio.realm=token',
   };
-  if (!cr.spec.env) {
-    cr.spec.env = [basicJavaArgs];
+  const spec = cr.spec;
+  if (!spec) return;
+  if (!spec.env) {
+    spec.env = [basicJavaArgs];
   } else {
-    const javaArgs = cr.spec.env.find((v) => v.name === 'JAVA_ARGS_APPEND');
+    const javaArgs = spec.env.find((v) => v.name === 'JAVA_ARGS_APPEND');
     if (javaArgs) {
       if (!javaArgs.value.includes('-Dhawtio.realm=token')) {
         javaArgs.value = javaArgs.value + ' ' + '-Dhawtio.realm=token';
       }
     } else {
-      cr.spec.env.push(basicJavaArgs);
+      spec.env.push(basicJavaArgs);
     }
   }
 };
@@ -148,8 +180,11 @@ const setEnvForTokenAuth = (cr: BrokerCR) => {
  * argument of the env, delete the env.
  */
 const deleteEnvForTokenAuth = (cr: BrokerCR) => {
-  if (cr.spec.env) {
-    const javaArgs = cr.spec.env.find((v) => v.name === 'JAVA_ARGS_APPEND');
+  const spec = cr.spec;
+  if (!spec) return;
+
+  if (spec.env) {
+    const javaArgs = spec.env.find((v) => v.name === 'JAVA_ARGS_APPEND');
     if (javaArgs) {
       if (javaArgs.value.includes('-Dhawtio.realm=token')) {
         const splitValue = javaArgs.value.split(' ');
@@ -158,14 +193,12 @@ const deleteEnvForTokenAuth = (cr: BrokerCR) => {
             .filter((v) => v !== '-Dhawtio.realm=token')
             .join(' ');
         } else {
-          cr.spec.env = cr.spec.env.filter(
-            (v) => v.name !== 'JAVA_ARGS_APPEND',
-          );
+          spec.env = spec.env.filter((v) => v.name !== 'JAVA_ARGS_APPEND');
         }
       }
     }
-    if (cr.spec.env.length === 0) {
-      delete cr.spec.env;
+    if (spec.env.length === 0) {
+      delete spec.env;
     }
   }
 };
@@ -173,19 +206,23 @@ const deleteEnvForTokenAuth = (cr: BrokerCR) => {
 /**
  * Return all the security roles of the CR as a Map<string, string>
  */
-export const getSecurityRoles = (cr: BrokerCR) => {
-  if (cr.spec?.brokerProperties?.length > 0) {
-    return new Map<string, string>(
-      cr.spec.brokerProperties
-        .filter((property) => property.startsWith('securityRoles'))
-        .map((property) => {
-          const key = property.split('=')[0];
-          const value = property.split('=')[1];
-          return [key, value];
-        }),
-    );
+export const getSecurityRoles = (cr: BrokerCR): Map<string, string> => {
+  const spec = cr.spec;
+  if (!spec) return new Map();
+
+  const brokerProperties = spec.brokerProperties;
+  if (!brokerProperties || brokerProperties.length === 0) {
+    return new Map();
   }
-  return new Map<string, string>();
+  return new Map<string, string>(
+    brokerProperties
+      .filter((property) => property.startsWith('securityRoles'))
+      .map((property) => {
+        const key = property.split('=')[0];
+        const value = property.split('=')[1];
+        return [key, value];
+      }),
+  );
 };
 
 /**
@@ -195,20 +232,20 @@ export const replaceSecurityRoles = (
   cr: BrokerCR,
   newSecurityRoles: Map<string, string>,
 ) => {
-  if (cr.spec?.brokerProperties?.length > 0) {
-    // delete all the previous security roles
-    cr.spec.brokerProperties = cr.spec.brokerProperties.filter(
-      (property) => !property.startsWith('securityRoles'),
-    );
-  }
+  const spec = cr.spec;
+  if (!spec) return;
+
+  let brokerProperties = spec.brokerProperties ?? [];
+
+  // delete all the previous security roles
+  brokerProperties = brokerProperties.filter(
+    (property) => !property.startsWith('securityRoles'),
+  );
+  // Add new security roles
   if (newSecurityRoles) {
-    if (!cr.spec?.brokerProperties) {
-      cr.spec.brokerProperties = [];
-    }
-    newSecurityRoles.forEach((v, k) =>
-      cr.spec.brokerProperties.push(k + '=' + v),
-    );
+    newSecurityRoles.forEach((v, k) => brokerProperties.push(k + '=' + v));
   }
+  spec.brokerProperties = brokerProperties;
 };
 
 /**

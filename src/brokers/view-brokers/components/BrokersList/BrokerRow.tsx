@@ -47,7 +47,7 @@ const ConditionModal: FC<ConditionModalProps> = ({ status }) => {
   return (
     <>
       <Button variant="link" onClick={() => setIsOpen(true)}>
-        {status ? getConditionString(status?.conditions) : '-'}
+        {status?.conditions ? getConditionString(status.conditions) : '-'}
       </Button>
       <Modal
         bodyAriaLabel="Status report"
@@ -114,15 +114,12 @@ export const BrokerRow: FC<BrokerRowProps> = ({
   onOpenModal,
 }) => {
   const { t } = useTranslation();
-  const {
-    metadata: { name, creationTimestamp, namespace },
-    status,
-  } = obj;
+  const { metadata: { name, creationTimestamp, namespace } = {}, status } = obj;
 
   const size = obj.spec?.deploymentPlan?.size;
 
   const readyCondition = status
-    ? obj.status.conditions.find(
+    ? obj.status?.conditions.find(
         (c: K8sResourceCondition) => c.type === BrokerConditionTypes.Ready,
       )
     : null;
@@ -153,7 +150,7 @@ export const BrokerRow: FC<BrokerRowProps> = ({
         {size}
       </TableData>
       <TableData id={columns[4].id} activeColumnIDs={activeColumnIDs}>
-        <Timestamp timestamp={creationTimestamp} />
+        {creationTimestamp ? <Timestamp timestamp={creationTimestamp} /> : '-'}
       </TableData>
       <TableData id={columns[5].id} activeColumnIDs={activeColumnIDs}>
         <ActionsColumn items={rowActions} />

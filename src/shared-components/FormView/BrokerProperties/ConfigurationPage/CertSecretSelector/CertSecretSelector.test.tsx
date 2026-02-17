@@ -3,6 +3,7 @@ import { CertSecretSelector } from './CertSecretSelector';
 import {
   BrokerCreationFormDispatch,
   BrokerCreationFormState,
+  EditorType,
 } from '@app/reducers/reducer';
 import {
   useK8sWatchResource,
@@ -70,10 +71,16 @@ describe('CertSecretSelector', () => {
 
   const mocDispatch = jest.fn();
   const mockFormState = {
+    editorType: EditorType.BROKER,
     cr: {
-      apiVersion: 'v1',
+      apiVersion: 'broker.amq.io/v1beta1',
+      kind: 'ActiveMQArtemis',
       metadata: { name: 'test-broker', namespace: 'test-namespace' },
+      spec: {},
     },
+    hasChanges: false,
+    yamlHasUnsavedChanges: false,
+    brokerVersion: '7.12' as const,
   };
   const mockSecrets = [
     {

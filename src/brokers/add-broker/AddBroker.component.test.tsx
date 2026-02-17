@@ -22,12 +22,18 @@ const SimplifiedCreaterBrokerPage: FC = () => {
   const onCancel = () => {
     return 0;
   };
+  const reloadExisting = jest.fn();
+
   const initialValues = newArtemisCR('default');
   const [brokerModel, dispatch] = useReducer(artemisCrReducer, initialValues);
   return (
     <BrokerCreationFormState.Provider value={brokerModel}>
       <BrokerCreationFormDispatch.Provider value={dispatch}>
-        <AddBroker onSubmit={onSubmit} onCancel={onCancel} />
+        <AddBroker
+          onSubmit={onSubmit}
+          onCancel={onCancel}
+          reloadExisting={reloadExisting}
+        />
       </BrokerCreationFormDispatch.Provider>
     </BrokerCreationFormState.Provider>
   );
@@ -40,9 +46,8 @@ const SimplifiedUpdateBrokerPage: FC = () => {
   const onCancel = () => {
     return 0;
   };
-  const reloadExisting = () => {
-    return 0;
-  };
+  const reloadExisting = jest.fn();
+
   const initialValues = newArtemisCR('default');
   const [brokerModel, dispatch] = useReducer(artemisCrReducer, initialValues);
   return (

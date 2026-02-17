@@ -30,6 +30,13 @@ const CertManagerPreset: FC<ResourceTemplateProps> = ({ resourceTemplate }) => {
     cr,
     resourceTemplate,
   );
+
+  if (!acceptor || !acceptor.name) {
+    return null;
+  }
+
+  const acceptorName = acceptor.name;
+
   return (
     <FormFieldGroupExpandable
       isExpanded
@@ -38,7 +45,7 @@ const CertManagerPreset: FC<ResourceTemplateProps> = ({ resourceTemplate }) => {
         <FormFieldGroupHeader
           titleText={{
             text: t('Cert-Manager issuer & Ingress exposure'),
-            id: 'nested-field-cert-manager-annotation-id' + acceptor.name,
+            id: 'nested-field-cert-manager-annotation-id' + acceptorName,
           }}
           titleDescription={t('Configuration items for the preset')}
           actions={
@@ -48,7 +55,7 @@ const CertManagerPreset: FC<ResourceTemplateProps> = ({ resourceTemplate }) => {
                 dispatch({
                   operation:
                     ArtemisReducerOperations712.deletePEMGenerationForAcceptor,
-                  payload: acceptor.name,
+                  payload: acceptorName,
                 })
               }
             />
@@ -59,13 +66,13 @@ const CertManagerPreset: FC<ResourceTemplateProps> = ({ resourceTemplate }) => {
       <FormGroup label={t('Issuer')} isRequired>
         <SelectIssuerDrawer
           selectedIssuer={
-            resourceTemplate.annotations['cert-manager.io/issuer']
+            resourceTemplate.annotations?.['cert-manager.io/issuer'] ?? ''
           }
           setSelectedIssuer={(issuer: string) => {
             dispatch({
               operation: ArtemisReducerOperations712.updateAnnotationIssuer,
               payload: {
-                acceptorName: acceptor.name,
+                acceptorName: acceptorName,
                 newIssuer: issuer,
               },
             });
@@ -74,7 +81,7 @@ const CertManagerPreset: FC<ResourceTemplateProps> = ({ resourceTemplate }) => {
             dispatch({
               operation: ArtemisReducerOperations712.updateAnnotationIssuer,
               payload: {
-                acceptorName: acceptor.name,
+                acceptorName: acceptorName,
                 newIssuer: '',
               },
             });
@@ -86,11 +93,16 @@ const CertManagerPreset: FC<ResourceTemplateProps> = ({ resourceTemplate }) => {
 };
 
 type ListPresetsProps = {
-  acceptor: Acceptor;
+  acceptor: Acceptor | undefined;
 };
 
 export const ListPresets: FC<ListPresetsProps> = ({ acceptor }) => {
   const { cr } = useContext(BrokerCreationFormState);
+
+  if (!acceptor) {
+    return <></>;
+  }
+
   const certManagerRt = getCertManagerResourceTemplateFromAcceptor(
     cr,
     acceptor,

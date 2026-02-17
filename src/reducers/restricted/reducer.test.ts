@@ -50,7 +50,9 @@ describe('Restricted reducer tests', () => {
 
   it('should return false for areMandatoryValuesSetRestricted when restricted mode is enabled', () => {
     const initialState = newArtemisCR('namespace') as FormStateRestricted;
-    initialState.cr.spec.restricted = true;
+    const spec = initialState.cr.spec;
+    if (!spec) return;
+    spec.restricted = true;
 
     const result = areMandatoryValuesSetRestricted(initialState);
     expect(result).toBe(false);
@@ -58,7 +60,9 @@ describe('Restricted reducer tests', () => {
 
   it('should return true for areMandatoryValuesSetRestricted when restricted mode is disabled', () => {
     const initialState = newArtemisCR('namespace') as FormStateRestricted;
-    delete initialState.cr.spec.restricted;
+    const spec = initialState.cr.spec;
+    if (!spec) return;
+    delete spec.restricted;
 
     const result = areMandatoryValuesSetRestricted(initialState);
     expect(result).toBe(true);
@@ -177,7 +181,9 @@ describe('Restricted reducer tests', () => {
 
   it('should return false when secrets are not validated in restricted mode', () => {
     const initialState = newArtemisCR('namespace') as FormStateRestricted;
-    initialState.cr.spec.restricted = true;
+    const spec = initialState.cr.spec;
+    if (!spec) return;
+    spec.restricted = true;
     initialState.ACTIVEMQ_ARTEMIS_MANAGER_CA_SECRET_NAME =
       'activemq-artemis-manager-ca';
     initialState.BASE_PROMETHEUS_CERT_SECRET_NAME = 'prometheus-cert';
@@ -189,7 +195,9 @@ describe('Restricted reducer tests', () => {
 
   it('should return true when all configuration and secrets are validated in restricted mode', () => {
     const initialState = newArtemisCR('namespace') as FormStateRestricted;
-    initialState.cr.spec.restricted = true;
+    const spec = initialState.cr.spec;
+    if (!spec) return;
+    spec.restricted = true;
     initialState.ACTIVEMQ_ARTEMIS_MANAGER_CA_SECRET_NAME =
       'activemq-artemis-manager-ca';
     initialState.BASE_PROMETHEUS_CERT_SECRET_NAME = 'prometheus-cert';
@@ -205,7 +213,9 @@ describe('Restricted reducer tests', () => {
 
   it('should return true when data plane is disabled but control plane is valid', () => {
     const initialState = newArtemisCR('namespace') as FormStateRestricted;
-    initialState.cr.spec.restricted = true;
+    if (initialState.cr.spec) {
+      initialState.cr.spec.restricted = true;
+    }
     initialState.ACTIVEMQ_ARTEMIS_MANAGER_CA_SECRET_NAME =
       'activemq-artemis-manager-ca';
     initialState.BASE_PROMETHEUS_CERT_SECRET_NAME = 'prometheus-cert';
@@ -227,7 +237,9 @@ describe('Restricted reducer tests', () => {
 
   it('should return false when one secret validation is missing', () => {
     const initialState = newArtemisCR('namespace') as FormStateRestricted;
-    initialState.cr.spec.restricted = true;
+    const spec = initialState.cr.spec;
+    if (!spec) return;
+    spec.restricted = true;
     initialState.ACTIVEMQ_ARTEMIS_MANAGER_CA_SECRET_NAME =
       'activemq-artemis-manager-ca';
     initialState.BASE_PROMETHEUS_CERT_SECRET_NAME = 'prometheus-cert';
@@ -243,7 +255,9 @@ describe('Restricted reducer tests', () => {
 
   it('should return false when secret validation result is empty string', () => {
     const initialState = newArtemisCR('namespace') as FormStateRestricted;
-    initialState.cr.spec.restricted = true;
+    const spec = initialState.cr.spec;
+    if (!spec) return;
+    spec.restricted = true;
     initialState.ACTIVEMQ_ARTEMIS_MANAGER_CA_SECRET_NAME =
       'activemq-artemis-manager-ca';
     initialState.BASE_PROMETHEUS_CERT_SECRET_NAME = 'prometheus-cert';

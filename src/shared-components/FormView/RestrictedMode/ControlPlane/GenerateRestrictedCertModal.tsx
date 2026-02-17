@@ -58,11 +58,11 @@ export const GenerateRestrictedCertModal: FC<
     if (!cr) {
       return null;
     }
-    const brokerName = cr.metadata.name;
+    const brokerName = cr.metadata?.name;
     // Generate specific DNS names for each broker pod
-    const dnsNames = [...Array(cr.spec.deploymentPlan.size).keys()].map(
+    const dnsNames = [...Array(cr.spec?.deploymentPlan?.size).keys()].map(
       (i) =>
-        `${brokerName}-ss-${i}.${brokerName}-hdls-svc.${cr.metadata.namespace}.svc.cluster.local`,
+        `${brokerName}-ss-${i}.${brokerName}-hdls-svc.${cr.metadata?.namespace}.svc.cluster.local`,
     );
 
     const certSecretName = `${brokerName}-broker-cert`;
@@ -97,6 +97,10 @@ export const GenerateRestrictedCertModal: FC<
     if (selectedIssuer === '' || commonName === '') {
       return;
     }
+    const namespace = cr?.metadata?.namespace;
+    if (!namespace) {
+      return;
+    }
 
     try {
       // ALL certificates are created in the broker namespace
@@ -104,7 +108,7 @@ export const GenerateRestrictedCertModal: FC<
       await createRestrictedCert(
         selectedIssuer,
         certDetails.certName,
-        cr.metadata.namespace,
+        namespace,
         commonName,
         certDetails.secretName,
         certDetails.isCA,
@@ -112,7 +116,9 @@ export const GenerateRestrictedCertModal: FC<
       );
       handleModalToggle();
     } catch (err) {
-      setError(err?.message || 'Failed to generate certificate');
+      setError(
+        err instanceof Error ? err.message : 'Failed to generate certificate',
+      );
     }
   };
 
@@ -162,7 +168,7 @@ export const GenerateRestrictedCertModal: FC<
           <DescriptionListGroup>
             <DescriptionListTerm>{t('Namespace')}</DescriptionListTerm>
             <DescriptionListDescription>
-              {cr.metadata.namespace}
+              {cr.metadata?.namespace}
             </DescriptionListDescription>
           </DescriptionListGroup>
           <DescriptionListGroup>

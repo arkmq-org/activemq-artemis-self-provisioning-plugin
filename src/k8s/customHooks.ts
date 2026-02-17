@@ -20,8 +20,9 @@ export const useGetIngressDomain = (): {
   const k8sGetBroker = () => {
     setLoading(true);
     k8sGet({ model: IngressDomainModel, name: 'cluster' })
-      .then((ing: Ingress) => {
-        setDomain(ing.spec.domain);
+      .then((result) => {
+        const ing = result as Ingress;
+        setDomain(ing.spec?.domain ?? '');
       })
       .catch((e) => {
         setError(e.message);

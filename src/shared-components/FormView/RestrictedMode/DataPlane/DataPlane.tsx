@@ -53,8 +53,8 @@ export const DataPlane: FC = () => {
     }
   }
 
-  const brokerName = formState.cr.metadata.name;
-  const namespace = formState.cr.metadata.namespace;
+  const brokerName = formState.cr.metadata?.name;
+  const namespace = formState.cr.metadata?.namespace;
   const jaasSecretName = `${brokerName}-jaas-config-bp`;
   const amqpsSecretName = 'amqps-pem';
   const jaasSecretHref = `/k8s/ns/${namespace}/secrets/${jaasSecretName}`;
@@ -73,8 +73,8 @@ export const DataPlane: FC = () => {
 
   const { amqpsSecretStatus } = useCreateAmqpsPemSecret({
     amqpsEnabled: acceptorEnabled,
-    brokerName,
-    namespace,
+    brokerName: brokerName ?? '',
+    namespace: namespace ?? '',
   });
 
   const { jaasSecretStatus } = useCreateJaasConfigPropertiesSecret({
@@ -84,7 +84,7 @@ export const DataPlane: FC = () => {
     securityDomain,
     roleName,
     clientCN,
-    namespace,
+    namespace: namespace ?? '',
     jaasSecretName,
   });
 

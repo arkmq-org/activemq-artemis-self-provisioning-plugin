@@ -42,11 +42,13 @@ export const DropdownWithToggle = <T,>({
   };
 
   const onSelect: DropdownProps['onSelect'] = (e) => {
-    if (e && e.currentTarget.textContent) {
-      const value: string = e.currentTarget.textContent;
-      const filteredOption = items?.filter((item) => item.label === value)[0];
-      if (onSelectOption && filteredOption) {
-        onSelectOption(filteredOption.value, name);
+    if (e?.currentTarget?.textContent) {
+      const selectedValue: string = e.currentTarget.textContent;
+      const filteredOption = items?.filter(
+        (item) => item.label === selectedValue,
+      )[0];
+      if (onSelectOption && filteredOption?.value !== undefined) {
+        onSelectOption(filteredOption.value, name ?? '');
       }
       setIsOpen((isOpen) => !isOpen);
     }

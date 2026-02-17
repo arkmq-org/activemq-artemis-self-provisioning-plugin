@@ -28,7 +28,9 @@ export const ConfigRenamingModal: FC<ConfigRenamingModalProps> = ({
   const dispatch = useContext(BrokerCreationFormDispatch);
   const [newName, setNewName] = useState(initName);
   const [toolTip, setTooltip] = useState('');
-  const [validateStatus, setValidateStatus] = useState(null);
+  const [validateStatus, setValidateStatus] = useState<
+    ValidatedOptions | undefined
+  >(undefined);
   const { cr } = useContext(BrokerCreationFormState);
   const uniqueSet = listConfigs(configType, cr, 'set') as Set<string>;
 
