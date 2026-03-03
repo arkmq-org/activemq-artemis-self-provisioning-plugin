@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
 import { login } from '../fixtures/auth';
-import { toggleRestrictedMode } from '../fixtures/restrictedMode';
 
 const username = 'kubeadmin';
 const password = process.env.KUBEADMIN_PASSWORD || 'kubeadmin';
@@ -37,10 +36,6 @@ test.describe('Create Broker via UI', () => {
       .first();
     await createBrokerButton.scrollIntoViewIfNeeded();
     await createBrokerButton.click();
-
-    // Disable restricted mode first (form now defaults to restricted mode)
-    // This needs to be done BEFORE filling the name, as switching modes resets the form
-    await toggleRestrictedMode(page, false);
 
     // NOW fill CR Name with a unique value (after switching modes)
     const brokerName = `e2e-broker-${Date.now()}`;
