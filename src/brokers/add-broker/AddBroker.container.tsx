@@ -14,7 +14,6 @@ import { ArtemisReducerOperations712 } from '@app/reducers/7.12/reducer';
 import { FormState712 } from '@app/reducers/7.12/import-types';
 import { useNavigate, useParams } from 'react-router-dom-v5-compat';
 import { useGetIngressDomain } from '@app/k8s/customHooks';
-import { ArtemisReducerOperationsRestricted } from '@app/reducers/restricted/reducer';
 
 export interface AddBrokerProps {
   initialValues: FormState712;
@@ -78,11 +77,6 @@ export const AddBrokerPage: FC = () => {
         ingressUrl: clusterDomain,
         isSetByUser: false,
       },
-    });
-    // Restricted is the new default
-    dispatch({
-      operation: ArtemisReducerOperationsRestricted.setIsRestrited,
-      payload: true,
     });
     setIsDomainSet(true);
   }
