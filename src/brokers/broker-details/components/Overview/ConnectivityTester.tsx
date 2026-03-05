@@ -230,6 +230,12 @@ export const ConnectivityTester: FC<ConnectivityTesterProps> = ({ cr }) => {
   const [cleanupStatus, setCleanupStatus] = useState<ActionState>({
     status: 'idle',
   });
+  const [messageCount, setMessageCount] = useState('1');
+
+  const isMessageCountValid = () => {
+    const num = parseInt(messageCount, 10);
+    return !isNaN(num) && num > 0;
+  };
 
   const [issuers, issuersLoaded, issuersError] = useK8sWatchResource<
     IssuerResource[]
@@ -549,13 +555,17 @@ export const ConnectivityTester: FC<ConnectivityTesterProps> = ({ cr }) => {
     }
   };
 
+  const messageCountValue = isMessageCountValid()
+    ? parseInt(messageCount, 10)
+    : 1;
+
   const producerCommand =
     'exec java -classpath /opt/amq/lib/*:/opt/amq/lib/extra/* ' +
     'org.apache.activemq.artemis.cli.Artemis producer ' +
     `--protocol=AMQP --url 'amqps://${brokerEndpoint}:${amqpsPort}?` +
     'transport.trustStoreType=PEMCA&transport.trustStoreLocation=/app/tls/ca/ca.pem&' +
     'transport.keyStoreType=PEMCFG&transport.keyStoreLocation=/app/tls/pem/tls.pemcfg' +
-    `' --message-count 10000 --destination queue://APP_JOBS`;
+    `' --message-count ${messageCountValue} --destination queue://APP_JOBS`;
 
   const consumerCommand =
     'exec java -classpath /opt/amq/lib/*:/opt/amq/lib/extra/* ' +
@@ -563,7 +573,7 @@ export const ConnectivityTester: FC<ConnectivityTesterProps> = ({ cr }) => {
     `--protocol=AMQP --url 'amqps://${brokerEndpoint}:${amqpsPort}?` +
     'transport.trustStoreType=PEMCA&transport.trustStoreLocation=/app/tls/ca/ca.pem&' +
     'transport.keyStoreType=PEMCFG&transport.keyStoreLocation=/app/tls/pem/tls.pemcfg' +
-    `' --message-count 10000 --destination queue://APP_JOBS --receive-timeout 30000`;
+    `' --message-count ${messageCountValue} --destination queue://APP_JOBS --receive-timeout 30000`;
 
   const handleRunProducer = () => {
     void runJob(producerJobName, producerCommand, setProducerStatus);
@@ -763,6 +773,20 @@ export const ConnectivityTester: FC<ConnectivityTesterProps> = ({ cr }) => {
       isDisabled: !hasClientCert,
       component: (
         <Form data-test="connectivity-run-jobs-step">
+          <FormGroup label={t('Message count')} isRequired>
+            <TextInput
+              value={messageCount}
+              onChange={(_event, value) => setMessageCount(value)}
+              data-test="connectivity-message-count"
+            />
+            <HelperText>
+              <HelperTextItem>
+                {t(
+                  'Number of messages to send and receive in the connectivity test.',
+                )}
+              </HelperTextItem>
+            </HelperText>
+          </FormGroup>
           <FormSection title={t('Producer')} data-test="connectivity-producer">
             <CodeBlock>
               <CodeBlockCode>{producerCommand}</CodeBlockCode>
@@ -799,7 +823,9 @@ export const ConnectivityTester: FC<ConnectivityTesterProps> = ({ cr }) => {
             <Button
               variant={ButtonVariant.primary}
               onClick={handleRunProducer}
-              isDisabled={producerStatus.status === 'working'}
+              isDisabled={
+                producerStatus.status === 'working' || !isMessageCountValid()
+              }
               data-test="connectivity-run-producer"
             >
               {producerStatus.status === 'working' && <Spinner size="sm" />}{' '}
@@ -842,7 +868,9 @@ export const ConnectivityTester: FC<ConnectivityTesterProps> = ({ cr }) => {
             <Button
               variant={ButtonVariant.primary}
               onClick={handleRunConsumer}
-              isDisabled={consumerStatus.status === 'working'}
+              isDisabled={
+                consumerStatus.status === 'working' || !isMessageCountValid()
+              }
               data-test="connectivity-run-consumer"
             >
               {consumerStatus.status === 'working' && <Spinner size="sm" />}{' '}
