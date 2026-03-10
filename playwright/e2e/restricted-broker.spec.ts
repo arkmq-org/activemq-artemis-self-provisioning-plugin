@@ -298,6 +298,15 @@ test.describe('Restricted Broker End-to-End', () => {
     await runJobsStepButton.click();
     await expect(runJobsRegion).toBeVisible({ timeout: 10000 });
 
+    const messageCountInput = runJobsRegion.locator(
+      '[data-test="connectivity-message-count"]',
+    );
+    await expect(messageCountInput).toBeVisible({ timeout: 10000 });
+    await messageCountInput.clear();
+    await messageCountInput.fill('2');
+    await expect(messageCountInput).toHaveValue('2');
+    console.log('Set message count to 2.');
+
     const producerGroup = runJobsRegion.locator(
       '[data-test="connectivity-producer"]',
     );
