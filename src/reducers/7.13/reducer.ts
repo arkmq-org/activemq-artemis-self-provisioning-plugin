@@ -27,13 +27,13 @@ interface IsUsingTokenAction extends ReducerActionBase {
 interface SetServiceAccountAction extends ReducerActionBase {
   operation: ArtemisReducerOperations713.setServiceAccount;
   /** set the service account for the broker*/
-  payload: string;
+  payload: string | undefined;
 }
 
 interface SetJaasExtraConfigAction extends ReducerActionBase {
   operation: ArtemisReducerOperations713.setJaasExtraConfig;
   /** The name of the secret for the jass login module*/
-  payload: string;
+  payload: string | undefined;
 }
 
 interface SetSecurityRolesAction extends ReducerActionBase {
@@ -55,6 +55,8 @@ export const reducer713: React.Reducer<
   ArtemisReducerActions713
 > = (prevFormState, action) => {
   const formState = { ...prevFormState };
+  if (!formState.cr) throw new Error('cr should not be undefined');
+  if (!formState.cr.spec) throw new Error('spec should not be undefined');
 
   switch (action.operation) {
     case ArtemisReducerOperations713.isUsingToken:
@@ -65,18 +67,23 @@ export const reducer713: React.Reducer<
       } else {
         formState.cr.spec.adminPassword = 'admin';
         formState.cr.spec.adminUser = 'admin';
-        delete formState.cr.spec.deploymentPlan.extraMounts;
-        delete formState.cr.spec.deploymentPlan.podSecurity;
-        // reinitialise the related fields
+        if (formState.cr.spec.deploymentPlan) {
+          delete formState.cr.spec.deploymentPlan.extraMounts;
+          delete formState.cr.spec.deploymentPlan.podSecurity;
+        }
         deleteEnvForTokenAuth(formState.cr);
-        // delete the security roles
         replaceSecurityRoles(formState.cr, new Map());
       }
       return formState;
     case ArtemisReducerOperations713.setJaasExtraConfig:
-      // reset the security roles, they will be updated later when the secret is
-      // known
       replaceSecurityRoles(formState.cr, new Map());
+      if (!formState.cr.spec.deploymentPlan) {
+        formState.cr.spec.deploymentPlan = {
+          image: 'placeholder',
+          requireLogin: false,
+          size: 1,
+        };
+      }
       if (!action.payload) {
         delete formState.cr.spec.deploymentPlan.extraMounts;
       } else {
@@ -89,6 +96,13 @@ export const reducer713: React.Reducer<
       replaceSecurityRoles(formState.cr, action.payload);
       return formState;
     case ArtemisReducerOperations713.setServiceAccount:
+      if (!formState.cr.spec.deploymentPlan) {
+        formState.cr.spec.deploymentPlan = {
+          image: 'placeholder',
+          requireLogin: false,
+          size: 1,
+        };
+      }
       if (!action.payload) {
         delete formState.cr.spec.deploymentPlan.podSecurity;
       } else {
@@ -106,13 +120,12 @@ export const reducer713: React.Reducer<
 };
 
 export const areMandatoryValuesSet713 = (formState: FormState713) => {
-  // if the user wants to configure the token review and has not set the
-  // required data, return false.
+  if (!formState.cr?.spec) throw new Error('spec should not be undefined');
   if (formState.cr.spec.adminUser === undefined) {
-    if (!formState.cr?.spec?.deploymentPlan?.extraMounts?.secrets[0]) {
+    if (!formState.cr.spec?.deploymentPlan?.extraMounts?.secrets?.[0]) {
       return false;
     }
-    if (!formState.cr?.spec?.deploymentPlan?.podSecurity?.serviceAccountName) {
+    if (!formState.cr.spec?.deploymentPlan?.podSecurity?.serviceAccountName) {
       return false;
     }
   }
@@ -125,6 +138,7 @@ export const areMandatoryValuesSet713 = (formState: FormState713) => {
  * it is created.
  */
 const setEnvForTokenAuth = (cr: BrokerCR) => {
+  if (!cr.spec) throw new Error('spec should not be undefined');
   const basicJavaArgs = {
     name: 'JAVA_ARGS_APPEND',
     value: '-Dhawtio.realm=token',
@@ -148,6 +162,7 @@ const setEnvForTokenAuth = (cr: BrokerCR) => {
  * argument of the env, delete the env.
  */
 const deleteEnvForTokenAuth = (cr: BrokerCR) => {
+  if (!cr.spec) throw new Error('spec should not be undefined');
   if (cr.spec.env) {
     const javaArgs = cr.spec.env.find((v) => v.name === 'JAVA_ARGS_APPEND');
     if (javaArgs) {
@@ -174,7 +189,7 @@ const deleteEnvForTokenAuth = (cr: BrokerCR) => {
  * Return all the security roles of the CR as a Map<string, string>
  */
 export const getSecurityRoles = (cr: BrokerCR) => {
-  if (cr.spec?.brokerProperties?.length > 0) {
+  if (cr.spec?.brokerProperties && cr.spec.brokerProperties.length > 0) {
     return new Map<string, string>(
       cr.spec.brokerProperties
         .filter((property) => property.startsWith('securityRoles'))
@@ -195,18 +210,18 @@ export const replaceSecurityRoles = (
   cr: BrokerCR,
   newSecurityRoles: Map<string, string>,
 ) => {
-  if (cr.spec?.brokerProperties?.length > 0) {
-    // delete all the previous security roles
+  if (!cr.spec) throw new Error('spec should not be undefined');
+  if (cr.spec.brokerProperties && cr.spec.brokerProperties.length > 0) {
     cr.spec.brokerProperties = cr.spec.brokerProperties.filter(
       (property) => !property.startsWith('securityRoles'),
     );
   }
   if (newSecurityRoles) {
-    if (!cr.spec?.brokerProperties) {
+    if (!cr.spec.brokerProperties) {
       cr.spec.brokerProperties = [];
     }
     newSecurityRoles.forEach((v, k) =>
-      cr.spec.brokerProperties.push(k + '=' + v),
+      cr.spec!.brokerProperties!.push(k + '=' + v),
     );
   }
 };
