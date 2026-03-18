@@ -12,8 +12,13 @@ export async function login(page: Page, username: string, password: string) {
   // Navigate to the application
   await page.goto('/');
 
-  // Handle the OAuth redirect
-  await page.waitForURL('https://oauth-openshift.apps-crc.testing/**', {
+  // Handle the OAuth redirect to console URL Or localhost
+  const consoleUrl = process.env.CONSOLE_URL || 'http://localhost:9000';
+  const urlMatch = consoleUrl.match(/apps\.([^/]+)/);
+  const clusterDomain = urlMatch ? `apps.${urlMatch[1]}` : 'apps-crc.testing';
+  const oauthPattern = `https://oauth-openshift.${clusterDomain}/**`;
+
+  await page.waitForURL(oauthPattern, {
     timeout: 30000,
   });
 
@@ -25,8 +30,10 @@ export async function login(page: Page, username: string, password: string) {
   // Click login button
   await page.locator('button[type=submit]:has-text("Log in")').click();
 
-  // Wait for redirect back to localhost
-  await page.waitForURL('http://localhost:9000/**', { timeout: 30000 });
+  // Wait for redirect back to console URL Or localhost
+  const isRemoteCluster = consoleUrl.startsWith('https://');
+  const redirectPattern = isRemoteCluster ? `${consoleUrl}/**` : 'http://localhost:9000/**';
+  await page.waitForURL(redirectPattern, { timeout: 30000 });
 
   // Wait for the page to be fully loaded and interactive
   await page.waitForLoadState('networkidle');
