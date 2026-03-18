@@ -18,8 +18,17 @@ export async function login(page: Page, username: string, password: string) {
   const clusterDomain = urlMatch ? `apps.${urlMatch[1]}` : 'apps-crc.testing';
   const oauthPattern = `https://oauth-openshift.${clusterDomain}/**`;
 
+  console.log(`Waiting for OAuth redirect to: ${oauthPattern}`);
+
   await page.waitForURL(oauthPattern, {
     timeout: 30000,
+  });
+
+  console.log(`Current URL after OAuth redirect: ${page.url()}`);
+  // Wait for the login form to be visible
+  await page.waitForSelector('input#inputUsername', {
+    state: 'visible',
+    timeout: 30000
   });
 
   // Fill in login credentials
