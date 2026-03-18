@@ -16,6 +16,7 @@
     "typecheck:7.12": "tsc -p src/reducers/7.12/tsconfig.json --noEmit",
     "typecheck:7.13": "tsc -p src/reducers/7.13/tsconfig.json --noEmit",
     "typecheck:global-reducers": "tsc -p src/reducers/tsconfig.json --noEmit",
+    "typecheck:restricted": "tsc -p src/reducers/restricted/tsconfig.json --noEmit",
     "clean": "rm -rf dist",
     "format:all": "prettier --config ./.prettierrc.yml --write './src/**/*'",
     "i18n": "i18next \"src/**/*.{js,jsx,ts,tsx}\" [-oc] -c i18next-parser.config.js",

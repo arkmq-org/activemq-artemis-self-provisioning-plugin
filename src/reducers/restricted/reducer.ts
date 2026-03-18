@@ -227,37 +227,51 @@ export const reducerRestricted: React.Reducer<
       return formState;
     case ArtemisReducerOperationsRestricted.setRestrictedDataPlaneAcceptorEnabled:
       ensureRestrictedDataPlane(formState);
+      if (!formState.restrictedDataPlane)
+        throw new Error('restrictedDataPlane should not be undefined');
       formState.restrictedDataPlane.securedAcceptor.enabled = action.payload;
       applyRestrictedDataPlaneConfig(formState);
       return formState;
     case ArtemisReducerOperationsRestricted.setRestrictedDataPlaneAcceptorPort:
       ensureRestrictedDataPlane(formState);
+      if (!formState.restrictedDataPlane)
+        throw new Error('restrictedDataPlane should not be undefined');
       formState.restrictedDataPlane.securedAcceptor.port = action.payload;
       applyRestrictedDataPlaneConfig(formState);
       return formState;
     case ArtemisReducerOperationsRestricted.setRestrictedDataPlaneAcceptorSecurityDomain:
       ensureRestrictedDataPlane(formState);
+      if (!formState.restrictedDataPlane)
+        throw new Error('restrictedDataPlane should not be undefined');
       formState.restrictedDataPlane.securedAcceptor.securityDomain =
         action.payload;
       applyRestrictedDataPlaneConfig(formState);
       return formState;
     case ArtemisReducerOperationsRestricted.setRestrictedDataPlaneAddressName:
       ensureRestrictedDataPlane(formState);
+      if (!formState.restrictedDataPlane)
+        throw new Error('restrictedDataPlane should not be undefined');
       formState.restrictedDataPlane.address.name = action.payload;
       applyRestrictedDataPlaneConfig(formState);
       return formState;
     case ArtemisReducerOperationsRestricted.setRestrictedDataPlaneAddressRoutingType:
       ensureRestrictedDataPlane(formState);
+      if (!formState.restrictedDataPlane)
+        throw new Error('restrictedDataPlane should not be undefined');
       formState.restrictedDataPlane.address.routingType = action.payload;
       applyRestrictedDataPlaneConfig(formState);
       return formState;
     case ArtemisReducerOperationsRestricted.setRestrictedDataPlaneRoleName:
       ensureRestrictedDataPlane(formState);
+      if (!formState.restrictedDataPlane)
+        throw new Error('restrictedDataPlane should not be undefined');
       formState.restrictedDataPlane.role.name = action.payload;
       applyRestrictedDataPlaneConfig(formState);
       return formState;
     case ArtemisReducerOperationsRestricted.setRestrictedDataPlaneRolePermission:
       ensureRestrictedDataPlane(formState);
+      if (!formState.restrictedDataPlane)
+        throw new Error('restrictedDataPlane should not be undefined');
       formState.restrictedDataPlane.role.permissions[
         action.payload.permission
       ] = action.payload.value;
@@ -265,18 +279,26 @@ export const reducerRestricted: React.Reducer<
       return formState;
     case ArtemisReducerOperationsRestricted.setRestrictedDataPlaneClientCN:
       ensureRestrictedDataPlane(formState);
+      if (!formState.restrictedDataPlane)
+        throw new Error('restrictedDataPlane should not be undefined');
       formState.restrictedDataPlane.clientCN = action.payload;
       return formState;
     case ArtemisReducerOperationsRestricted.setRestrictedDataPlaneConsent:
       ensureRestrictedDataPlane(formState);
+      if (!formState.restrictedDataPlane)
+        throw new Error('restrictedDataPlane should not be undefined');
       formState.restrictedDataPlane.consent = action.payload;
       return formState;
     case ArtemisReducerOperationsRestricted.setRestrictedDataPlaneJaasStatus:
       ensureRestrictedDataPlane(formState);
+      if (!formState.restrictedDataPlane)
+        throw new Error('restrictedDataPlane should not be undefined');
       formState.restrictedDataPlane.jaasSecretStatus = action.payload;
       return formState;
     case ArtemisReducerOperationsRestricted.setRestrictedDataPlaneAmqpsStatus:
       ensureRestrictedDataPlane(formState);
+      if (!formState.restrictedDataPlane)
+        throw new Error('restrictedDataPlane should not be undefined');
       formState.restrictedDataPlane.amqpsSecretStatus = action.payload;
       return formState;
     default:
@@ -291,7 +313,7 @@ export const areMandatoryValuesSetRestricted = (
   formState: FormStateRestricted,
 ) => {
   // if the user wants restricted mode, ensure everything is correctly defined
-  if (formState.cr.spec.restricted) {
+  if (formState.cr?.spec?.restricted) {
     // Check that all mandatory operator configuration fields are set
     if (!formState.ACTIVEMQ_ARTEMIS_MANAGER_CA_SECRET_NAME) {
       return false;
@@ -390,6 +412,7 @@ const isValidPort = (port?: string) => {
 };
 
 const applyRestrictedDataPlaneConfig = (formState: FormStateRestricted) => {
+  if (!formState.cr?.spec) throw new Error('spec should not be undefined');
   const dataPlane = formState.restrictedDataPlane;
   if (!dataPlane?.securedAcceptor) {
     return;
