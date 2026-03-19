@@ -1,6 +1,15 @@
 import { Page } from '@playwright/test';
 
-export async function login(page: Page, username: string, password: string) {
+export async function login(page: Page) {
+  const username = process.env.KUBEADMIN_USERNAME;
+  const password = process.env.KUBEADMIN_PASSWORD;
+
+  if (!username || !password) {
+    throw new Error('Missing OpenShift credentials. Set KUBEADMIN_USERNAME and KUBEADMIN_PASSWORD environment variables.');
+  }
+
+  console.log(`Logging in as user: ${username}`);
+
   // Set up console user settings before navigation
   await page.addInitScript(() => {
     window.localStorage.setItem(
