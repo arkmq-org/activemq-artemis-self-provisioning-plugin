@@ -25,6 +25,20 @@ export async function login(page: Page, username: string, password: string) {
   });
 
   console.log(`Current URL after OAuth redirect: ${page.url()}`);
+  
+  // First, check if we need to select an identity provider (kube:admin)
+  try {
+    const identityProviderButton = page.locator('a, button').filter({ hasText: /^kube:admin$/i }).first();
+
+    await identityProviderButton.waitFor({ state: 'visible', timeout: 5000 });
+    
+    console.log('Identity provider selection found, clicking on kube:admin...');
+    await identityProviderButton.click();
+    await page.waitForLoadState('domcontentloaded');
+  } catch (e) {
+    console.log('No identity provider selection found, proceeding directly to login form...');
+  }
+
   // Wait for the login form to be visible
   await page.waitForSelector('input#inputUsername', {
     state: 'visible',
