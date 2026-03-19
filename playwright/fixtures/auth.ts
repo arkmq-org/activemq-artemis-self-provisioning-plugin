@@ -45,18 +45,32 @@ export async function login(page: Page, username: string, password: string) {
     timeout: 30000
   });
 
+  console.log('Login form found, filling in credentials...');
+
   // Fill in login credentials
   await page.locator('input#inputUsername').clear();
   await page.locator('input#inputUsername').fill(username);
   await page.locator('input#inputPassword').fill(password);
 
-  // Click login button
-  await page.locator('button[type=submit]:has-text("Log in")').click();
+  console.log('Credentials filled, submitting login form...');
+
+  // Click login button and wait for navigation
+  const loginButton = page.locator('button[type=submit]:has-text("Log in")');
+  await loginButton.click();
 
   // Wait for redirect back to console URL Or localhost
   const isRemoteCluster = consoleUrl.startsWith('https://');
   const redirectPattern = isRemoteCluster ? `${consoleUrl}/**` : 'http://localhost:9000/**';
-  await page.waitForURL(redirectPattern, { timeout: 30000 });
+  
+  console.log(`Waiting for redirect to: ${redirectPattern}`);
+  
+  try {
+    await page.waitForURL(redirectPattern, { timeout: 60000 });
+    console.log(`Successfully redirected to: ${page.url()}`);
+  } catch (error) {
+    console.log(`Failed to redirect. Current URL: ${page.url()}`);
+    throw error;
+  }
 
   // Wait for the page to be fully loaded and interactive
   await page.waitForLoadState('networkidle');
