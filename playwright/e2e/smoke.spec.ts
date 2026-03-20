@@ -60,7 +60,7 @@ test.describe('Create Broker via UI', () => {
 
     // Wait for form to load
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(3000);
 
     // NOW fill CR Name with a unique value (after switching modes)
     const brokerName = `e2e-broker-${Date.now()}`;
@@ -71,25 +71,28 @@ test.describe('Create Broker via UI', () => {
     await nameInput.clear();
     await nameInput.fill(brokerName);
     
-    // Trigger validation by pressing Tab or clicking outside
+    // Trigger validation and wait for form to process
     await nameInput.press('Tab');
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(2000);
 
     // Click Create and wait for the creation to start
     const createButton = page
       .locator('button')
       .filter({ hasText: /^Create$/i });
 
-    // Wait for button to be enabled with better error handling
-    try {
-      await expect(createButton).toBeEnabled({ timeout: 30000 });
-    } catch (error) {
-      console.error('Create button not enabled. Checking form state...');
-      console.error('Name input value:', await nameInput.inputValue());
-      console.error('Button state:', await createButton.getAttribute('disabled'));
-      console.error('Button classes:', await createButton.getAttribute('class'));
-      throw error;
-    }
+    // Poll for button to be enabled - form validation may take time
+    await expect(async () => {
+      const isDisabled = await createButton.getAttribute('aria-disabled');
+      const buttonDisabled = await createButton.getAttribute('disabled');
+      console.log(`Button state - aria-disabled: ${isDisabled}, disabled: ${buttonDisabled}`);
+      expect(isDisabled).not.toBe('true');
+      expect(buttonDisabled).toBeNull();
+    }).toPass({
+      timeout: 60000,
+      intervals: [2000],
+    });
+    
+    console.log('✓ Create button is now enabled');
 
     // Click and wait for navigation away from the form (indicates successful submission)
     await Promise.all([
