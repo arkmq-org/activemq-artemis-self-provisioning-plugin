@@ -1,5 +1,4 @@
 import { defineConfig, devices } from '@playwright/test';
-
 export default defineConfig({
   testDir: './playwright/e2e',
   fullyParallel: false,
@@ -9,7 +8,7 @@ export default defineConfig({
   reporter: 'list',
   timeout: 480000, // 8 minutes for broker startup
   use: {
-    baseURL: 'http://localhost:9000',
+    baseURL: process.env.CONSOLE_URL || 'http://localhost:9000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
