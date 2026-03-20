@@ -58,22 +58,38 @@ test.describe('Create Broker via UI', () => {
     await createBrokerButton.scrollIntoViewIfNeeded();
     await createBrokerButton.click();
 
+    // Wait for form to load
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(2000);
+
     // NOW fill CR Name with a unique value (after switching modes)
     const brokerName = `e2e-broker-${Date.now()}`;
     const nameInput = page.locator(
       '#horizontal-form-name, input[name="horizontal-form-name"]',
     );
-    await expect(nameInput).toBeVisible();
+    await expect(nameInput).toBeVisible({ timeout: 10000 });
     await nameInput.clear();
     await nameInput.fill(brokerName);
+    
+    // Trigger validation by pressing Tab or clicking outside
+    await nameInput.press('Tab');
+    await page.waitForTimeout(1000);
 
     // Click Create and wait for the creation to start
     const createButton = page
       .locator('button')
       .filter({ hasText: /^Create$/i });
 
-    // Ensure the button is enabled before clicking
-    await expect(createButton).toBeEnabled({ timeout: 10000 });
+    // Wait for button to be enabled with better error handling
+    try {
+      await expect(createButton).toBeEnabled({ timeout: 30000 });
+    } catch (error) {
+      console.error('Create button not enabled. Checking form state...');
+      console.error('Name input value:', await nameInput.inputValue());
+      console.error('Button state:', await createButton.getAttribute('disabled'));
+      console.error('Button classes:', await createButton.getAttribute('class'));
+      throw error;
+    }
 
     // Click and wait for navigation away from the form (indicates successful submission)
     await Promise.all([

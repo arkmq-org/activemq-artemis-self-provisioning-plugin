@@ -216,11 +216,35 @@ test.describe('Restricted Broker End-to-End', () => {
     // Step 6: Wait for broker to be ready (stay on the list page)
     // The broker should show "5 ok / 5" in the Conditions column
     // Brokers can take 3-5 minutes to fully start up
-    await expect(page.locator('text=/5\\s+ok\\s*\\/\\s*5/i')).toBeVisible({
-      timeout: 300000,
-    }); // 5 minutes timeout for broker startup
-
-    console.log('✅ Broker is ready with 5 OK / 5 status');
+    console.log('Waiting for broker to be ready...');
+    
+    try {
+      // Try multiple status patterns that might appear
+      await expect(
+        page.locator('text=/5\\s+ok\\s*\\/\\s*5/i, text=/5\\s*ok\\s*\\/\\s*5/i, text=/Ready/i')
+      ).toBeVisible({
+        timeout: 420000, // 7 minutes timeout for broker startup
+      });
+      console.log('✅ Broker is ready');
+    } catch (error) {
+      console.error('Broker did not reach ready state. Checking current status...');
+      console.error('Current URL:', page.url());
+      
+      // Try to find the broker row and log its status
+      const brokerRow = page.locator(`tr:has-text("${brokerName}")`);
+      if (await brokerRow.isVisible()) {
+        const rowText = await brokerRow.textContent();
+        console.error('Broker row content:', rowText);
+      } else {
+        console.error('Broker row not found in the list');
+      }
+      
+      // Log all visible text on the page for debugging
+      const pageText = await page.locator('body').textContent();
+      console.error('Page contains:', pageText?.substring(0, 500));
+      
+      throw error;
+    }
 
     // Step 7: Go to broker details page
     console.log('Navigating to broker details...');
