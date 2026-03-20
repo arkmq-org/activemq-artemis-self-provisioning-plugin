@@ -37,7 +37,7 @@ export async function login(page: Page) {
   
   // First, check if we need to select an identity provider (kube:admin)
   try {
-    const identityProviderButton = page.locator('a, button').filter({ hasText: /^/htpasswd$/i }).first();
+    const identityProviderButton = page.locator('a, button').filter({ hasText: /^htpasswd$/i }).first();
 
     await identityProviderButton.waitFor({ state: 'visible', timeout: 5000 });
     
