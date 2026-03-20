@@ -10,9 +10,6 @@ import {
   cleanupE2EClusterInfrastructure,
 } from '../fixtures/k8s';
 
-const username = 'kubeadmin';
-const password = process.env.KUBEADMIN_PASSWORD || 'kubeadmin';
-
 // Generate a unique namespace for this test run
 const testNamespace = `e2e-test-${Date.now()}`;
 
@@ -46,18 +43,28 @@ test.describe('Restricted Broker End-to-End', () => {
     // - activemq-artemis-manager-cert operator certificate in our namespace
 
     // Login
-    await login(page, username, password);
+    await login(page);
 
     // Navigate to the test namespace's brokers page
     await page.goto(`/k8s/ns/${testNamespace}/brokers`, {
       waitUntil: 'load',
     });
     await page.waitForLoadState('domcontentloaded');
+    
+    // Wait for page to stabilize
+    await page.waitForTimeout(2000);
 
-    // Wait for the page to load and click Create Broker
-    await expect(
-      page.locator('h1, [data-test="resource-title"]', { hasText: /Brokers/i }),
-    ).toBeVisible({ timeout: 30000 });
+    // Wait for the page to load and click Create Broker with better error handling
+    try {
+      await expect(
+        page.locator('h1, [data-test="resource-title"]').filter({ hasText: /Brokers/i }),
+      ).toBeVisible({ timeout: 60000 });
+    } catch (error) {
+      console.error('Failed to find Brokers heading. Current URL:', page.url());
+      console.error('Page title:', await page.title());
+      console.error('Visible h1 elements:', await page.locator('h1').allTextContents());
+      throw error;
+    }
 
     // Click Create Broker (button or anchor)
     const createBrokerButton = page

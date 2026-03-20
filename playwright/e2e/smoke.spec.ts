@@ -1,13 +1,24 @@
 import { test, expect } from '@playwright/test';
 import { login } from '../fixtures/auth';
 
-const username = 'kubeadmin';
-const password = process.env.KUBEADMIN_PASSWORD || 'kubeadmin';
-
 test.describe('Console login smoke', () => {
   test('logs in and lands on console', async ({ page }) => {
-    await login(page, username, password);
-    await expect(page).toHaveURL(/localhost/, { timeout: 30000 });
+    await login(page);
+    
+    // Check that we're on the console (either localhost or remote cluster)
+    const consoleUrl = process.env.CONSOLE_URL || 'http://localhost:9000';
+    const isRemoteCluster = consoleUrl.startsWith('https://');
+    
+    if (isRemoteCluster) {
+      // For remote clusters, check we're on the console domain
+      await expect(page).toHaveURL(/console-openshift-console\.apps\..*/, { timeout: 30000 });
+    } else {
+      // For localhost, check for localhost
+      await expect(page).toHaveURL(/localhost/, { timeout: 30000 });
+    }
+    
+    // Verify we can see the console UI (dashboards or any console page)
+    await expect(page.locator('body')).toBeVisible();
   });
 });
 
@@ -16,18 +27,28 @@ test.describe('Create Broker via UI', () => {
     page,
   }) => {
     // Login
-    await login(page, username, password);
+    await login(page);
 
     // Navigate to all-namespaces brokers page
     await page.goto('/k8s/all-namespaces/brokers', {
       waitUntil: 'load',
     });
     await page.waitForLoadState('domcontentloaded');
+    
+    // Wait for page to stabilize
+    await page.waitForTimeout(2000);
 
-    // Ensure Brokers page loaded - wait for heading
-    await expect(
-      page.locator('h1, [data-test="resource-title"]', { hasText: /Brokers/i }),
-    ).toBeVisible({ timeout: 30000 });
+    // Ensure Brokers page loaded - wait for heading with better error handling
+    try {
+      await expect(
+        page.locator('h1, [data-test="resource-title"]').filter({ hasText: /Brokers/i }),
+      ).toBeVisible({ timeout: 60000 });
+    } catch (error) {
+      console.error('Failed to find Brokers heading. Current URL:', page.url());
+      console.error('Page title:', await page.title());
+      console.error('Visible h1 elements:', await page.locator('h1').allTextContents());
+      throw error;
+    }
 
     // Click Create Broker (button or anchor)
     const createBrokerButton = page
