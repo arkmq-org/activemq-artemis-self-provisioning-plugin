@@ -29,8 +29,12 @@ export enum EditorType {
 }
 
 export const BrokerCreationFormState = createContext<FormState>({});
+const initialFormDispatch: React.Dispatch<ReducerActions> = () => {
+  // no-op placeholder for context default value
+};
+
 export const BrokerCreationFormDispatch =
-  createContext<React.Dispatch<ReducerActions>>(null);
+  createContext<React.Dispatch<ReducerActions>>(initialFormDispatch);
 
 export interface BaseFormState {
   brokerVersion?: '7.12' | '7.13';
@@ -101,6 +105,8 @@ export const artemisCrReducer: React.Reducer<FormState, ReducerActions> = (
   action,
 ) => {
   const formState = { ...prevFormState };
+  if (!formState.cr) throw new Error('cr should not be undefined');
+  if (!formState.cr.spec) throw new Error('spec should not be undefined');
   if (
     action.operation !== ArtemisReducerGlobalOperations.setEditorType &&
     action.operation !== ArtemisReducerGlobalOperations.setYamlHasUnsavedChanges
@@ -134,15 +140,21 @@ export const artemisCrReducer: React.Reducer<FormState, ReducerActions> = (
       formState.yamlHasUnsavedChanges = false;
       formState.hasChanges = action.payload.isSetByUser;
       return formState;
-    case ArtemisReducerOperationsRestricted.setIsRestrited:
+    case ArtemisReducerOperationsRestricted.setIsRestrited: {
+      if (!formState.cr) throw new Error('cr should not be undefined');
+      if (!formState.cr.metadata?.namespace)
+        throw new Error('namespace should not be undefined');
       formState.cr = newArtemisCR(formState.cr.metadata.namespace).cr;
+      if (!formState.cr.spec) throw new Error('spec should not be undefined');
       formState.cr.spec.ingressDomain = ingressDomain;
       if (action.payload) {
         delete formState.cr.spec.adminUser;
         delete formState.cr.spec.adminPassword;
         delete formState.cr.spec.console;
-        delete formState.cr.spec.deploymentPlan.image;
-        delete formState.cr.spec.deploymentPlan.requireLogin;
+        if (formState.cr.spec.deploymentPlan) {
+          delete formState.cr.spec.deploymentPlan.image;
+          delete formState.cr.spec.deploymentPlan.requireLogin;
+        }
         formState.brokerVersion = '7.13';
         (
           formState as FormStateRestricted
@@ -157,6 +169,7 @@ export const artemisCrReducer: React.Reducer<FormState, ReducerActions> = (
       }
       formState.cr.spec.restricted = action.payload;
       return formState;
+    }
   }
   if (formState.cr.spec.restricted) {
     return reducerRestricted(
@@ -183,7 +196,9 @@ export const getBrokerVersion = (formState: FormState) => {
   return formState.brokerVersion;
 };
 
-export const areMandatoryValuesSet = (formState: FormState) => {
+export const areMandatoryValuesSet = (formState: FormState): boolean => {
+  if (!formState.cr) throw new Error('cr should not be undefined');
+  if (!formState.cr.spec) throw new Error('spec should not be undefined');
   if (formState.cr.spec.restricted) {
     return areMandatoryValuesSetRestricted(formState);
   }
@@ -192,5 +207,7 @@ export const areMandatoryValuesSet = (formState: FormState) => {
       return areMandatoryValuesSet713(formState);
     case '7.12':
       return areMandatoryValuesSet712(formState);
+    default:
+      throw new Error(`Unknown broker version: ${formState.brokerVersion}`);
   }
 };

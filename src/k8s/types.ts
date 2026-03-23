@@ -97,8 +97,8 @@ export type BrokerCR = K8sResourceCommon & {
     console?: Console;
     resourceTemplates?: ResourceTemplate[];
     deploymentPlan?: {
-      image: string;
-      requireLogin: boolean;
+      image?: string;
+      requireLogin?: boolean;
       size: number;
       messageMigration?: boolean;
       persistenceEnabled?: boolean;
