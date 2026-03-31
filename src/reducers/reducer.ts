@@ -145,6 +145,7 @@ export const artemisCrReducer: React.Reducer<FormState, ReducerActions> = (
       if (!formState.cr.metadata?.namespace)
         throw new Error('namespace should not be undefined');
       formState.cr = newArtemisCR(formState.cr.metadata.namespace).cr;
+      if (!formState.cr) throw new Error('cr should not be undefined');
       if (!formState.cr.spec) throw new Error('spec should not be undefined');
       formState.cr.spec.ingressDomain = ingressDomain;
       if (action.payload) {

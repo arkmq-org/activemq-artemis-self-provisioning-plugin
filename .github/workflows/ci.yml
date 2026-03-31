@@ -101,7 +101,6 @@ jobs:
           
       - name: check strict mode for reducers/restricted
         run: |
-      - name: check strict mode for reducers/restricted
           OUTPUT=$(yarn typecheck:restricted 2>&1 || true)
           if echo "$OUTPUT" | grep -Eq "src/reducers/restricted/.*\.(ts|tsx).*error"; then
             echo "$OUTPUT" | grep -E "src/reducers/restricted/.*\.(ts|tsx).*error"
