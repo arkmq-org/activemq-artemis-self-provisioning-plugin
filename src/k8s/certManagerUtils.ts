@@ -54,6 +54,7 @@ export const createClusterIssuerChainOfTrust = async (
         algorithm: 'RSA',
         encoding: 'PKCS1',
         size: 2048,
+        rotationPolicy: 'Always',
       },
       issuerRef: {
         name: rootIssuerName,
@@ -152,6 +153,7 @@ export const createIssuerChainOfTrust = async (
       privateKey: {
         algorithm: 'ECDSA',
         size: 256,
+        rotationPolicy: 'Always',
       },
       issuerRef: {
         name: rootIssuer.metadata.name,
@@ -221,6 +223,7 @@ export const createRestrictedCert = async (
         algorithm: 'RSA',
         encoding: 'PKCS1',
         size: 2048,
+        rotationPolicy: 'Always',
       },
       isCA: isCA,
       issuerRef: {

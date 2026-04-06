@@ -121,6 +121,8 @@ spec:
   isCA: true
   commonName: ${prefix}.artemis.root.ca
   secretName: ${resourceNames.rootSecret}
+  privateKey:
+    rotationPolicy: Always
   issuerRef:
     name: ${resourceNames.rootIssuer}
     kind: ClusterIssuer
@@ -212,6 +214,8 @@ metadata:
 spec:
   secretName: ${operatorCertName}
   commonName: activemq-artemis-operator
+  privateKey:
+    rotationPolicy: Always
   issuerRef:
     name: ${caIssuerName}
     kind: ClusterIssuer
