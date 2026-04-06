@@ -85,6 +85,7 @@ const createCert = async (
         algorithm: 'RSA',
         encoding: 'PKCS1',
         size: 2048,
+        rotationPolicy: 'Always',
       },
       isCA: false,
       issuerRef: {

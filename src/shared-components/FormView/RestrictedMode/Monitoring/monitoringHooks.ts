@@ -435,6 +435,9 @@ export const useCreateMonitoringResources = ({
                   },
                 },
                 commonName: 'prometheus',
+                privateKey: {
+                  rotationPolicy: 'Always',
+                },
                 issuerRef: {
                   name: 'dev-ca-issuer',
                   kind: 'ClusterIssuer',
@@ -470,6 +473,9 @@ export const useCreateMonitoringResources = ({
                 },
               },
               commonName: 'prometheus',
+              privateKey: {
+                rotationPolicy: 'Always',
+              },
               issuerRef: {
                 name: 'dev-ca-issuer',
                 kind: 'ClusterIssuer',

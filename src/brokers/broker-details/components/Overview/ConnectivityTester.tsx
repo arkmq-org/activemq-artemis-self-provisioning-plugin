@@ -418,6 +418,9 @@ export const ConnectivityTester: FC<ConnectivityTesterProps> = ({ cr }) => {
           spec: {
             secretName: 'messaging-client-cert',
             commonName: clientCN.trim(),
+            privateKey: {
+              rotationPolicy: 'Always',
+            },
             issuerRef: {
               name: selectedIssuer.name,
               kind: selectedIssuer.kind,
