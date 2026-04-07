@@ -3,7 +3,7 @@ module.exports = {
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
   testMatch: ['<rootDir>/**/*.test.ts', '<rootDir>/**/*.test.tsx'],
   transformIgnorePatterns: [
-    '<rootDir>/node_modules/(?!(@patternfly|@openshift-console\\S*?|react-tokens|@novnc|@popperjs|lodash|monaco-editor|react-monaco-editor|byte-size|lodash-es)/.*)',
+    '<rootDir>/node_modules/(?!(@patternfly|@openshift-console\\S*?|react-tokens|@novnc|@popperjs|monaco-editor|react-monaco-editor|byte-size)/.*)',
   ],
   moduleNameMapper: {
     '^.+\\.(css|sass|scss)$': '<rootDir>/styleMock.js',
