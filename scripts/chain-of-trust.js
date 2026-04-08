@@ -90,6 +90,7 @@ const resourceNames = {
   caIssuer: `${prefix}-ca-issuer`,
   bundle: 'activemq-artemis-manager-ca',
   operatorCert: 'activemq-artemis-manager-cert',
+  prometheusCert: 'prometheus-cert',
 };
 
 /**
@@ -207,6 +208,11 @@ async function cleanup() {
       `kubectl delete secret ${resourceNames.operatorCert} -n ${namespace} --ignore-not-found=true`,
     );
 
+    // Delete all prometheus certificates and secrets
+    console.log('  Deleting all Prometheus certificates...');
+    await deleteCertificatePattern(resourceNames.prometheusCert);
+    await deleteSecretPattern(resourceNames.prometheusCert);
+
     // Delete all broker certificates (both generic and CR-specific)
     console.log('  Deleting all broker certificates...');
     await deleteCertificatePattern('broker-cert');
@@ -232,6 +238,9 @@ async function cleanup() {
     console.log(`  ✓ Bundle: ${resourceNames.bundle}`);
     console.log(
       `  ✓ Certificate: ${resourceNames.operatorCert} (from ${namespace})`,
+    );
+    console.log(
+      `  ✓ All Prometheus certificates and secrets (pattern: *${resourceNames.prometheusCert}*)`,
     );
     console.log(
       `  ✓ All broker certificates and secrets (pattern: *broker-cert*)`,
