@@ -1,6 +1,6 @@
 # **Using the self-provisioning plugin**
 
-A development preview version of the self-provisioning plugin is available with AMQ Broker 7.13.
+A development preview version of the self-provisioning plugin is available with AMQ Broker 7.14.
 
 The self-provisioning plugin is a dynamic plugin for the Openshift Console. The plugin adds a new broker workload type to the Openshift console. You can use the broker workload type to create broker deployments on Openshift.
 
@@ -79,7 +79,7 @@ For authorization, you can configure Role Based Access Control (RBAC). With RBAC
 
 **Prerequisites**
 
-- You installed version 7.13 of the AMQ Broker Operator for RHEL 8\. You can configure RBAC only on brokers created by using version 7.13 of the Operator.
+- You installed version 7.14 of the AMQ Broker Operator for RHEL 8. 
 
 - The cluster administrator has created a cluster level service account that has the system:auth-delegator role. This broker uses this service account to conduct token reviews to identify the roles associated with a token. The following example YAML creates a service account with the required role binding.
 
