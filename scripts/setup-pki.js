@@ -279,11 +279,18 @@ async function detectOperatorNamespace(fallback = 'default') {
       return ns;
     }
   } catch (error) {
-    // Detection failed, fall through to fallback
+    // Log the error for debugging
+    console.error(`Error querying operator pods: ${error.message}`);
   }
-  console.log(
-    `⚠️  Could not detect operator namespace, falling back to "${fallback}"`,
+
+  // If we reach here, no operator was found
+  console.error(
+    `❌ Could not detect operator namespace using label: ${OPERATOR_POD_LABEL}`,
   );
+  console.error(
+    `⚠️  Falling back to "${fallback}" - this may cause issues if the operator is not in this namespace`,
+  );
+
   return fallback;
 }
 
