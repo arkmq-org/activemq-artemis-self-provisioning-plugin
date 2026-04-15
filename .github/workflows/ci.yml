@@ -98,7 +98,7 @@ jobs:
             exit 1
           fi
           echo "✓ No type errors in src/reducers/"
-          
+
       - name: check strict mode for reducers/restricted
         run: |
           OUTPUT=$(yarn typecheck:restricted 2>&1 || true)
@@ -319,6 +319,7 @@ jobs:
 
       - name: Run Playwright tests for console version 4.18
         env:
+          KUBEADMIN_USERNAME: kubeadmin
           KUBEADMIN_PASSWORD: ${{ steps.get_password.outputs.password }}
         run: |
           ./test_utils/prepare_env.sh
@@ -328,8 +329,19 @@ jobs:
           export CONSOLE_CONTAINER=$(docker ps -aq --filter ancestor=quay.io/openshift/origin-console:4.18)
           ./test_utils/teardown.sh
 
+      - name: Upload test artifacts for 4.18
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts-4.18
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 2
+
       - name: Run Playwright tests for console version 4.19
         env:
+          KUBEADMIN_USERNAME: kubeadmin
           KUBEADMIN_PASSWORD: ${{ steps.get_password.outputs.password }}
         run: |
           ./test_utils/prepare_env.sh
@@ -339,8 +351,19 @@ jobs:
           export CONSOLE_CONTAINER=$(docker ps -aq --filter ancestor=quay.io/openshift/origin-console:4.19)
           ./test_utils/teardown.sh
 
+      - name: Upload test artifacts for 4.19
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts-4.19
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 2
+
       - name: Run Playwright tests for console version 4.20
         env:
+          KUBEADMIN_USERNAME: kubeadmin
           KUBEADMIN_PASSWORD: ${{ steps.get_password.outputs.password }}
         run: |
           ./test_utils/prepare_env.sh
@@ -350,8 +373,19 @@ jobs:
           export CONSOLE_CONTAINER=$(docker ps -aq --filter ancestor=quay.io/openshift/origin-console:4.20)
           ./test_utils/teardown.sh
 
+      - name: Upload test artifacts for 4.20
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts-4.20
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 2
+
       - name: Run Playwright tests for console version 4.21
         env:
+          KUBEADMIN_USERNAME: kubeadmin
           KUBEADMIN_PASSWORD: ${{ steps.get_password.outputs.password }}
         run: |
           ./test_utils/prepare_env.sh
@@ -361,16 +395,12 @@ jobs:
           export CONSOLE_CONTAINER=$(docker ps -aq --filter ancestor=quay.io/openshift/origin-console:4.21)
           ./test_utils/teardown.sh
 
-      - name: Upload Playwright test results on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-test-results
-          path: test-results/
-
-      - name: Upload Playwright reports
+      - name: Upload test artifacts for 4.21
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
-          path: playwright-report/
+          name: playwright-artifacts-4.21
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 2

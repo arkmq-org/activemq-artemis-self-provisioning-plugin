@@ -10,7 +10,7 @@ import {
   cleanupE2EClusterInfrastructure,
 } from '../fixtures/k8s';
 
-const username = 'kubeadmin';
+const username = process.env.KUBEADMIN_USERNAME || 'kubeadmin';
 const password = process.env.KUBEADMIN_PASSWORD || 'kubeadmin';
 
 // Generate a unique namespace for this test run
