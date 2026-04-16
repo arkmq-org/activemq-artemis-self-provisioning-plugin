@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { execSync } from 'child_process';
 import { login } from '../fixtures/auth';
 import { toggleRestrictedMode } from '../fixtures/restrictedMode';
 import {
@@ -209,11 +210,109 @@ test.describe('Restricted Broker End-to-End', () => {
     // Step 6: Wait for broker to be ready (stay on the list page)
     // The broker should show "5 ok / 5" in the Conditions column
     // Brokers can take 3-5 minutes to fully start up
-    await expect(page.locator('text=/5\\s+ok\\s*\\/\\s*5/i')).toBeVisible({
-      timeout: 300000,
-    }); // 5 minutes timeout for broker startup
+    try {
+      await expect(page.locator('text=/5\\s+ok\\s*\\/\\s*5/i')).toBeVisible({
+        timeout: 300000,
+      }); // 5 minutes timeout for broker startup
+      console.log('✅ Broker is ready with 5 OK / 5 status');
+    } catch (error) {
+      // If not 5/5, get detailed broker status
+      console.error('❌ Broker did not reach 5 OK / 5 status');
+      console.log('📊 Fetching detailed broker status...');
 
-    console.log('✅ Broker is ready with 5 OK / 5 status');
+      try {
+        // Get broker CR status in JSON format
+        const brokerStatus = execSync(
+          `kubectl get activemqartemis ${brokerName} -n ${testNamespace} -o json`,
+          { encoding: 'utf-8' },
+        );
+        const brokerJson = JSON.parse(brokerStatus) as {
+          status?: {
+            conditions?: Array<{
+              type: string;
+              status: string;
+              reason?: string;
+            }>;
+            podStatus?: Record<string, unknown>;
+          };
+        };
+
+        console.log('='.repeat(80));
+        console.log('BROKER STATUS DETAILS');
+        console.log('='.repeat(80));
+        console.log(`Broker Name: ${brokerName}`);
+        console.log(`Namespace: ${testNamespace}`);
+        console.log('\nStatus Conditions:');
+        console.log(
+          JSON.stringify(brokerJson.status?.conditions || [], null, 2),
+        );
+        console.log('\nPod Status:');
+        console.log(
+          JSON.stringify(brokerJson.status?.podStatus || {}, null, 2),
+        );
+        console.log('\nFull Status:');
+        console.log(JSON.stringify(brokerJson.status || {}, null, 2));
+        console.log('='.repeat(80));
+
+        // Also get pod details
+        const pods = execSync(
+          `kubectl get pods -n ${testNamespace} -l ActiveMQArtemis=${brokerName} -o json`,
+          { encoding: 'utf-8' },
+        );
+        const podsJson = JSON.parse(pods) as {
+          items?: Array<{
+            metadata: { name: string };
+            status: {
+              phase: string;
+              conditions?: Array<{
+                type: string;
+                status: string;
+                reason?: string;
+              }>;
+              containerStatuses?: Array<{
+                name: string;
+                ready: boolean;
+                restartCount: number;
+                state: {
+                  waiting?: { reason: string };
+                  terminated?: { reason: string };
+                };
+              }>;
+            };
+          }>;
+        };
+        console.log('\nPOD DETAILS:');
+        podsJson.items?.forEach((pod) => {
+          console.log(`\nPod: ${pod.metadata.name}`);
+          console.log(`  Phase: ${pod.status.phase}`);
+          console.log(`  Conditions:`);
+          pod.status.conditions?.forEach((cond) => {
+            console.log(
+              `    ${cond.type}: ${cond.status} (${cond.reason || 'N/A'})`,
+            );
+          });
+          console.log(`  Container Statuses:`);
+          pod.status.containerStatuses?.forEach((container) => {
+            console.log(
+              `    ${container.name}: ready=${container.ready}, restarts=${container.restartCount}`,
+            );
+            if (container.state.waiting) {
+              console.log(`      Waiting: ${container.state.waiting.reason}`);
+            }
+            if (container.state.terminated) {
+              console.log(
+                `      Terminated: ${container.state.terminated.reason}`,
+              );
+            }
+          });
+        });
+        console.log('='.repeat(80));
+      } catch (cmdError) {
+        console.error('Failed to get broker status:', cmdError);
+      }
+
+      throw error; // Re-throw to fail the test
+    }
 
     // Step 7: Go to broker details page
     console.log('Navigating to broker details...');
