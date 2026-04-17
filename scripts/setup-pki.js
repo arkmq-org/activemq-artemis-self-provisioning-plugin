@@ -132,10 +132,38 @@ async function waitForSecret(namespace, secretName, timeoutMs = 60000) {
 }
 
 /**
+ * Detect the cert-manager cluster resource namespace
+ * This is the namespace where ClusterIssuers look for secrets
+ */
+async function detectCertManagerNamespace() {
+  try {
+    // Try to get the cert-manager deployment and check its --cluster-resource-namespace flag
+    const { stdout } = await execAsync(
+      `kubectl get deployment cert-manager -n cert-manager -o jsonpath='{.spec.template.spec.containers[0].args}'`,
+    );
+
+    // Look for --cluster-resource-namespace flag
+    const match = stdout.match(/--cluster-resource-namespace[=\s]+([^\s,\]]+)/);
+    if (match && match[1]) {
+      console.log(`  ✓ Detected cluster resource namespace: ${match[1]}`);
+      return match[1];
+    }
+  } catch (error) {
+    console.log(
+      '  ⚠ Could not detect cluster resource namespace from deployment args',
+    );
+  }
+
+  // Default to cert-manager namespace if not specified
+  console.log('  ✓ Using default namespace: cert-manager');
+  return 'cert-manager';
+}
+
+/**
  * Creates the cluster-level cert-manager infrastructure
  * This includes:
  * - Self-signed root ClusterIssuer
- * - Root CA Certificate in cert-manager namespace
+ * - Root CA Certificate in detected cluster resource namespace
  * - CA ClusterIssuer (signed by root CA)
  *
  * @param {string} prefix - Prefix for resource names (e.g., "dev", "e2e")
@@ -143,6 +171,10 @@ async function waitForSecret(namespace, secretName, timeoutMs = 60000) {
  */
 async function createClusterInfrastructure(prefix) {
   console.log(`📦 Creating cluster infrastructure with prefix: ${prefix}...`);
+
+  // Detect the namespace where cert-manager looks for cluster resources
+  console.log('🔍 Detecting cert-manager cluster resource namespace...');
+  const clusterResourceNamespace = await detectCertManagerNamespace();
 
   const resourceNames = {
     rootIssuer: `${prefix}-selfsigned-root-issuer`,
@@ -164,14 +196,16 @@ spec:
   await applyYaml(rootIssuerYaml);
   await waitForClusterIssuerReady(resourceNames.rootIssuer);
 
-  // Step 2: Create root CA certificate
-  console.log('📦 Step 2: Creating root CA certificate...');
+  // Step 2: Create root CA certificate in the detected cluster resource namespace
+  console.log(
+    `📦 Step 2: Creating root CA certificate in ${clusterResourceNamespace} namespace...`,
+  );
   const rootCACertYaml = `
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: ${resourceNames.rootCert}
-  namespace: cert-manager
+  namespace: ${clusterResourceNamespace}
 spec:
   isCA: true
   commonName: ${prefix}.artemis.root.ca
@@ -190,28 +224,21 @@ spec:
     `⏳ Waiting for certificate ${resourceNames.rootCert} to be ready...`,
   );
   await execAsync(
-    `kubectl wait --for=condition=Ready certificate/${resourceNames.rootCert} -n cert-manager --timeout=120s`,
+    `kubectl wait --for=condition=Ready certificate/${resourceNames.rootCert} -n ${clusterResourceNamespace} --timeout=120s`,
   );
   console.log(`✓ Certificate ${resourceNames.rootCert} is Ready`);
 
-  // CRITICAL FIX: Wait for secret to exist
+  // CRITICAL FIX: Wait for secret to exist in the cluster resource namespace
   console.log(
-    `⏳ Waiting for secret ${resourceNames.rootSecret} to exist in cert-manager namespace...`,
+    `⏳ Waiting for secret ${resourceNames.rootSecret} to exist in ${clusterResourceNamespace} namespace...`,
   );
-  await waitForSecret('cert-manager', resourceNames.rootSecret, 120000);
-  console.log(`✓ Secret ${resourceNames.rootSecret} exists`);
-
-  // CRITICAL FIX: Copy secret to default namespace for ClusterIssuer access
-  console.log(
-    '📦 Copying root CA secret to default namespace for ClusterIssuer...',
+  await waitForSecret(
+    clusterResourceNamespace,
+    resourceNames.rootSecret,
+    120000,
   );
-  await execAsync(`
-    kubectl get secret ${resourceNames.rootSecret} -n cert-manager -o yaml | \
-    sed 's/namespace: cert-manager/namespace: default/' | \
-    kubectl apply -f -
-  `);
   console.log(
-    `✓ Secret ${resourceNames.rootSecret} copied to default namespace`,
+    `✓ Secret ${resourceNames.rootSecret} exists in ${clusterResourceNamespace}`,
   );
 
   // CRITICAL FIX: Wait for cert-manager to reconcile the secret internally
