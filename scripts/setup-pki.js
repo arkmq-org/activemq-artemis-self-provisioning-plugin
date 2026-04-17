@@ -141,7 +141,6 @@ async function getCertManagerNamespace() {
     '  🔍 Detecting cluster-resource-namespace from cert-manager deployment...',
   );
 
-  // Try to get it from the actual cert-manager deployment
   const namespaces = ['cert-manager', 'openshift-cert-manager'];
 
   for (const ns of namespaces) {
@@ -150,27 +149,39 @@ async function getCertManagerNamespace() {
         `kubectl get deployment cert-manager -n ${ns} -o jsonpath='{.spec.template.spec.containers[0].args}' 2>/dev/null`,
       );
 
-      // Look for --cluster-resource-namespace=XXXX in the args
-      const match = stdout.match(/--cluster-resource-namespace=([^\s,]+)/);
+      if (!stdout) continue;
+
+      // Extract the value cleanly
+      const match = stdout.match(/--cluster-resource-namespace=([^,\s'"]+)/);
+
       if (match && match[1]) {
-        console.log(
-          `  ✓ Detected cluster-resource-namespace: ${match[1]} (from ${ns} deployment)`,
-        );
-        return match[1];
+        let detectedNs = match[1].trim();
+
+        // 🔥 CRITICAL FIX: resolve $(POD_NAMESPACE)
+        if (detectedNs.includes('$(POD_NAMESPACE)')) {
+          console.log(
+            `  ✓ Found $(POD_NAMESPACE), resolving to deployment namespace: ${ns}`,
+          );
+          return ns;
+        }
+
+        console.log(`  ✓ Detected cluster-resource-namespace: ${detectedNs}`);
+        return detectedNs;
       }
-    } catch (error) {
-      // Deployment not found in this namespace, try next
+
+      // If arg not present → default behavior = same namespace
+      console.log(
+        `  ✓ No explicit cluster-resource-namespace, using deployment namespace: ${ns}`,
+      );
+      return ns;
+    } catch (err) {
       continue;
     }
   }
 
-  // Fallback to environment variable or default
-  const fallback =
-    process.env.CERT_MANAGER_CLUSTER_RESOURCE_NAMESPACE || 'cert-manager';
-  console.log(
-    `  ⚠️  Could not detect cluster-resource-namespace, using fallback: ${fallback}`,
-  );
-  return fallback;
+  // fallback
+  console.log('  ⚠️  Falling back to cert-manager namespace');
+  return 'cert-manager';
 }
 
 /**
