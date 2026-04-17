@@ -132,57 +132,16 @@ async function waitForSecret(namespace, secretName, timeoutMs = 60000) {
 }
 
 /**
- * Detect the cert-manager cluster resource namespace
+ * Get the cert-manager cluster resource namespace
  * This is the namespace where ClusterIssuers look for secrets
+ * Uses environment variable CERT_MANAGER_CLUSTER_RESOURCE_NAMESPACE if set,
+ * otherwise defaults to 'cert-manager'
  */
-async function detectCertManagerNamespace() {
-  try {
-    // Try to get the cert-manager deployment and check its --cluster-resource-namespace flag
-    const { stdout } = await execAsync(
-      `kubectl get deployment cert-manager -n cert-manager -o jsonpath='{.spec.template.spec.containers[0].args}'`,
-    );
-
-    // Look for --cluster-resource-namespace flag
-    const match = stdout.match(
-      /--cluster-resource-namespace[=\s]+([^\s,\]"]+)/,
-    );
-    if (match && match[1]) {
-      let namespace = match[1].trim();
-
-      // If it's an environment variable reference like $(POD_NAMESPACE), resolve it
-      if (namespace.startsWith('$(') && namespace.endsWith(')')) {
-        const envVar = namespace.slice(2, -1); // Extract POD_NAMESPACE from $(POD_NAMESPACE)
-        console.log(`  ⚠ Found environment variable reference: ${envVar}`);
-
-        // Try to get the actual value from a running pod
-        try {
-          const { stdout: podNamespace } = await execAsync(
-            `kubectl get pod -n cert-manager -l app=cert-manager -o jsonpath='{.items[0].metadata.namespace}'`,
-          );
-          if (podNamespace && podNamespace.trim()) {
-            namespace = podNamespace.trim();
-            console.log(`  ✓ Resolved to pod namespace: ${namespace}`);
-            return namespace;
-          }
-        } catch (e) {
-          console.log(
-            `  ⚠ Could not resolve environment variable, using cert-manager namespace`,
-          );
-        }
-      } else {
-        console.log(`  ✓ Detected cluster resource namespace: ${namespace}`);
-        return namespace;
-      }
-    }
-  } catch (error) {
-    console.log(
-      '  ⚠ Could not detect cluster resource namespace from deployment args',
-    );
-  }
-
-  // Default to cert-manager namespace if not specified
-  console.log('  ✓ Using default namespace: cert-manager');
-  return 'cert-manager';
+function getCertManagerNamespace() {
+  const namespace =
+    process.env.CERT_MANAGER_CLUSTER_RESOURCE_NAMESPACE || 'cert-manager';
+  console.log(`  ✓ Using cluster resource namespace: ${namespace}`);
+  return namespace;
 }
 
 /**
@@ -198,9 +157,9 @@ async function detectCertManagerNamespace() {
 async function createClusterInfrastructure(prefix) {
   console.log(`📦 Creating cluster infrastructure with prefix: ${prefix}...`);
 
-  // Detect the namespace where cert-manager looks for cluster resources
-  console.log('🔍 Detecting cert-manager cluster resource namespace...');
-  const clusterResourceNamespace = await detectCertManagerNamespace();
+  // Get the namespace where cert-manager looks for cluster resources
+  console.log('🔍 Getting cert-manager cluster resource namespace...');
+  const clusterResourceNamespace = getCertManagerNamespace();
 
   const resourceNames = {
     rootIssuer: `${prefix}-selfsigned-root-issuer`,
