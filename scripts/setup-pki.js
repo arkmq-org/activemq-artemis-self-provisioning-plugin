@@ -251,6 +251,32 @@ spec:
     exit 1
   `);
 
+  // CRITICAL FIX: Wait for secret to be fully CA-ready (not just populated)
+  console.log('🔒 Waiting for CA secret to be fully usable for signing...');
+  await execAsync(`
+    for i in {1..30}; do
+      # Verify BOTH tls.key and ca.crt exist (required for CA issuer)
+      TLS_KEY=$(kubectl get secret ${resourceNames.rootSecret} -n ${CERT_MANAGER_NAMESPACE} -o jsonpath='{.data.tls\\.key}' 2>/dev/null || true)
+      CA_CRT=$(kubectl get secret ${resourceNames.rootSecret} -n ${CERT_MANAGER_NAMESPACE} -o jsonpath='{.data.ca\\.crt}' 2>/dev/null || true)
+      
+      if [ -n "$TLS_KEY" ] && [ -n "$CA_CRT" ]; then
+        echo "✓ Secret is fully CA-ready (has both tls.key and ca.crt)"
+        exit 0
+      fi
+      
+      echo "⏳ Secret not CA-ready yet... retry $i/30"
+      sleep 3
+    done
+    
+    echo "❌ Secret never became CA-ready"
+    kubectl get secret ${resourceNames.rootSecret} -n ${CERT_MANAGER_NAMESPACE} -o yaml
+    exit 1
+  `);
+
+  // CRITICAL FIX: Hard delay to let cert-manager stabilize internal cache
+  console.log('⏱️  Stabilization delay (10s) for cert-manager cache...');
+  await new Promise((resolve) => setTimeout(resolve, 10000));
+
   // Step 3: Create CA issuer (delete first to ensure clean state)
   console.log('📦 Step 3: Creating CA-signed ClusterIssuer...');
   console.log(
@@ -277,6 +303,16 @@ spec:
     secretName: ${resourceNames.rootSecret}
 `;
   await applyYaml(caIssuerYaml);
+
+  // CRITICAL FIX: Use kubectl wait for proper event-driven readiness
+  console.log('⏳ Waiting for CA issuer to be ready (event-driven)...');
+  await execAsync(`
+    kubectl wait --for=jsonpath='{.data.ca\\.crt}' \
+      secret/${resourceNames.rootSecret} \
+      -n ${CERT_MANAGER_NAMESPACE} \
+      --timeout=120s
+  `);
+
   await waitForClusterIssuerReady(resourceNames.caIssuer);
 
   console.log('✅ Cluster infrastructure created successfully');
