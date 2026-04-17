@@ -95,23 +95,39 @@ async function waitForClusterIssuerReady(issuerName, timeoutMs = 120000) {
 }
 
 /**
- * Wait for a secret to exist in a namespace
+ * Wait for a secret to exist in a namespace AND have valid CA data
  */
 async function waitForSecret(namespace, secretName, timeoutMs = 60000) {
   const startTime = Date.now();
 
   while (Date.now() - startTime < timeoutMs) {
     try {
+      // Check if secret exists
       await execAsync(`kubectl get secret ${secretName} -n ${namespace}`);
-      return; // Secret exists
+
+      // Verify it has ca.crt data (critical for ClusterIssuer)
+      const { stdout } = await execAsync(
+        `kubectl get secret ${secretName} -n ${namespace} -o jsonpath='{.data.ca\\.crt}'`,
+      );
+
+      if (stdout && stdout.trim().length > 0) {
+        console.log(
+          `  ✓ Secret has ca.crt data (${stdout.trim().length} bytes)`,
+        );
+        return; // Secret exists with valid data
+      }
+
+      console.log(`  ⏳ Secret exists but ca.crt data not ready yet...`);
     } catch (error) {
-      // Secret doesn't exist yet
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Secret doesn't exist yet or error reading it
+      console.log(`  ⏳ Secret not found yet, retrying...`);
     }
+
+    await new Promise((resolve) => setTimeout(resolve, 2000));
   }
 
   throw new Error(
-    `Timeout waiting for secret ${secretName} in namespace ${namespace}`,
+    `Timeout waiting for secret ${secretName} with valid ca.crt data in namespace ${namespace}`,
   );
 }
 
