@@ -31,27 +31,66 @@ async function applyYaml(yaml) {
 /**
  * Wait for a ClusterIssuer to be Ready
  */
-async function waitForClusterIssuerReady(issuerName, timeoutMs = 60000) {
+async function waitForClusterIssuerReady(issuerName, timeoutMs = 120000) {
   console.log(`⏳ Waiting for ClusterIssuer ${issuerName} to be Ready...`);
   const startTime = Date.now();
+  let lastStatus = '';
+  let lastMessage = '';
 
   while (Date.now() - startTime < timeoutMs) {
     try {
-      const { stdout } = await execAsync(
+      // Get the Ready condition status
+      const { stdout: status } = await execAsync(
         `kubectl get clusterissuer ${issuerName} -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}'`,
       );
-      if (stdout.trim() === 'True') {
+
+      // Get the Ready condition message
+      const { stdout: message } = await execAsync(
+        `kubectl get clusterissuer ${issuerName} -o jsonpath='{.status.conditions[?(@.type=="Ready")].message}'`,
+      );
+
+      const currentStatus = status.trim();
+      const currentMessage = message.trim();
+
+      // Log status changes
+      if (currentStatus !== lastStatus || currentMessage !== lastMessage) {
+        console.log(`  Status: ${currentStatus || 'Unknown'}`);
+        if (currentMessage) {
+          console.log(`  Message: ${currentMessage}`);
+        }
+        lastStatus = currentStatus;
+        lastMessage = currentMessage;
+      }
+
+      if (currentStatus === 'True') {
         console.log(`✓ ClusterIssuer ${issuerName} is Ready`);
         return;
       }
     } catch (error) {
       // Issuer might not exist yet
+      if (lastStatus !== 'NotFound') {
+        console.log(`  Status: NotFound (waiting for creation...)`);
+        lastStatus = 'NotFound';
+      }
     }
     await new Promise((resolve) => setTimeout(resolve, 2000));
   }
 
+  // Before throwing, dump the full ClusterIssuer YAML for debugging
+  try {
+    console.log('\n❌ ClusterIssuer failed to become Ready. Full status:');
+    const { stdout: fullYaml } = await execAsync(
+      `kubectl get clusterissuer ${issuerName} -o yaml`,
+    );
+    console.log(fullYaml);
+  } catch (error) {
+    console.log('  (Could not retrieve ClusterIssuer details)');
+  }
+
   throw new Error(
-    `Timeout waiting for ClusterIssuer ${issuerName} to be Ready`,
+    `Timeout waiting for ClusterIssuer ${issuerName} to be Ready. Last message: ${
+      lastMessage || 'none'
+    }`,
   );
 }
 
