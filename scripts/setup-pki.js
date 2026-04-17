@@ -143,10 +143,36 @@ async function detectCertManagerNamespace() {
     );
 
     // Look for --cluster-resource-namespace flag
-    const match = stdout.match(/--cluster-resource-namespace[=\s]+([^\s,\]]+)/);
+    const match = stdout.match(
+      /--cluster-resource-namespace[=\s]+([^\s,\]"]+)/,
+    );
     if (match && match[1]) {
-      console.log(`  ✓ Detected cluster resource namespace: ${match[1]}`);
-      return match[1];
+      let namespace = match[1].trim();
+
+      // If it's an environment variable reference like $(POD_NAMESPACE), resolve it
+      if (namespace.startsWith('$(') && namespace.endsWith(')')) {
+        const envVar = namespace.slice(2, -1); // Extract POD_NAMESPACE from $(POD_NAMESPACE)
+        console.log(`  ⚠ Found environment variable reference: ${envVar}`);
+
+        // Try to get the actual value from a running pod
+        try {
+          const { stdout: podNamespace } = await execAsync(
+            `kubectl get pod -n cert-manager -l app=cert-manager -o jsonpath='{.items[0].metadata.namespace}'`,
+          );
+          if (podNamespace && podNamespace.trim()) {
+            namespace = podNamespace.trim();
+            console.log(`  ✓ Resolved to pod namespace: ${namespace}`);
+            return namespace;
+          }
+        } catch (e) {
+          console.log(
+            `  ⚠ Could not resolve environment variable, using cert-manager namespace`,
+          );
+        }
+      } else {
+        console.log(`  ✓ Detected cluster resource namespace: ${namespace}`);
+        return namespace;
+      }
     }
   } catch (error) {
     console.log(
