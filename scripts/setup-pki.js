@@ -132,16 +132,45 @@ async function waitForSecret(namespace, secretName, timeoutMs = 60000) {
 }
 
 /**
- * Get the cert-manager cluster resource namespace
+ * Get the cert-manager cluster resource namespace by querying the actual deployment
  * This is the namespace where ClusterIssuers look for secrets
- * Uses environment variable CERT_MANAGER_CLUSTER_RESOURCE_NAMESPACE if set,
- * otherwise defaults to 'cert-manager'
+ * Falls back to environment variable or 'cert-manager' if detection fails
  */
-function getCertManagerNamespace() {
-  const namespace =
+async function getCertManagerNamespace() {
+  console.log(
+    '  🔍 Detecting cluster-resource-namespace from cert-manager deployment...',
+  );
+
+  // Try to get it from the actual cert-manager deployment
+  const namespaces = ['cert-manager', 'openshift-cert-manager'];
+
+  for (const ns of namespaces) {
+    try {
+      const { stdout } = await execAsync(
+        `kubectl get deployment cert-manager -n ${ns} -o jsonpath='{.spec.template.spec.containers[0].args}' 2>/dev/null`,
+      );
+
+      // Look for --cluster-resource-namespace=XXXX in the args
+      const match = stdout.match(/--cluster-resource-namespace=([^\s,]+)/);
+      if (match && match[1]) {
+        console.log(
+          `  ✓ Detected cluster-resource-namespace: ${match[1]} (from ${ns} deployment)`,
+        );
+        return match[1];
+      }
+    } catch (error) {
+      // Deployment not found in this namespace, try next
+      continue;
+    }
+  }
+
+  // Fallback to environment variable or default
+  const fallback =
     process.env.CERT_MANAGER_CLUSTER_RESOURCE_NAMESPACE || 'cert-manager';
-  console.log(`  ✓ Using cluster resource namespace: ${namespace}`);
-  return namespace;
+  console.log(
+    `  ⚠️  Could not detect cluster-resource-namespace, using fallback: ${fallback}`,
+  );
+  return fallback;
 }
 
 /**
@@ -159,7 +188,7 @@ async function createClusterInfrastructure(prefix) {
 
   // Get the namespace where cert-manager looks for cluster resources
   console.log('🔍 Getting cert-manager cluster resource namespace...');
-  const clusterResourceNamespace = getCertManagerNamespace();
+  const clusterResourceNamespace = await getCertManagerNamespace();
 
   const resourceNames = {
     rootIssuer: `${prefix}-selfsigned-root-issuer`,
