@@ -229,7 +229,7 @@ spec:
   await new Promise((resolve) => setTimeout(resolve, 10000)); // 10s buffer
   console.log('✓ cert-manager reconciliation buffer complete');
 
-  // Step 3: Create CA issuer
+  // Step 3: Create CA issuer with explicit secret namespace
   console.log('📦 Step 3: Creating CA-signed ClusterIssuer...');
   const caIssuerYaml = `
 apiVersion: cert-manager.io/v1
@@ -239,6 +239,8 @@ metadata:
 spec:
   ca:
     secretName: ${resourceNames.rootSecret}
+    # CRITICAL: ClusterIssuer MUST specify namespace for CA secret
+    secretNamespace: ${clusterResourceNamespace}
 `;
   await applyYaml(caIssuerYaml);
   await waitForClusterIssuerReady(resourceNames.caIssuer);
