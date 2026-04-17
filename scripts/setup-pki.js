@@ -240,8 +240,6 @@ spec:
   console.log(
     `✓ Secret ${resourceNames.rootSecret} exists in ${clusterResourceNamespace}`,
   );
-
-  // CRITICAL FIX: Wait for cert-manager to reconcile the secret internally
   console.log('⏳ Waiting for cert-manager to reconcile secret...');
   await new Promise((resolve) => setTimeout(resolve, 10000)); // 10s buffer
   console.log('✓ cert-manager reconciliation buffer complete');
