@@ -201,6 +201,19 @@ spec:
   await waitForSecret('cert-manager', resourceNames.rootSecret, 120000);
   console.log(`✓ Secret ${resourceNames.rootSecret} exists`);
 
+  // CRITICAL FIX: Copy secret to default namespace for ClusterIssuer access
+  console.log(
+    '📦 Copying root CA secret to default namespace for ClusterIssuer...',
+  );
+  await execAsync(`
+    kubectl get secret ${resourceNames.rootSecret} -n cert-manager -o yaml | \
+    sed 's/namespace: cert-manager/namespace: default/' | \
+    kubectl apply -f -
+  `);
+  console.log(
+    `✓ Secret ${resourceNames.rootSecret} copied to default namespace`,
+  );
+
   // CRITICAL FIX: Wait for cert-manager to reconcile the secret internally
   console.log('⏳ Waiting for cert-manager to reconcile secret...');
   await new Promise((resolve) => setTimeout(resolve, 10000)); // 10s buffer
