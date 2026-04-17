@@ -149,6 +149,7 @@ metadata:
 spec:
   ca:
     secretName: ${resourceNames.rootSecret}
+    namespace: cert-manager
 `;
   await applyYaml(caIssuerYaml);
   await waitForClusterIssuerReady(resourceNames.caIssuer);
