@@ -132,57 +132,10 @@ async function waitForSecret(namespace, secretName, timeoutMs = 60000) {
 }
 
 /**
- * Get the cert-manager cluster resource namespace by querying the actual deployment
- * This is the namespace where ClusterIssuers look for secrets
- * Falls back to environment variable or 'cert-manager' if detection fails
+ * Hard-coded cert-manager namespace - single source of truth
+ * ClusterIssuers ALWAYS look for secrets in this namespace
  */
-async function getCertManagerNamespace() {
-  console.log(
-    '  🔍 Detecting cluster-resource-namespace from cert-manager deployment...',
-  );
-
-  const namespaces = ['cert-manager', 'openshift-cert-manager'];
-
-  for (const ns of namespaces) {
-    try {
-      const { stdout } = await execAsync(
-        `kubectl get deployment cert-manager -n ${ns} -o jsonpath='{.spec.template.spec.containers[0].args}' 2>/dev/null`,
-      );
-
-      if (!stdout) continue;
-
-      // Extract the value cleanly
-      const match = stdout.match(/--cluster-resource-namespace=([^,\s'"]+)/);
-
-      if (match && match[1]) {
-        let detectedNs = match[1].trim();
-
-        // 🔥 CRITICAL FIX: resolve $(POD_NAMESPACE)
-        if (detectedNs.includes('$(POD_NAMESPACE)')) {
-          console.log(
-            `  ✓ Found $(POD_NAMESPACE), resolving to deployment namespace: ${ns}`,
-          );
-          return ns;
-        }
-
-        console.log(`  ✓ Detected cluster-resource-namespace: ${detectedNs}`);
-        return detectedNs;
-      }
-
-      // If arg not present → default behavior = same namespace
-      console.log(
-        `  ✓ No explicit cluster-resource-namespace, using deployment namespace: ${ns}`,
-      );
-      return ns;
-    } catch (err) {
-      continue;
-    }
-  }
-
-  // fallback
-  console.log('  ⚠️  Falling back to cert-manager namespace');
-  return 'cert-manager';
-}
+const CERT_MANAGER_NAMESPACE = 'cert-manager';
 
 /**
  * Creates the cluster-level cert-manager infrastructure
@@ -196,10 +149,23 @@ async function getCertManagerNamespace() {
  */
 async function createClusterInfrastructure(prefix) {
   console.log(`📦 Creating cluster infrastructure with prefix: ${prefix}...`);
+  console.log(`  Using cert-manager namespace: ${CERT_MANAGER_NAMESPACE}`);
 
-  // Get the namespace where cert-manager looks for cluster resources
-  console.log('🔍 Getting cert-manager cluster resource namespace...');
-  const clusterResourceNamespace = await getCertManagerNamespace();
+  // SAFETY CHECK: Verify cert-manager is actually running
+  console.log('🔍 Verifying cert-manager is running...');
+  try {
+    const { stdout } = await execAsync(
+      `kubectl get pods -A | grep cert-manager || true`,
+    );
+    if (!stdout || stdout.trim() === '') {
+      throw new Error(
+        'cert-manager pods not found in cluster. Please install cert-manager first.',
+      );
+    }
+    console.log('✓ cert-manager pods found');
+  } catch (error) {
+    throw new Error(`Failed to verify cert-manager: ${error.message}`);
+  }
 
   const resourceNames = {
     rootIssuer: `${prefix}-selfsigned-root-issuer`,
@@ -221,16 +187,16 @@ spec:
   await applyYaml(rootIssuerYaml);
   await waitForClusterIssuerReady(resourceNames.rootIssuer);
 
-  // Step 2: Create root CA certificate in the detected cluster resource namespace
+  // Step 2: Create root CA certificate in cert-manager namespace
   console.log(
-    `📦 Step 2: Creating root CA certificate in ${clusterResourceNamespace} namespace...`,
+    `📦 Step 2: Creating root CA certificate in ${CERT_MANAGER_NAMESPACE} namespace...`,
   );
   const rootCACertYaml = `
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: ${resourceNames.rootCert}
-  namespace: ${clusterResourceNamespace}
+  namespace: ${CERT_MANAGER_NAMESPACE}
 spec:
   isCA: true
   commonName: ${prefix}.artemis.root.ca
@@ -249,28 +215,58 @@ spec:
     `⏳ Waiting for certificate ${resourceNames.rootCert} to be ready...`,
   );
   await execAsync(
-    `kubectl wait --for=condition=Ready certificate/${resourceNames.rootCert} -n ${clusterResourceNamespace} --timeout=120s`,
+    `kubectl wait --for=condition=Ready certificate/${resourceNames.rootCert} -n ${CERT_MANAGER_NAMESPACE} --timeout=120s`,
   );
   console.log(`✓ Certificate ${resourceNames.rootCert} is Ready`);
 
-  // CRITICAL FIX: Wait for secret to exist in the cluster resource namespace
+  // Wait for secret to exist and be ready
   console.log(
-    `⏳ Waiting for secret ${resourceNames.rootSecret} to exist in ${clusterResourceNamespace} namespace...`,
+    `⏳ Waiting for secret ${resourceNames.rootSecret} to exist in ${CERT_MANAGER_NAMESPACE} namespace...`,
   );
-  await waitForSecret(
-    clusterResourceNamespace,
-    resourceNames.rootSecret,
-    120000,
-  );
+  await waitForSecret(CERT_MANAGER_NAMESPACE, resourceNames.rootSecret, 120000);
   console.log(
-    `✓ Secret ${resourceNames.rootSecret} exists in ${clusterResourceNamespace}`,
+    `✓ Secret ${resourceNames.rootSecret} exists in ${CERT_MANAGER_NAMESPACE}`,
   );
-  console.log('⏳ Waiting for cert-manager to reconcile secret...');
-  await new Promise((resolve) => setTimeout(resolve, 10000)); // 10s buffer
-  console.log('✓ cert-manager reconciliation buffer complete');
 
-  // Step 3: Create CA issuer
+  // CRITICAL: Verify secret is in correct namespace
+  console.log('🔍 Verifying CA secret location...');
+  const { stdout: secretNs } = await execAsync(
+    `kubectl get secret ${resourceNames.rootSecret} -n ${CERT_MANAGER_NAMESPACE} -o jsonpath='{.metadata.namespace}'`,
+  );
+  console.log(`✓ CA secret confirmed in namespace: ${secretNs}`);
+
+  // ROBUST: Wait for secret data to be populated (OpenShift-compatible)
+  console.log('⏳ Waiting for secret to be fully populated...');
+  await execAsync(`
+    for i in {1..30}; do
+      DATA=$(kubectl get secret ${resourceNames.rootSecret} -n ${CERT_MANAGER_NAMESPACE} -o jsonpath='{.data.ca\\.crt}' 2>/dev/null || true)
+      if [ -n "$DATA" ]; then
+        echo "✓ Secret fully populated"
+        exit 0
+      fi
+      echo "⏳ Waiting for CA data... (attempt $i/30)"
+      sleep 2
+    done
+    echo "❌ Timeout waiting for CA data"
+    exit 1
+  `);
+
+  // Step 3: Create CA issuer (delete first to ensure clean state)
   console.log('📦 Step 3: Creating CA-signed ClusterIssuer...');
+  console.log(
+    `  Cleaning up any existing ClusterIssuer ${resourceNames.caIssuer}...`,
+  );
+  try {
+    await execAsync(
+      `kubectl delete clusterissuer ${resourceNames.caIssuer} --ignore-not-found=true`,
+    );
+    // Small buffer for deletion (don't over-engineer)
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+    console.log('  Cleanup complete');
+  } catch (error) {
+    // Ignore errors - issuer might not exist
+  }
+
   const caIssuerYaml = `
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
@@ -292,13 +288,13 @@ spec:
  *
  * @param {string} rootSecretName - Name of the root CA secret (from createClusterInfrastructure)
  * @param {string} caIssuerName - Name of the CA issuer (from createClusterInfrastructure)
- * @param {string} operatorNamespace - Namespace where operator runs (default: "default")
+ * @param {string} operatorNamespace - Namespace where operator runs (default: "cert-manager")
  * @returns {Promise<object>} Resource names that were created
  */
 async function createTrustBundleAndOperatorCert(
   rootSecretName,
   caIssuerName,
-  operatorNamespace = 'default',
+  operatorNamespace = 'cert-manager',
 ) {
   console.log(
     `📦 Creating trust bundle and operator cert for namespace: ${operatorNamespace}...`,
