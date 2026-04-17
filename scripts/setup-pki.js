@@ -174,9 +174,21 @@ spec:
     `⏳ Waiting for certificate ${resourceNames.rootCert} to be ready...`,
   );
   await execAsync(
-    `kubectl wait --for=condition=Ready certificate/${resourceNames.rootCert} -n cert-manager --timeout=60s`,
+    `kubectl wait --for=condition=Ready certificate/${resourceNames.rootCert} -n cert-manager --timeout=120s`,
   );
   console.log(`✓ Certificate ${resourceNames.rootCert} is Ready`);
+
+  // CRITICAL FIX: Wait for secret to exist
+  console.log(
+    `⏳ Waiting for secret ${resourceNames.rootSecret} to exist in cert-manager namespace...`,
+  );
+  await waitForSecret('cert-manager', resourceNames.rootSecret, 120000);
+  console.log(`✓ Secret ${resourceNames.rootSecret} exists`);
+
+  // CRITICAL FIX: Wait for cert-manager to reconcile the secret internally
+  console.log('⏳ Waiting for cert-manager to reconcile secret...');
+  await new Promise((resolve) => setTimeout(resolve, 10000)); // 10s buffer
+  console.log('✓ cert-manager reconciliation buffer complete');
 
   // Step 3: Create CA issuer
   console.log('📦 Step 3: Creating CA-signed ClusterIssuer...');
