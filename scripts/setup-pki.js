@@ -455,13 +455,20 @@ spec:
       key: "ca.pem"
 `;
   await applyYaml(bundleYaml);
-  console.log('✓ Trust bundle created (will distribute to all namespaces)');
+  console.log('✓ Trust bundle created');
+
+  // CRITICAL: Wait for Bundle to be Synced before checking for secrets
+  console.log('⏳ Waiting for Bundle to be Synced...');
+  await execAsync(
+    `kubectl wait bundle ${bundleName} --for=condition=Synced=True --timeout=180s`,
+  );
+  console.log('✓ Bundle synced successfully');
 
   // Step 2: Wait for the CA secret to appear in the operator namespace
   console.log(
     `⏳ Waiting for CA secret to be distributed to namespace ${operatorNamespace}...`,
   );
-  await waitForSecret(operatorNamespace, bundleName);
+  await waitForSecret(operatorNamespace, bundleName, 180000);
   console.log(`✓ CA secret available in namespace ${operatorNamespace}`);
 
   // Step 3: Create operator certificate
