@@ -4,7 +4,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 
 const execAsync = promisify(exec);
-const username = 'kubeadmin';
+const username = process.env.KUBEADMIN_USERNAME || 'kubeadmin';
 const password = process.env.KUBEADMIN_PASSWORD || 'kubeadmin';
 
 test.describe('Broker Navigation and Discoverability', () => {
