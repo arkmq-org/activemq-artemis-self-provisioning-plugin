@@ -452,7 +452,8 @@ spec:
       key: "ca.crt"
   target:
     secret:
-      key: "ca.crt"
+      name: ${bundleName}
+      key: "ca.pem"
 `;
   await applyYaml(bundleYaml);
   console.log('✓ Trust bundle created');
