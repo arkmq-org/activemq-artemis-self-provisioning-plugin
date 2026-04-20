@@ -430,6 +430,7 @@ spec:
   - secret:
       name: ${rootSecretName}
       key: "ca.crt"
+      namespace: ${CERT_MANAGER_NAMESPACE}
   target:
     secret:
       key: "ca.pem"
