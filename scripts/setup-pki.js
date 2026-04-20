@@ -452,8 +452,7 @@ spec:
       key: "ca.crt"
   target:
     secret:
-      name: ${bundleName}
-      key: "ca.pem"
+      key: "ca.crt"
 `;
   await applyYaml(bundleYaml);
   console.log('✓ Trust bundle created');
@@ -471,6 +470,70 @@ spec:
   );
   await waitForSecret(operatorNamespace, bundleName, 180000);
   console.log(`✓ CA secret available in namespace ${operatorNamespace}`);
+
+  // Step 2.5: Patch secret to add ca.pem key (operator compatibility)
+  console.log('🔧 Ensuring ca.crt is ready before patching...');
+
+  let retries = 20;
+  let ready = false;
+
+  while (retries-- > 0) {
+    try {
+      const { stdout } = await execAsync(
+        `kubectl get secret ${bundleName} -n ${operatorNamespace} -o jsonpath='{.data.ca\\.crt}'`,
+      );
+
+      if (stdout && stdout.trim().length > 0) {
+        console.log(
+          `  ✓ ca.crt data available (${stdout.trim().length} bytes)`,
+        );
+        ready = true;
+        break;
+      }
+    } catch (e) {
+      // Secret might not exist yet, continue waiting
+    }
+
+    console.log('  ⏳ Waiting for ca.crt to be available...');
+    await new Promise((res) => setTimeout(res, 3000));
+  }
+
+  if (!ready) {
+    console.error('❌ ca.crt not available after waiting, skipping patch');
+    console.log('   This may cause broker deployment failures');
+  } else {
+    // Check if ca.pem already exists (avoid unnecessary patching)
+    let needsPatch = true;
+    try {
+      const { stdout } = await execAsync(
+        `kubectl get secret ${bundleName} -n ${operatorNamespace} -o jsonpath='{.data.ca\\.pem}'`,
+      );
+      if (stdout && stdout.trim().length > 0) {
+        console.log('  ℹ️  ca.pem already exists, skipping patch');
+        needsPatch = false;
+      }
+    } catch (e) {
+      // ca.pem doesn't exist, we need to patch
+    }
+
+    if (needsPatch) {
+      console.log('🔧 Patching secret to add ca.pem key...');
+      try {
+        await execAsync(`
+          kubectl get secret ${bundleName} -n ${operatorNamespace} -o json | \
+          jq '.data["ca.pem"] = .data["ca.crt"]' | \
+          kubectl apply -f -
+        `);
+        console.log('✓ Secret patched with ca.pem key');
+      } catch (error) {
+        console.error(
+          '⚠️  Warning: Failed to patch secret with ca.pem key:',
+          error.message,
+        );
+        console.log('   This may cause broker deployment failures');
+      }
+    }
+  }
 
   // Step 3: Create operator certificate
   console.log('📦 Step 2: Creating operator certificate...');
