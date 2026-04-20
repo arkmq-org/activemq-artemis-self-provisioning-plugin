@@ -132,10 +132,35 @@ async function waitForSecret(namespace, secretName, timeoutMs = 60000) {
 }
 
 /**
- * Hard-coded cert-manager namespace - single source of truth
- * ClusterIssuers ALWAYS look for secrets in this namespace
+ * Dynamically detect the ACTIVE cert-manager namespace
+ * This handles cases where cert-manager runs in different namespaces:
+ * - cert-manager (new installation)
+ * - openshift-operators (OpenShift managed)
+ * - openshift-cert-manager (some OpenShift versions)
  */
-const CERT_MANAGER_NAMESPACE = 'cert-manager';
+async function detectCertManagerNamespace() {
+  console.log('🔍 Detecting active cert-manager namespace...');
+
+  try {
+    const { stdout } = await execAsync(
+      `kubectl get pods -A -l app.kubernetes.io/name=cert-manager -o jsonpath='{.items[0].metadata.namespace}'`,
+    );
+
+    const namespace = stdout.trim().replace(/^'|'$/g, '');
+
+    if (!namespace) {
+      throw new Error('No cert-manager pods found in cluster');
+    }
+
+    console.log(`✓ Active cert-manager found in namespace: ${namespace}`);
+    return namespace;
+  } catch (error) {
+    console.error('❌ Failed to detect cert-manager namespace:', error.message);
+    throw new Error(
+      'Could not detect cert-manager namespace. Ensure cert-manager is installed and running.',
+    );
+  }
+}
 
 /**
  * Creates the cluster-level cert-manager infrastructure
@@ -149,23 +174,10 @@ const CERT_MANAGER_NAMESPACE = 'cert-manager';
  */
 async function createClusterInfrastructure(prefix) {
   console.log(`📦 Creating cluster infrastructure with prefix: ${prefix}...`);
-  console.log(`  Using cert-manager namespace: ${CERT_MANAGER_NAMESPACE}`);
 
-  // SAFETY CHECK: Verify cert-manager is actually running
-  console.log('🔍 Verifying cert-manager is running...');
-  try {
-    const { stdout } = await execAsync(
-      `kubectl get pods -A | grep cert-manager || true`,
-    );
-    if (!stdout || stdout.trim() === '') {
-      throw new Error(
-        'cert-manager pods not found in cluster. Please install cert-manager first.',
-      );
-    }
-    console.log('✓ cert-manager pods found');
-  } catch (error) {
-    throw new Error(`Failed to verify cert-manager: ${error.message}`);
-  }
+  // CRITICAL: Detect the ACTIVE cert-manager namespace dynamically
+  const CERT_MANAGER_NAMESPACE = await detectCertManagerNamespace();
+  console.log(`  Using cert-manager namespace: ${CERT_MANAGER_NAMESPACE}`);
 
   const resourceNames = {
     rootIssuer: `${prefix}-selfsigned-root-issuer`,
