@@ -283,12 +283,32 @@ spec:
   );
   console.log(`✓ CA secret confirmed in namespace: ${secretNs}`);
 
-  // NOTE: Secret is now in the correct namespace (openshift-operators)
-  // where the active cert-manager controller expects it.
-  // No copying needed - ClusterIssuer will find it here.
+  // CRITICAL: Copy CA secret to cert-manager namespace for trust-manager
+  //  (in cert-manager namespace) can only read secrets from its own namespace
+  // ClusterIssuer needs it in openshift-operators, trust-manager needs it in cert-manager
   console.log(
-    `✓ CA secret created in ${CERT_MANAGER_NAMESPACE} namespace (active cert-manager location)`,
+    '📋 Copying CA secret to cert-manager namespace for trust-manager...',
   );
+  try {
+    await execAsync(`
+      kubectl get secret ${resourceNames.rootSecret} -n ${CERT_MANAGER_NAMESPACE} -o yaml | \
+      sed 's/namespace: ${CERT_MANAGER_NAMESPACE}/namespace: cert-manager/' | \
+      sed '/resourceVersion:/d' | \
+      sed '/uid:/d' | \
+      sed '/creationTimestamp:/d' | \
+      kubectl apply -f -
+    `);
+    console.log(
+      `✓ CA secret copied to cert-manager namespace for trust-manager`,
+    );
+  } catch (error) {
+    console.error(
+      `⚠️  Warning: Could not copy secret to cert-manager namespace: ${error.message}`,
+    );
+    console.error(
+      '   trust-manager may not be able to distribute the CA bundle',
+    );
+  }
 
   // ROBUST: Wait for secret data to be populated (OpenShift-compatible)
   console.log('⏳ Waiting for secret to be fully populated...');
@@ -430,7 +450,6 @@ spec:
   - secret:
       name: ${rootSecretName}
       key: "ca.crt"
-      namespace: ${CERT_MANAGER_NAMESPACE}
   target:
     secret:
       key: "ca.pem"
