@@ -132,32 +132,66 @@ async function waitForSecret(namespace, secretName, timeoutMs = 60000) {
 }
 
 /**
- * Dynamically detect the ACTIVE cert-manager namespace
- * This handles cases where cert-manager runs in different namespaces:
- * - cert-manager (new installation)
- * - openshift-operators (OpenShift managed)
- * - openshift-cert-manager (some OpenShift versions)
+ * CRITICAL FIX: Use the ACTIVE cert-manager namespace
+ *
+ * Based on DEBUG logs, the ACTIVE cert-manager controller is in 'openshift-operators'.
+ * This is the OpenShift-managed cert-manager with --cluster-resource-namespace=openshift-operators.
+ *
+ * MUST create secrets in openshift-operators namespace, NOT cert-manager namespace.
+ *
+ * Can be overridden via environment variable for flexibility.
  */
-async function detectCertManagerNamespace() {
-  console.log('🔍 Detecting active cert-manager namespace...');
+const CERT_MANAGER_NAMESPACE =
+  process.env.CERT_MANAGER_NAMESPACE || 'openshift-operators';
+
+/**
+ * Verifies cert-manager is running in the expected namespace
+ * This is a safety check to ensure we're using the ACTIVE cert-manager
+ */
+async function verifyCertManagerNamespace() {
+  console.log(
+    `🔍 Verifying cert-manager is running in '${CERT_MANAGER_NAMESPACE}' namespace...`,
+  );
 
   try {
     const { stdout } = await execAsync(
-      `kubectl get pods -A -l app.kubernetes.io/name=cert-manager -o jsonpath='{.items[0].metadata.namespace}'`,
+      `kubectl get pods -n ${CERT_MANAGER_NAMESPACE} -l app.kubernetes.io/name=cert-manager -o jsonpath='{.items[0].metadata.name}'`,
     );
 
-    const namespace = stdout.trim().replace(/^'|'$/g, '');
+    const podName = stdout.trim().replace(/^'|'$/g, '');
 
-    if (!namespace) {
-      throw new Error('No cert-manager pods found in cluster');
+    if (!podName) {
+      throw new Error(
+        `No cert-manager pods found in '${CERT_MANAGER_NAMESPACE}' namespace`,
+      );
     }
 
-    console.log(`✓ Active cert-manager found in namespace: ${namespace}`);
-    return namespace;
+    console.log(
+      `✓ cert-manager verified in '${CERT_MANAGER_NAMESPACE}' namespace (pod: ${podName})`,
+    );
+
+    // Also verify this is the ACTIVE controller by checking logs
+    console.log(`🔍 Verifying this is the ACTIVE cert-manager controller...`);
+    const { stdout: logs } = await execAsync(
+      `kubectl logs -n ${CERT_MANAGER_NAMESPACE} ${podName} --tail=5 2>/dev/null || echo "Could not get logs"`,
+    );
+
+    if (logs.includes('Could not get logs')) {
+      console.log(
+        `⚠️  Warning: Could not verify controller activity, but pod exists`,
+      );
+    } else {
+      console.log(`✓ Controller is active and logging`);
+    }
+
+    return CERT_MANAGER_NAMESPACE;
   } catch (error) {
-    console.error('❌ Failed to detect cert-manager namespace:', error.message);
+    console.error(
+      `❌ Failed to verify cert-manager in '${CERT_MANAGER_NAMESPACE}' namespace:`,
+      error.message,
+    );
     throw new Error(
-      'Could not detect cert-manager namespace. Ensure cert-manager is installed and running.',
+      `cert-manager not found in expected namespace '${CERT_MANAGER_NAMESPACE}'. Ensure cert-manager is installed correctly.`,
     );
   }
 }
@@ -175,9 +209,11 @@ async function detectCertManagerNamespace() {
 async function createClusterInfrastructure(prefix) {
   console.log(`📦 Creating cluster infrastructure with prefix: ${prefix}...`);
 
-  // CRITICAL: Detect the ACTIVE cert-manager namespace dynamically
-  const CERT_MANAGER_NAMESPACE = await detectCertManagerNamespace();
-  console.log(`  Using cert-manager namespace: ${CERT_MANAGER_NAMESPACE}`);
+  // CRITICAL: Verify cert-manager is in the expected namespace
+  await verifyCertManagerNamespace();
+  console.log(
+    `  Using HARDCODED cert-manager namespace: ${CERT_MANAGER_NAMESPACE}`,
+  );
 
   const resourceNames = {
     rootIssuer: `${prefix}-selfsigned-root-issuer`,
@@ -288,6 +324,30 @@ spec:
   // CRITICAL FIX: Hard delay to let cert-manager stabilize internal cache
   console.log('⏱️  Stabilization delay (10s) for cert-manager cache...');
   await new Promise((resolve) => setTimeout(resolve, 10000));
+
+  // CRITICAL VERIFICATION: Ensure secret exists in cert-manager namespace BEFORE creating ClusterIssuer
+  console.log('========================================');
+  console.log('VERIFYING SECRET BEFORE CLUSTERISSUER');
+  console.log('========================================');
+
+  try {
+    await execAsync(
+      `kubectl get secret ${resourceNames.rootSecret} -n ${CERT_MANAGER_NAMESPACE}`,
+    );
+    console.log(
+      `✓ Secret exists where cert-manager expects it (${CERT_MANAGER_NAMESPACE} namespace)`,
+    );
+  } catch (error) {
+    console.error(
+      `❌ FATAL: Secret missing in ${CERT_MANAGER_NAMESPACE} namespace`,
+    );
+    console.error(
+      'This will cause ClusterIssuer to fail with "secret not found" error',
+    );
+    throw new Error(
+      `Secret ${resourceNames.rootSecret} not found in ${CERT_MANAGER_NAMESPACE} namespace`,
+    );
+  }
 
   // Step 3: Create CA issuer (delete first to ensure clean state)
   console.log('📦 Step 3: Creating CA-signed ClusterIssuer...');
