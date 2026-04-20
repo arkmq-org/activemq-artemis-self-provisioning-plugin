@@ -283,6 +283,13 @@ spec:
   );
   console.log(`✓ CA secret confirmed in namespace: ${secretNs}`);
 
+  // NOTE: Secret is now in the correct namespace (openshift-operators)
+  // where the active cert-manager controller expects it.
+  // No copying needed - ClusterIssuer will find it here.
+  console.log(
+    `✓ CA secret created in ${CERT_MANAGER_NAMESPACE} namespace (active cert-manager location)`,
+  );
+
   // ROBUST: Wait for secret data to be populated (OpenShift-compatible)
   console.log('⏳ Waiting for secret to be fully populated...');
   await execAsync(`
