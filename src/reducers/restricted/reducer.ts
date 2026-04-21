@@ -520,7 +520,18 @@ const applyRestrictedDataPlaneConfig = (formState: FormStateRestricted) => {
   const jaasSecretName = brokerName
     ? `${brokerName}-jaas-config-bp`
     : 'artemis-broker-jaas-config-bp';
+
+  // Get operator CA secret name from form state
+  const operatorCaSecret =
+    formState.ACTIVEMQ_ARTEMIS_MANAGER_CA_SECRET_NAME || '';
+
+  // Build list of managed secrets (secrets that this reducer controls)
   const managedSecrets = [jaasSecretName, 'amqps-pem'];
+  if (operatorCaSecret) {
+    managedSecrets.push(operatorCaSecret);
+  }
+
+  // Required secrets are those needed when secured acceptor is enabled
   const requiredSecrets = dataPlane.securedAcceptor.enabled
     ? managedSecrets
     : [];

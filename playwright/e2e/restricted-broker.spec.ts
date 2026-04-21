@@ -208,18 +208,18 @@ test.describe('Restricted Broker End-to-End', () => {
     await page.waitForTimeout(2000);
 
     // Step 6: Wait for broker to be ready (stay on the list page)
-    // Restricted brokers show "3 ok / 5" (no acceptors/connectors in restricted mode)
+    // With CA secret properly mounted, broker should reach 5 OK / 5
     // Brokers can take 3-5 minutes to fully start up
     try {
       await expect(
-        page.locator('text=/3\\s+(OK|ok)\\s*\\/\\s*5/i'),
+        page.locator('text=/5\\s+(OK|ok)\\s*\\/\\s*5/i'),
       ).toBeVisible({
         timeout: 300000,
       }); // 5 minutes timeout for broker startup
-      console.log('✅ Broker is ready with 3 OK / 5 status (restricted mode)');
+      console.log('✅ Broker is ready with 5 OK / 5 status (restricted mode)');
     } catch (error) {
-      // If not 3/5, get detailed broker status
-      console.error('❌ Broker did not reach 3 OK / 5 status');
+      // If not 5/5, get detailed broker status
+      console.error('❌ Broker did not reach 5 OK / 5 status');
       console.error('📊 Fetching detailed broker status...');
 
       // Get broker pod logs to see why it's crashing
