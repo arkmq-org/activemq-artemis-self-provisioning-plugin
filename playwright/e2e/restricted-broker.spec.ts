@@ -414,12 +414,134 @@ test.describe('Restricted Broker End-to-End', () => {
     );
     await expect(runProducerButton).toBeEnabled({ timeout: 10000 });
     console.log('Running producer job...');
+
+    // Get broker CR configuration before running job
+    try {
+      console.log('\n' + '='.repeat(80));
+      console.log('BROKER CR CONFIGURATION:');
+      const brokerCR = execSync(
+        `kubectl get activemqartemis ${brokerName} -n ${testNamespace} -o yaml`,
+        { encoding: 'utf-8' },
+      );
+      console.log(brokerCR);
+      console.log('='.repeat(80) + '\n');
+    } catch (err) {
+      console.error('Failed to get broker CR:', err);
+    }
+
     await runProducerButton.click();
     await expect(producerGroup).toBeVisible({ timeout: 10000 });
-    await expect
-      .poll(async () => await producerGroup.innerText(), { timeout: 300000 })
-      .toContain('Job status: succeeded');
-    console.log('Producer job succeeded.');
+
+    try {
+      await expect
+        .poll(async () => await producerGroup.innerText(), { timeout: 300000 })
+        .toContain('Job status: succeeded');
+      console.log('Producer job succeeded.');
+    } catch (error) {
+      console.error('\n' + '='.repeat(80));
+      console.error('PRODUCER JOB FAILED - COLLECTING DIAGNOSTICS');
+      console.error('='.repeat(80));
+
+      // Get job name from UI
+      const jobText = await producerGroup.innerText();
+      console.log('Job UI text:', jobText);
+      const jobMatch = jobText.match(/Job status: failed\s+(\S+)/);
+      const jobName = jobMatch ? jobMatch[1] : null;
+
+      if (jobName) {
+        console.log(`\nJob name: ${jobName}`);
+
+        // Get job details
+        try {
+          const jobDetails = execSync(
+            `kubectl get job ${jobName} -n ${testNamespace} -o yaml`,
+            { encoding: 'utf-8' },
+          );
+          console.log('\nJOB YAML:');
+          console.log(jobDetails);
+        } catch (err) {
+          console.error('Failed to get job details:', err);
+        }
+
+        // Get pod name from job
+        try {
+          const podName = execSync(
+            `kubectl get pods -n ${testNamespace} -l job-name=${jobName} -o jsonpath='{.items[0].metadata.name}'`,
+            { encoding: 'utf-8' },
+          );
+          console.log(`\nPod name: ${podName}`);
+
+          if (podName && podName.trim()) {
+            // Get pod logs
+            try {
+              const logs = execSync(
+                `kubectl logs ${podName.trim()} -n ${testNamespace} --all-containers=true`,
+                { encoding: 'utf-8' },
+              );
+              console.log('\nPOD LOGS:');
+              console.log(logs);
+            } catch (err) {
+              console.error('Failed to get pod logs:', err);
+            }
+
+            // Get pod describe
+            try {
+              const describe = execSync(
+                `kubectl describe pod ${podName.trim()} -n ${testNamespace}`,
+                { encoding: 'utf-8' },
+              );
+              console.log('\nPOD DESCRIBE:');
+              console.log(describe);
+            } catch (err) {
+              console.error('Failed to describe pod:', err);
+            }
+          }
+        } catch (err) {
+          console.error('Failed to get pod name:', err);
+        }
+
+        // Get broker pod logs
+        try {
+          console.log('\nBROKER POD LOGS:');
+          const brokerPods = execSync(
+            `kubectl get pods -n ${testNamespace} -l ActiveMQArtemis=${brokerName} -o jsonpath='{.items[*].metadata.name}'`,
+            { encoding: 'utf-8' },
+          );
+          const podNames = brokerPods.split(' ');
+          for (const pod of podNames) {
+            if (pod && pod.trim()) {
+              console.log(`\n--- Logs from ${pod} ---`);
+              try {
+                const logs = execSync(
+                  `kubectl logs ${pod.trim()} -n ${testNamespace} --tail=100`,
+                  { encoding: 'utf-8' },
+                );
+                console.log(logs);
+              } catch (err) {
+                console.error(`Failed to get logs from ${pod}:`, err);
+              }
+            }
+          }
+        } catch (err) {
+          console.error('Failed to get broker pod logs:', err);
+        }
+
+        // Get broker service details
+        try {
+          console.log('\nBROKER SERVICES:');
+          const services = execSync(
+            `kubectl get svc -n ${testNamespace} -l ActiveMQArtemis=${brokerName} -o yaml`,
+            { encoding: 'utf-8' },
+          );
+          console.log(services);
+        } catch (err) {
+          console.error('Failed to get services:', err);
+        }
+      }
+
+      console.error('='.repeat(80) + '\n');
+      throw error;
+    }
 
     // Run consumer job and wait for success
     const consumerGroup = runJobsRegion.locator(
