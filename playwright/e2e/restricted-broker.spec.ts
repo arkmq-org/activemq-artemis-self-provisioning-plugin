@@ -211,13 +211,46 @@ test.describe('Restricted Broker End-to-End', () => {
     // Restricted brokers show "3 ok / 5" (no acceptors/connectors in restricted mode)
     // Brokers can take 3-5 minutes to fully start up
     try {
-      await expect(page.locator('text=/5\\s+ok\\s*\\/\\s*5/i')).toBeVisible({
+      await expect(
+        page.locator('text=/3\\s+(OK|ok)\\s*\\/\\s*5/i'),
+      ).toBeVisible({
         timeout: 300000,
       }); // 5 minutes timeout for broker startup
-      console.log('✅ Broker is ready with 5 OK / 5 status (restricted mode)');
+      console.log('✅ Broker is ready with 3 OK / 5 status (restricted mode)');
     } catch (error) {
-      // If not 5/5, get detailed broker status
-      console.error('❌ Broker did not reach 5 OK / 5 status');
+      // If not 3/5, get detailed broker status
+      console.error('❌ Broker did not reach 3 OK / 5 status');
+      console.error('📊 Fetching detailed broker status...');
+
+      // Get broker pod logs to see why it's crashing
+      try {
+        console.log('\n' + '='.repeat(80));
+        console.log('BROKER POD LOGS (CrashLoopBackOff diagnosis):');
+        console.log('='.repeat(80));
+        const podLogs = execSync(
+          `kubectl logs -n ${testNamespace} -l ActiveMQArtemis=${brokerName} --tail=200 --all-containers=true`,
+          { encoding: 'utf-8' },
+        );
+        console.log(podLogs);
+        console.log('='.repeat(80) + '\n');
+      } catch (err) {
+        console.error('Failed to get broker pod logs:', err);
+      }
+
+      // Get pod events
+      try {
+        console.log('\n' + '='.repeat(80));
+        console.log('BROKER POD EVENTS:');
+        console.log('='.repeat(80));
+        const events = execSync(
+          `kubectl get events -n ${testNamespace} --field-selector involvedObject.kind=Pod --sort-by='.lastTimestamp'`,
+          { encoding: 'utf-8' },
+        );
+        console.log(events);
+        console.log('='.repeat(80) + '\n');
+      } catch (err) {
+        console.error('Failed to get pod events:', err);
+      }
       console.log('📊 Fetching detailed broker status...');
 
       try {
