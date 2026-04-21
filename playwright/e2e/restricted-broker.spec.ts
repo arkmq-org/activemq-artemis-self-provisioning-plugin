@@ -211,10 +211,10 @@ test.describe('Restricted Broker End-to-End', () => {
     // Restricted brokers show "3 ok / 5" (no acceptors/connectors in restricted mode)
     // Brokers can take 3-5 minutes to fully start up
     try {
-      await expect(page.locator('text=/3\\s+ok\\s*\\/\\s*5/i')).toBeVisible({
+      await expect(page.locator('text=/5\\s+ok\\s*\\/\\s*5/i')).toBeVisible({
         timeout: 300000,
       }); // 5 minutes timeout for broker startup
-      console.log('✅ Broker is ready with 3 OK / 5 status (restricted mode)');
+      console.log('✅ Broker is ready with 5 OK / 5 status (restricted mode)');
     } catch (error) {
       // If not 5/5, get detailed broker status
       console.error('❌ Broker did not reach 5 OK / 5 status');
