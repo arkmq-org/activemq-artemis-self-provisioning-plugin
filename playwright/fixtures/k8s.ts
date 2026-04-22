@@ -70,6 +70,7 @@ export async function createE2ETrustBundleAndOperatorCert(
   );
 
   // Wait for the CA secret to appear in the broker namespace
+  // trust-manager automatically creates ca.crt, ca.pem, ca.jks, and ca.p12
   console.log(`⏳ Waiting for CA secret in broker namespace ${namespace}...`);
   await waitForSecret(namespace, 'activemq-artemis-manager-ca', 60000);
   console.log(`✓ CA secret available in broker namespace (${namespace})`);
