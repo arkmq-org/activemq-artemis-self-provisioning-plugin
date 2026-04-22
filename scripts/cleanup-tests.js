@@ -130,16 +130,44 @@ async function cleanupTests() {
 
     // 9. Delete e2e-specific cert-manager resources
     console.log('  Deleting e2e cert-manager resources...');
-    await execAsync(
-      'kubectl delete certificate e2e-root-ca -n cert-manager --ignore-not-found=true || true',
-    );
-    await execAsync(
-      'kubectl delete secret e2e-root-ca-secret -n cert-manager --ignore-not-found=true || true',
+    // PROTECTED: Do NOT delete from cert-manager or openshift-operators namespaces
+    // These are shared infrastructure namespaces that trust-manager depends on
+    console.log(
+      '  ⚠️  Skipping cert-manager/openshift-operators namespaces (protected)',
     );
 
-    // 10. Delete all e2e test namespaces
+    // Only delete e2e resources from openshift-operators if they exist
+    const protectedNamespaces = [
+      'cert-manager',
+      'openshift-operators',
+      'trust-manager',
+    ];
+    console.log(`  Protected namespaces: ${protectedNamespaces.join(', ')}`);
+
+    // 10. Delete all e2e test namespaces (but NOT protected ones)
     console.log('  Deleting e2e test namespaces...');
-    await deleteNamespacePattern('e2e-');
+    try {
+      const { stdout } = await execAsync(
+        'kubectl get namespaces -o name | grep "e2e-" || true',
+      );
+
+      if (stdout && stdout.trim()) {
+        const namespaces = stdout.trim().split('\n');
+        for (const ns of namespaces) {
+          const nsName = ns.replace('namespace/', '');
+          if (!protectedNamespaces.includes(nsName)) {
+            console.log(`    Deleting namespace: ${nsName}`);
+            await execAsync(
+              `kubectl delete namespace ${nsName} --ignore-not-found=true || true`,
+            );
+          } else {
+            console.log(`    Skipping protected namespace: ${nsName}`);
+          }
+        }
+      }
+    } catch (error) {
+      // Ignore errors
+    }
 
     // Wait for resources to be fully deleted
     await new Promise((resolve) => setTimeout(resolve, 5000));

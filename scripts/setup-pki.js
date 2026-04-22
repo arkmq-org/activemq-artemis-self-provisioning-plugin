@@ -547,8 +547,7 @@ spec:
   await waitForSecret(operatorNamespace, bundleName, 180000);
   console.log(`✓ CA secret available in namespace ${operatorNamespace}`);
 
-  // Step 2.5: Patch secret to add ca.pem key in operator namespace
-  await patchSecretWithCaPem(bundleName, operatorNamespace);
+  // Note: No patching needed - trust-manager creates ca.crt which is what we use
 
   // Step 3: Create operator certificate
   console.log('📦 Step 2: Creating operator certificate...');
