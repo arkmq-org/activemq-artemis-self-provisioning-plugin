@@ -13,6 +13,78 @@ const { promisify } = require('util');
 const execAsync = promisify(exec);
 
 /**
+ * Patches a secret to add ca.pem key (copy of ca.crt) for operator compatibility
+ * @param {string} secretName - Name of the secret to patch
+ * @param {string} namespace - Namespace where the secret exists
+ */
+async function patchSecretWithCaPem(secretName, namespace) {
+  console.log(`🔧 Patching secret ${secretName} in namespace ${namespace}...`);
+
+  // Wait for ca.crt to be ready
+  let retries = 20;
+  let ready = false;
+
+  while (retries-- > 0) {
+    try {
+      const { stdout } = await execAsync(
+        `kubectl get secret ${secretName} -n ${namespace} -o jsonpath='{.data.ca\\.crt}'`,
+      );
+
+      if (stdout && stdout.trim().length > 0) {
+        console.log(
+          `  ✓ ca.crt data available (${stdout.trim().length} bytes)`,
+        );
+        ready = true;
+        break;
+      }
+    } catch (e) {
+      // Secret might not exist yet, continue waiting
+    }
+
+    console.log('  ⏳ Waiting for ca.crt to be available...');
+    await new Promise((res) => setTimeout(res, 3000));
+  }
+
+  if (!ready) {
+    console.error(`❌ ca.crt not available in ${namespace} after waiting`);
+    throw new Error(`Secret ${secretName} not ready in namespace ${namespace}`);
+  }
+
+  // Check if ca.pem already exists (avoid unnecessary patching)
+  let needsPatch = true;
+  try {
+    const { stdout } = await execAsync(
+      `kubectl get secret ${secretName} -n ${namespace} -o jsonpath='{.data.ca\\.pem}'`,
+    );
+    if (stdout && stdout.trim().length > 0) {
+      console.log(
+        `  ℹ️  ca.pem already exists in ${namespace}, skipping patch`,
+      );
+      needsPatch = false;
+    }
+  } catch (e) {
+    // ca.pem doesn't exist, we need to patch
+  }
+
+  if (needsPatch) {
+    try {
+      await execAsync(`
+        kubectl get secret ${secretName} -n ${namespace} -o json | \
+        jq '.data["ca.pem"] = .data["ca.crt"]' | \
+        kubectl apply -f -
+      `);
+      console.log(`✓ Secret patched with ca.pem key in ${namespace}`);
+    } catch (error) {
+      console.error(
+        `⚠️  Warning: Failed to patch secret in ${namespace}:`,
+        error.message,
+      );
+      throw error;
+    }
+  }
+}
+
+/**
  * Apply YAML content using kubectl
  */
 async function applyYaml(yaml) {
@@ -451,11 +523,22 @@ spec:
       name: ${rootSecretName}
       key: "ca.crt"
   target:
+    additionalFormats:
+      jks:
+        key: "ca.jks"
+      pkcs12:
+        key: "ca.p12"
+      pem:
+        key: "ca.pem"
     secret:
+      key: "ca.crt"
+    configMap:
       key: "ca.crt"
 `;
   await applyYaml(bundleYaml);
-  console.log('✓ Trust bundle created');
+  console.log(
+    '✓ Trust bundle created with multiple formats (ca.crt, ca.jks, ca.p12, ca.pem)',
+  );
 
   // CRITICAL: Wait for Bundle to be Synced before checking for secrets
   console.log('⏳ Waiting for Bundle to be Synced...');
@@ -471,69 +554,8 @@ spec:
   await waitForSecret(operatorNamespace, bundleName, 180000);
   console.log(`✓ CA secret available in namespace ${operatorNamespace}`);
 
-  // Step 2.5: Patch secret to add ca.pem key (operator compatibility)
-  console.log('🔧 Ensuring ca.crt is ready before patching...');
-
-  let retries = 20;
-  let ready = false;
-
-  while (retries-- > 0) {
-    try {
-      const { stdout } = await execAsync(
-        `kubectl get secret ${bundleName} -n ${operatorNamespace} -o jsonpath='{.data.ca\\.crt}'`,
-      );
-
-      if (stdout && stdout.trim().length > 0) {
-        console.log(
-          `  ✓ ca.crt data available (${stdout.trim().length} bytes)`,
-        );
-        ready = true;
-        break;
-      }
-    } catch (e) {
-      // Secret might not exist yet, continue waiting
-    }
-
-    console.log('  ⏳ Waiting for ca.crt to be available...');
-    await new Promise((res) => setTimeout(res, 3000));
-  }
-
-  if (!ready) {
-    console.error('❌ ca.crt not available after waiting, skipping patch');
-    console.log('   This may cause broker deployment failures');
-  } else {
-    // Check if ca.pem already exists (avoid unnecessary patching)
-    let needsPatch = true;
-    try {
-      const { stdout } = await execAsync(
-        `kubectl get secret ${bundleName} -n ${operatorNamespace} -o jsonpath='{.data.ca\\.pem}'`,
-      );
-      if (stdout && stdout.trim().length > 0) {
-        console.log('  ℹ️  ca.pem already exists, skipping patch');
-        needsPatch = false;
-      }
-    } catch (e) {
-      // ca.pem doesn't exist, we need to patch
-    }
-
-    if (needsPatch) {
-      console.log('🔧 Patching secret to add ca.pem key...');
-      try {
-        await execAsync(`
-          kubectl get secret ${bundleName} -n ${operatorNamespace} -o json | \
-          jq '.data["ca.pem"] = .data["ca.crt"]' | \
-          kubectl apply -f -
-        `);
-        console.log('✓ Secret patched with ca.pem key');
-      } catch (error) {
-        console.error(
-          '⚠️  Warning: Failed to patch secret with ca.pem key:',
-          error.message,
-        );
-        console.log('   This may cause broker deployment failures');
-      }
-    }
-  }
+  // Step 2.5: Patch secret to add ca.pem key in operator namespace
+  await patchSecretWithCaPem(bundleName, operatorNamespace);
 
   // Step 3: Create operator certificate
   console.log('📦 Step 2: Creating operator certificate...');
