@@ -523,13 +523,6 @@ spec:
       name: ${rootSecretName}
       key: "ca.crt"
   target:
-    additionalFormats:
-      jks:
-        key: "ca.jks"
-      pkcs12:
-        key: "ca.p12"
-      pem:
-        key: "ca.pem"
     secret:
       key: "ca.crt"
     configMap:
@@ -537,7 +530,7 @@ spec:
 `;
   await applyYaml(bundleYaml);
   console.log(
-    '✓ Trust bundle created with multiple formats (ca.crt, ca.jks, ca.p12, ca.pem)',
+    '✓ Trust bundle created (ca.crt only, compatible with trust-manager v0.22.1)',
   );
 
   // CRITICAL: Wait for Bundle to be Synced before checking for secrets
