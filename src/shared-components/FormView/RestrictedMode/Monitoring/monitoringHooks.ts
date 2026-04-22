@@ -595,7 +595,7 @@ export const useCreateMonitoringResources = ({
                     ca: {
                       secret: {
                         name: 'activemq-artemis-manager-ca',
-                        key: 'ca.pem',
+                        key: 'ca.crt',
                       },
                     },
                     cert: {

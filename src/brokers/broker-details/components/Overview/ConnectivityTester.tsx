@@ -565,7 +565,7 @@ export const ConnectivityTester: FC<ConnectivityTesterProps> = ({ cr }) => {
     'exec java -classpath /opt/amq/lib/*:/opt/amq/lib/extra/* ' +
     'org.apache.activemq.artemis.cli.Artemis producer ' +
     `--protocol=AMQP --url 'amqps://${brokerEndpoint}:${amqpsPort}?` +
-    'transport.trustStoreType=PEMCA&transport.trustStoreLocation=/app/tls/ca/ca.pem&' +
+    'transport.trustStoreType=PEMCA&transport.trustStoreLocation=/app/tls/ca/ca.crt&' +
     'transport.keyStoreType=PEMCFG&transport.keyStoreLocation=/app/tls/pem/tls.pemcfg' +
     `' --message-count ${messageCountValue} --destination queue://APP_JOBS`;
 
@@ -573,7 +573,7 @@ export const ConnectivityTester: FC<ConnectivityTesterProps> = ({ cr }) => {
     'exec java -classpath /opt/amq/lib/*:/opt/amq/lib/extra/* ' +
     'org.apache.activemq.artemis.cli.Artemis consumer ' +
     `--protocol=AMQP --url 'amqps://${brokerEndpoint}:${amqpsPort}?` +
-    'transport.trustStoreType=PEMCA&transport.trustStoreLocation=/app/tls/ca/ca.pem&' +
+    'transport.trustStoreType=PEMCA&transport.trustStoreLocation=/app/tls/ca/ca.crt&' +
     'transport.keyStoreType=PEMCFG&transport.keyStoreLocation=/app/tls/pem/tls.pemcfg' +
     `' --message-count ${messageCountValue} --destination queue://APP_JOBS --receive-timeout 30000`;
 

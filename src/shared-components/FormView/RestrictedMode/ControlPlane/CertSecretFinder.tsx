@@ -53,7 +53,7 @@ type CertSecretFinderProps = {
   /** Whether to show the Generate button (default: true) */
   showGenerateButton?: boolean;
   /** The secret key to read certificate data from (default: 'tls.crt') */
-  secretDataKey?: 'tls.crt' | 'ca.pem';
+  secretDataKey?: 'tls.crt' | 'ca.crt';
 };
 
 /**
@@ -126,7 +126,7 @@ export const CertSecretFinder: FC<CertSecretFinderProps> = ({
       });
 
       // Extract the certificate data from the secret
-      // Certificates are in 'tls.crt' for TLS secrets, 'ca.pem' for CA bundles
+      // Certificates are in 'tls.crt' for TLS secrets, 'ca.crt' for CA bundles
       const certData = secret.data?.[secretDataKey];
       if (!certData) {
         setParseError(

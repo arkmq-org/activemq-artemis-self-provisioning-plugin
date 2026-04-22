@@ -71,7 +71,7 @@ export const ControlPlane: FC = () => {
             'The operator uses this CA bundle to verify broker certificates.',
           )}
           showGenerateButton={false}
-          secretDataKey="ca.pem"
+          secretDataKey="ca.crt"
         />
 
         <CertSecretFinder

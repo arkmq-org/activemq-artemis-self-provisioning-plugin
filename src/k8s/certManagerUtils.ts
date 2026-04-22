@@ -275,7 +275,7 @@ export const createTrustBundle = async (
       ],
       target: {
         secret: {
-          key: 'ca.pem',
+          key: 'ca.crt',
         },
         namespaceSelector: {
           matchExpressions: [
