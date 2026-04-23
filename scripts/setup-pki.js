@@ -531,7 +531,6 @@ spec:
   sources:
   - secret:
       name: ${rootSecretName}
-      namespace: cert-manager
       key: "ca.crt"
   target:
     secret:
