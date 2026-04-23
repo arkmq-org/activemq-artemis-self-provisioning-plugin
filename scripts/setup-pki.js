@@ -213,8 +213,10 @@ async function waitForSecret(namespace, secretName, timeoutMs = 60000) {
  *
  * Can be overridden via environment variable for flexibility.
  */
+// SINGLE SOURCE OF TRUTH: Use cert-manager namespace only
+// This is where trust-manager runs and expects to find CA secrets
 const CERT_MANAGER_NAMESPACE =
-  process.env.CERT_MANAGER_NAMESPACE || 'openshift-operators';
+  process.env.CERT_MANAGER_NAMESPACE || 'cert-manager';
 
 /**
  * Verifies cert-manager is running in the expected namespace
@@ -272,7 +274,7 @@ async function verifyCertManagerNamespace() {
  * Creates the cluster-level cert-manager infrastructure
  * This includes:
  * - Self-signed root ClusterIssuer
- * - Root CA Certificate in detected cluster resource namespace
+ * - Root CA Certificate in cert-manager namespace (SINGLE SOURCE OF TRUTH)
  * - CA ClusterIssuer (signed by root CA)
  *
  * @param {string} prefix - Prefix for resource names (e.g., "dev", "e2e")
@@ -284,7 +286,7 @@ async function createClusterInfrastructure(prefix) {
   // CRITICAL: Verify cert-manager is in the expected namespace
   await verifyCertManagerNamespace();
   console.log(
-    `  Using HARDCODED cert-manager namespace: ${CERT_MANAGER_NAMESPACE}`,
+    `  Using cert-manager namespace: ${CERT_MANAGER_NAMESPACE} (SINGLE SOURCE OF TRUTH)`,
   );
 
   const resourceNames = {
@@ -307,7 +309,7 @@ spec:
   await applyYaml(rootIssuerYaml);
   await waitForClusterIssuerReady(resourceNames.rootIssuer);
 
-  // Step 2: Create root CA certificate in cert-manager namespace
+  // Step 2: Create root CA certificate in cert-manager namespace ONLY
   console.log(
     `📦 Step 2: Creating root CA certificate in ${CERT_MANAGER_NAMESPACE} namespace...`,
   );
@@ -355,32 +357,10 @@ spec:
   );
   console.log(`✓ CA secret confirmed in namespace: ${secretNs}`);
 
-  // CRITICAL: Copy CA secret to cert-manager namespace for trust-manager
-  //  (in cert-manager namespace) can only read secrets from its own namespace
-  // ClusterIssuer needs it in openshift-operators, trust-manager needs it in cert-manager
+  // REMOVED: No cross-namespace copying - trust-manager reads from cert-manager namespace
   console.log(
-    '📋 Copying CA secret to cert-manager namespace for trust-manager...',
+    '✓ CA secret in cert-manager namespace (trust-manager will read from here)',
   );
-  try {
-    await execAsync(`
-      kubectl get secret ${resourceNames.rootSecret} -n ${CERT_MANAGER_NAMESPACE} -o yaml | \
-      sed 's/namespace: ${CERT_MANAGER_NAMESPACE}/namespace: cert-manager/' | \
-      sed '/resourceVersion:/d' | \
-      sed '/uid:/d' | \
-      sed '/creationTimestamp:/d' | \
-      kubectl apply -f -
-    `);
-    console.log(
-      `✓ CA secret copied to cert-manager namespace for trust-manager`,
-    );
-  } catch (error) {
-    console.error(
-      `⚠️  Warning: Could not copy secret to cert-manager namespace: ${error.message}`,
-    );
-    console.error(
-      '   trust-manager may not be able to distribute the CA bundle',
-    );
-  }
 
   // ROBUST: Wait for secret data to be populated (OpenShift-compatible)
   console.log('⏳ Waiting for secret to be fully populated...');
@@ -472,6 +452,7 @@ metadata:
 spec:
   ca:
     secretName: ${resourceNames.rootSecret}
+    secretNamespace: ${CERT_MANAGER_NAMESPACE}
 `;
   await applyYaml(caIssuerYaml);
 
@@ -521,6 +502,7 @@ spec:
   sources:
   - secret:
       name: ${rootSecretName}
+      namespace: ${CERT_MANAGER_NAMESPACE}
       key: "ca.crt"
   target:
     secret:
