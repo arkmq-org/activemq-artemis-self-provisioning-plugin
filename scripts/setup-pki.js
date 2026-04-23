@@ -152,60 +152,65 @@ async function waitForSecret(namespace, secretName, timeoutMs = 60000) {
  *
  * Can be overridden via environment variable for flexibility.
  */
-const CERT_MANAGER_NAMESPACE =
-  process.env.CERT_MANAGER_NAMESPACE || 'cert-manager';
+const CERT_MANAGER_NAMESPACE = process.env.CERT_MANAGER_NAMESPACE;
 
-/**
- * Verifies cert-manager is running in the expected namespace
- * This is a safety check to ensure we're using the ACTIVE cert-manager
- */
-async function verifyCertManagerNamespace() {
-  console.log(
-    `🔍 Verifying cert-manager is running in '${CERT_MANAGER_NAMESPACE}' namespace...`,
+console.log(`CERT_MANAGER_NAMESPACE is  ` + CERT_MANAGER_NAMESPACE);
+if (!CERT_MANAGER_NAMESPACE) {
+  throw new Error(
+    'CERT_MANAGER_NAMESPACE must be set explicitly (no auto-detection)',
   );
-
-  try {
-    const { stdout } = await execAsync(
-      `kubectl get pods -n ${CERT_MANAGER_NAMESPACE} -l app.kubernetes.io/name=cert-manager -o jsonpath='{.items[0].metadata.name}'`,
-    );
-
-    const podName = stdout.trim().replace(/^'|'$/g, '');
-
-    if (!podName) {
-      throw new Error(
-        `No cert-manager pods found in '${CERT_MANAGER_NAMESPACE}' namespace`,
-      );
-    }
-
-    console.log(
-      `✓ cert-manager verified in '${CERT_MANAGER_NAMESPACE}' namespace (pod: ${podName})`,
-    );
-
-    // Also verify this is the ACTIVE controller by checking logs
-    console.log(`🔍 Verifying this is the ACTIVE cert-manager controller...`);
-    const { stdout: logs } = await execAsync(
-      `kubectl logs -n ${CERT_MANAGER_NAMESPACE} ${podName} --tail=5 2>/dev/null || echo "Could not get logs"`,
-    );
-
-    if (logs.includes('Could not get logs')) {
-      console.log(
-        `⚠️  Warning: Could not verify controller activity, but pod exists`,
-      );
-    } else {
-      console.log(`✓ Controller is active and logging`);
-    }
-
-    return CERT_MANAGER_NAMESPACE;
-  } catch (error) {
-    console.error(
-      `❌ Failed to verify cert-manager in '${CERT_MANAGER_NAMESPACE}' namespace:`,
-      error.message,
-    );
-    throw new Error(
-      `cert-manager not found in expected namespace '${CERT_MANAGER_NAMESPACE}'. Ensure cert-manager is installed correctly.`,
-    );
-  }
 }
+// /**
+//  * Verifies cert-manager is running in the expected namespace
+//  * This is a safety check to ensure we're using the ACTIVE cert-manager
+//  */
+// async function verifyCertManagerNamespace() {
+//   console.log(
+//     `🔍 Verifying cert-manager is running in '${CERT_MANAGER_NAMESPACE}' namespace...`,
+//   );
+//
+//   try {
+//     const { stdout } = await execAsync(
+//       `kubectl get pods -n ${CERT_MANAGER_NAMESPACE} -l app.kubernetes.io/name=cert-manager -o jsonpath='{.items[0].metadata.name}'`,
+//     );
+//
+//     const podName = stdout.trim().replace(/^'|'$/g, '');
+//
+//     if (!podName) {
+//       throw new Error(
+//         `No cert-manager pods found in '${CERT_MANAGER_NAMESPACE}' namespace`,
+//       );
+//     }
+//
+//     console.log(
+//       `✓ cert-manager verified in '${CERT_MANAGER_NAMESPACE}' namespace (pod: ${podName})`,
+//     );
+//
+//     // Also verify this is the ACTIVE controller by checking logs
+//     console.log(`🔍 Verifying this is the ACTIVE cert-manager controller...`);
+//     const { stdout: logs } = await execAsync(
+//       `kubectl logs -n ${CERT_MANAGER_NAMESPACE} ${podName} --tail=5 2>/dev/null || echo "Could not get logs"`,
+//     );
+//
+//     if (logs.includes('Could not get logs')) {
+//       console.log(
+//         `⚠️  Warning: Could not verify controller activity, but pod exists`,
+//       );
+//     } else {
+//       console.log(`✓ Controller is active and logging`);
+//     }
+//
+//     return CERT_MANAGER_NAMESPACE;
+//   } catch (error) {
+//     console.error(
+//       `❌ Failed to verify cert-manager in '${CERT_MANAGER_NAMESPACE}' namespace:`,
+//       error.message,
+//     );
+//     throw new Error(
+//       `cert-manager not found in expected namespace '${CERT_MANAGER_NAMESPACE}'. Ensure cert-manager is installed correctly.`,
+//     );
+//   }
+// }
 
 /**
  * Creates the cluster-level cert-manager infrastructure
@@ -220,11 +225,11 @@ async function verifyCertManagerNamespace() {
 async function createClusterInfrastructure(prefix) {
   console.log(`📦 Creating cluster infrastructure with prefix: ${prefix}...`);
 
-  // CRITICAL: Verify cert-manager is in the expected namespace
-  await verifyCertManagerNamespace();
-  console.log(
-    `  Using cert-manager namespace: ${CERT_MANAGER_NAMESPACE} (SINGLE SOURCE OF TRUTH)`,
-  );
+  if (!CERT_MANAGER_NAMESPACE) {
+    throw new Error(
+      'CERT_MANAGER_NAMESPACE must be explicitly set when using OLM installs',
+    );
+  }
 
   const resourceNames = {
     rootIssuer: `${prefix}-selfsigned-root-issuer`,
@@ -418,7 +423,7 @@ spec:
 async function createTrustBundleAndOperatorCert(
   rootSecretName,
   caIssuerName,
-  operatorNamespace = 'cert-manager',
+  operatorNamespace,
 ) {
   console.log(
     `📦 Creating trust bundle and operator cert for namespace: ${operatorNamespace}...`,
