@@ -452,7 +452,6 @@ metadata:
 spec:
   ca:
     secretName: ${resourceNames.rootSecret}
-    secretNamespace: ${CERT_MANAGER_NAMESPACE}
 `;
   await applyYaml(caIssuerYaml);
 
