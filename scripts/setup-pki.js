@@ -142,17 +142,18 @@ async function waitForSecret(namespace, secretName, timeoutMs = 60000) {
  * Can be overridden via environment variable for flexibility.
  */
 /**
- * CRITICAL FIX: Use the ACTIVE cert-manager namespace
+ * SINGLE PKI NAMESPACE: Use cert-manager namespace for ALL PKI resources
  *
- * Based on DEBUG logs, the ACTIVE cert-manager controller is in 'openshift-operators'.
- * This is the OpenShift-managed cert-manager with --cluster-resource-namespace=openshift-operators.
- *
- * MUST create secrets in openshift-operators namespace, NOT cert-manager namespace.
+ * This ensures:
+ * - Root CA Certificate and Secret in cert-manager namespace
+ * - trust-manager can read secrets locally (no cross-namespace issues)
+ * - No RBAC or propagation delays
+ * - Matches OLM-certified patterns
  *
  * Can be overridden via environment variable for flexibility.
  */
 const CERT_MANAGER_NAMESPACE =
-  process.env.CERT_MANAGER_NAMESPACE || 'openshift-operators';
+  process.env.CERT_MANAGER_NAMESPACE || 'cert-manager';
 
 /**
  * Verifies cert-manager is running in the expected namespace
@@ -293,32 +294,10 @@ spec:
   );
   console.log(`✓ CA secret confirmed in namespace: ${secretNs}`);
 
-  // CRITICAL: Copy CA secret to cert-manager namespace for trust-manager
-  // trust-manager (in cert-manager namespace) can only read secrets from its own namespace
-  // ClusterIssuer needs it in openshift-operators, trust-manager needs it in cert-manager
+  // No cross-namespace copying needed - everything in cert-manager namespace
   console.log(
-    '📋 Copying CA secret to cert-manager namespace for trust-manager...',
+    `✓ CA secret in ${CERT_MANAGER_NAMESPACE} namespace (trust-manager will read from here)`,
   );
-  try {
-    await execAsync(`
-      kubectl get secret ${resourceNames.rootSecret} -n ${CERT_MANAGER_NAMESPACE} -o yaml | \
-      sed 's/namespace: ${CERT_MANAGER_NAMESPACE}/namespace: cert-manager/' | \
-      sed '/resourceVersion:/d' | \
-      sed '/uid:/d' | \
-      sed '/creationTimestamp:/d' | \
-      kubectl apply -f -
-    `);
-    console.log(
-      `✓ CA secret copied to cert-manager namespace for trust-manager`,
-    );
-  } catch (error) {
-    console.error(
-      `⚠️  Warning: Could not copy secret to cert-manager namespace: ${error.message}`,
-    );
-    console.error(
-      '   trust-manager may not be able to distribute the CA bundle',
-    );
-  }
 
   // ROBUST: Wait for secret data to be populated (OpenShift-compatible)
   console.log('⏳ Waiting for secret to be fully populated...');
