@@ -217,7 +217,7 @@ spec:
 
   console.log('✅ Trust + operator cert ready');
 
-  return { bundle, cert };
+  return { bundle, operatorCert: cert };
 }
 
 /**
