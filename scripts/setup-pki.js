@@ -1,13 +1,5 @@
 /**
  * Shared PKI Setup Functions (OLM-Safe, cert-manager v1 compatible)
- *
- * This module creates a simple, reliable PKI chain:
- * self-signed root → CA ClusterIssuer → leaf certificates
- *
- * Assumptions:
- * - cert-manager is installed via OLM
- * - controller runs in CERT_MANAGER_NAMESPACE
- * - all PKI resources live in SAME namespace (required for CA issuer)
  */
 
 const { exec } = require('child_process');
@@ -20,6 +12,7 @@ const execAsync = promisify(exec);
  */
 async function applyYaml(yaml) {
   const escapedYaml = yaml.replace(/'/g, "'\\''");
+
   const { stdout, stderr } = await execAsync(
     `echo '${escapedYaml}' | kubectl apply -f -`,
   );
@@ -52,7 +45,7 @@ async function waitForClusterIssuerReady(name, timeoutMs = 120000) {
         return;
       }
     } catch (_) {
-      // ignore until exists
+      /* empty */
     }
 
     await new Promise((r) => setTimeout(r, 2000));
@@ -78,7 +71,7 @@ async function waitForSecret(namespace, secretName, timeoutMs = 60000) {
         return;
       }
     } catch (_) {
-      // ignore
+      /* empty */
     }
 
     await new Promise((r) => setTimeout(r, 2000));
@@ -87,9 +80,6 @@ async function waitForSecret(namespace, secretName, timeoutMs = 60000) {
   throw new Error(`Timeout waiting for secret ${secretName}`);
 }
 
-/**
- * Required env
- */
 const CERT_MANAGER_NAMESPACE = process.env.CERT_MANAGER_NAMESPACE;
 
 if (!CERT_MANAGER_NAMESPACE) {
@@ -99,7 +89,7 @@ if (!CERT_MANAGER_NAMESPACE) {
 console.log(`📍 Using namespace: ${CERT_MANAGER_NAMESPACE}`);
 
 /**
- * Create PKI chain (ROOT + CA issuer)
+ * PKI Infrastructure
  */
 async function createClusterInfrastructure(prefix) {
   const ns = CERT_MANAGER_NAMESPACE;
@@ -111,7 +101,6 @@ async function createClusterInfrastructure(prefix) {
     caIssuer: `${prefix}-ca-issuer`,
   };
 
-  // 1. Self-signed root issuer
   await applyYaml(`
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
@@ -123,7 +112,6 @@ spec:
 
   await waitForClusterIssuerReady(names.rootIssuer);
 
-  // 2. Root CA certificate (must be SAME namespace)
   await applyYaml(`
 apiVersion: cert-manager.io/v1
 kind: Certificate
@@ -145,7 +133,6 @@ spec:
 
   await waitForSecret(ns, names.rootSecret);
 
-  // 3. CA issuer (signs everything else)
   await applyYaml(`
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
@@ -164,7 +151,7 @@ spec:
 }
 
 /**
- * Trust bundle + operator cert
+ * TRUST + OPERATOR CERT
  */
 async function createTrustBundleAndOperatorCert(
   rootSecret,
@@ -174,7 +161,7 @@ async function createTrustBundleAndOperatorCert(
   const bundle = 'artemis-ca-bundle';
   const cert = 'artemis-operator-cert';
 
-  // Trust bundle
+  // ✅ FIXED: no selector, direct namespace target
   await applyYaml(`
 apiVersion: trust.cert-manager.io/v1alpha1
 kind: Bundle
@@ -188,6 +175,9 @@ spec:
   target:
     secret:
       key: ca.crt
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: ${operatorNamespace}
 `);
 
   await execAsync(
@@ -196,7 +186,6 @@ spec:
 
   await waitForSecret(operatorNamespace, bundle);
 
-  // Operator cert
   await applyYaml(`
 apiVersion: cert-manager.io/v1
 kind: Certificate
@@ -221,7 +210,7 @@ spec:
 }
 
 /**
- * Full setup
+ * FULL SETUP
  */
 async function setupCompletePKI(prefix, operatorNamespace = 'default') {
   const infra = await createClusterInfrastructure(prefix);
@@ -244,9 +233,7 @@ async function detectOperatorNamespace(fallback = 'default') {
       `kubectl get pods -A -l app.kubernetes.io/name=arkmq-org-broker-operator -o jsonpath='{.items[0].metadata.namespace}'`,
     );
 
-    if (stdout.trim()) {
-      return stdout.trim();
-    }
+    if (stdout.trim()) return stdout.trim();
   } catch (_) {
     /* empty */
   }
