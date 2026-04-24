@@ -243,7 +243,7 @@ async function verifyCertManagerNamespace() {
     console.log(
       `✓ cert-manager verified in '${CERT_MANAGER_NAMESPACE}' namespace (pod: ${podName})`,
     );
-    //updated with previous changes
+
     // Also verify this is the ACTIVE controller by checking logs
     console.log(`🔍 Verifying this is the ACTIVE cert-manager controller...`);
     const { stdout: logs } = await execAsync(
