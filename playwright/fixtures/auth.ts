@@ -62,9 +62,6 @@ export async function login(page: Page, username: string, password: string) {
 
   console.log('Credentials filled, submitting login form...');
 
-  // Click login button and wait for navigation
-  const loginButton = page.locator('button[type=submit]:has-text("Log in")');
-
   // Wait for redirect back to console URL Or localhost
   const redirectPattern = isRemoteCluster()
     ? `${consoleUrl}/**`
@@ -73,25 +70,27 @@ export async function login(page: Page, username: string, password: string) {
   console.log(`Waiting for redirect to: ${redirectPattern}`);
 
   try {
-    // Use Promise.race to handle both navigation and potential errors
-    await Promise.race([
+    // Click login button and wait for navigation with extended timeout
+    const loginButton = page.locator('button[type=submit]:has-text("Log in")');
+    await Promise.all([
+      page.waitForURL(redirectPattern, { timeout: 90000 }), // 90 second timeout
       loginButton.click(),
-      page.waitForURL(redirectPattern, { timeout: 65000 }),
     ]);
-
-    // Give it a moment to settle
-    await page.waitForTimeout(1000);
-
-    // Check if we're at the right URL
-    if (!page.url().match(new RegExp(redirectPattern.replace('**', '.*')))) {
-      console.log(`Still waiting for redirect. Current URL: ${page.url()}`);
-      await page.waitForURL(redirectPattern, { timeout: 30000 });
-    }
 
     console.log(`Successfully redirected to: ${page.url()}`);
   } catch (error) {
     console.log(`Failed to redirect. Current URL: ${page.url()}`);
     console.log(`Error: ${error}`);
+
+    // Check if we're already at the console (maybe already logged in)
+    if (
+      page.url().includes(consoleUrl) ||
+      page.url().includes('localhost:9000')
+    ) {
+      console.log('Already at console URL, continuing...');
+      return;
+    }
+
     throw error;
   }
 
