@@ -500,7 +500,7 @@ const applyRestrictedDataPlaneConfig = (formState: FormStateRestricted) => {
         'acceptorConfigurations."amqps".params.trustStoreType=PEMCA',
       );
       newBrokerProperties.push(
-        'acceptorConfigurations."amqps".params.trustStorePath=/amq/extra/secrets/activemq-artemis-manager-ca/ca.crt',
+        'acceptorConfigurations."amqps".params.trustStorePath=/amq/extra/secrets/activemq-artemis-manager-ca/ca.pem',
       );
     }
   }
