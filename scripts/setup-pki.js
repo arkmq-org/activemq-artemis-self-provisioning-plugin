@@ -31,7 +31,7 @@ async function applyYaml(yaml) {
 /**
  * Wait for a ClusterIssuer to be Ready
  */
-async function waitForClusterIssuerReady(issuerName, timeoutMs = 60000) {
+async function waitForClusterIssuerReady(issuerName, timeoutMs = 300000) {
   console.log(`⏳ Waiting for ClusterIssuer ${issuerName} to be Ready...`);
   const startTime = Date.now();
 
@@ -135,7 +135,7 @@ spec:
     `⏳ Waiting for certificate ${resourceNames.rootCert} to be ready...`,
   );
   await execAsync(
-    `kubectl wait --for=condition=Ready certificate/${resourceNames.rootCert} -n cert-manager --timeout=60s`,
+    `kubectl wait --for=condition=Ready certificate/${resourceNames.rootCert} -n cert-manager --timeout=180s`,
   );
   console.log(`✓ Certificate ${resourceNames.rootCert} is Ready`);
 
