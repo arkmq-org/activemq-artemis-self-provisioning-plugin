@@ -162,13 +162,13 @@ spec:
  *
  * @param {string} rootSecretName - Name of the root CA secret (from createClusterInfrastructure)
  * @param {string} caIssuerName - Name of the CA issuer (from createClusterInfrastructure)
- * @param {string} operatorNamespace - Namespace where operator runs (default: "default")
+ * @param {string} operatorNamespace - Namespace where operator runs
  * @returns {Promise<object>} Resource names that were created
  */
 async function createTrustBundleAndOperatorCert(
   rootSecretName,
   caIssuerName,
-  operatorNamespace = 'default',
+  operatorNamespace,
 ) {
   console.log(
     `📦 Creating trust bundle and operator cert for namespace: ${operatorNamespace}...`,
@@ -200,7 +200,7 @@ spec:
   console.log(
     `⏳ Waiting for CA secret to be distributed to namespace ${operatorNamespace}...`,
   );
-  await waitForSecret(operatorNamespace, bundleName);
+  await waitForSecret(operatorNamespace, bundleName, 120000);
   console.log(`✓ CA secret available in namespace ${operatorNamespace}`);
 
   // Step 3: Create operator certificate
@@ -242,10 +242,10 @@ spec:
  * This is a convenience function that combines createClusterInfrastructure and createTrustBundleAndOperatorCert
  *
  * @param {string} prefix - Prefix for resource names (e.g., "dev", "e2e")
- * @param {string} operatorNamespace - Namespace where operator runs (default: "default")
+ * @param {string} operatorNamespace - Namespace where operator runs
  * @returns {Promise<object>} All created resource names
  */
-async function setupCompletePKI(prefix, operatorNamespace = 'default') {
+async function setupCompletePKI(prefix, operatorNamespace) {
   const clusterResources = await createClusterInfrastructure(prefix);
   const trustResources = await createTrustBundleAndOperatorCert(
     clusterResources.rootSecret,
@@ -262,36 +262,12 @@ async function setupCompletePKI(prefix, operatorNamespace = 'default') {
 const OPERATOR_POD_LABEL = 'app.kubernetes.io/name=arkmq-org-broker-operator';
 
 /**
- * Auto-detect the namespace where the ActiveMQ Artemis operator is running
- * by querying for pods with the operator's well-known label.
- *
- * @param {string} [fallback='default'] - Namespace to return if detection fails
- * @returns {Promise<string>} The detected operator namespace
+ * Auto-detect is disabled in CI. OPERATOR_NAMESPACE must be provided explicitly.
  */
-async function detectOperatorNamespace(fallback = 'default') {
-  try {
-    const { stdout } = await execAsync(
-      `kubectl get pods -A -l ${OPERATOR_POD_LABEL} -o jsonpath='{.items[0].metadata.namespace}'`,
-    );
-    const ns = stdout.trim().replace(/^'|'$/g, '');
-    if (ns) {
-      console.log(`✓ Detected operator namespace: ${ns}`);
-      return ns;
-    }
-  } catch (error) {
-    // Log the error for debugging
-    console.error(`Error querying operator pods: ${error.message}`);
-  }
-
-  // If we reach here, no operator was found
-  console.error(
-    `❌ Could not detect operator namespace using label: ${OPERATOR_POD_LABEL}`,
+async function detectOperatorNamespace(fallback) {
+  throw new Error(
+    'CI should always provide OPERATOR_NAMESPACE; auto-detect disabled.',
   );
-  console.error(
-    `⚠️  Falling back to "${fallback}" - this may cause issues if the operator is not in this namespace`,
-  );
-
-  return fallback;
 }
 
 module.exports = {

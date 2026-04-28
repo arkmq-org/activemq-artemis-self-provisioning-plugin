@@ -19,7 +19,7 @@
  *   --help                Show this help message
  */
 
-const { setupCompletePKI, detectOperatorNamespace } = require('./setup-pki');
+const { setupCompletePKI, waitForSecret } = require('./setup-pki');
 const { exec } = require('child_process');
 const { promisify } = require('util');
 
@@ -28,9 +28,9 @@ const execAsync = promisify(exec);
 // Parse command line arguments
 const args = process.argv.slice(2);
 const command = args[0];
-let namespace = null;
-let namespaceExplicit = false;
-let prefix = 'dev';
+let namespace = process.env.OPERATOR_NAMESPACE || null;
+let namespaceExplicit = Boolean(process.env.OPERATOR_NAMESPACE);
+let prefix = process.env.PREFIX || 'dev';
 
 function showHelp() {
   console.log(`
@@ -124,10 +124,11 @@ async function deleteSecretPattern(pattern) {
  * provided, otherwise auto-detect from the cluster.
  */
 async function resolveNamespace() {
-  if (namespaceExplicit) {
+  if (namespaceExplicit && namespace) {
+    console.log(`Using explicit namespace: ${namespace}`);
     return namespace;
   }
-  return await detectOperatorNamespace('default');
+  throw new Error('❌ OPERATOR_NAMESPACE must be set in CI');
 }
 
 /**
@@ -136,13 +137,27 @@ async function resolveNamespace() {
 async function setup() {
   namespace = await resolveNamespace();
 
-  console.log('\n🔐 Setting up Chain of Trust for ActiveMQ Artemis\n');
-  console.log(`Configuration:`);
-  console.log(`  - Namespace: ${namespace}`);
-  console.log(`  - Prefix: ${prefix}\n`);
+  console.log(`Namespace: ${namespace}, Prefix: ${prefix}`);
 
   try {
     const createdResources = await setupCompletePKI(prefix, namespace);
+
+    // Wait for operator certificate secret
+    console.log('⏳ Waiting for operator certificate secret to exist...');
+    await waitForSecret(namespace, createdResources.operatorCert, 120000);
+    console.log('✓ Operator certificate secret is ready');
+
+    // Wait for trust bundle to sync
+    console.log('⏳ Waiting for trust bundle to report Synced=True...');
+    await execAsync(
+      `kubectl wait bundle ${createdResources.bundle} --for=condition=Synced=True --timeout=120s`,
+    );
+    console.log('✓ Trust bundle is synced');
+
+    // Wait for trust bundle secret
+    console.log('⏳ Waiting for trust bundle secret to be synced...');
+    await waitForSecret(namespace, createdResources.bundle, 120000);
+    console.log('✓ Trust bundle secret is synced');
 
     // Success summary
     console.log('\n✅ Chain of Trust Setup Complete!\n');
@@ -170,12 +185,8 @@ async function setup() {
     );
   } catch (error) {
     console.error('\n❌ Error during setup:', error.message);
-    console.error('\nMake sure you have:');
-    console.error('  - kubectl configured and connected to your cluster');
-    console.error('  - cert-manager installed in your cluster');
-    console.error('  - trust-manager installed in your cluster');
     console.error(
-      '  - Appropriate permissions to create cluster-wide resources\n',
+      'Make sure you have kubectl configured and connected to your cluster',
     );
     process.exit(1);
   }
