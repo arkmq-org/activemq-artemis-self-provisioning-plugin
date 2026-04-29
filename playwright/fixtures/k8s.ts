@@ -61,7 +61,10 @@ export async function createE2EClusterInfrastructure(): Promise<void> {
 export async function createE2ETrustBundleAndOperatorCert(
   namespace: string,
 ): Promise<void> {
-  const operatorNs = await detectOperatorNamespace('default');
+  // In CI, OPERATOR_NAMESPACE must be provided via environment variable
+  // detectOperatorNamespace is disabled in CI to enforce explicit configuration
+  const operatorNs = process.env.OPERATOR_NAMESPACE || 'default';
+  console.log(`Using operator namespace: ${operatorNs}`);
 
   await createTrustBundleAndOperatorCert(
     'e2e-root-ca-secret',
