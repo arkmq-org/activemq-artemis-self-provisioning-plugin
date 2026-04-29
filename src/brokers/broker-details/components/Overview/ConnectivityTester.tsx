@@ -488,7 +488,7 @@ export const ConnectivityTester: FC<ConnectivityTesterProps> = ({ cr }) => {
             containers: [
               {
                 name,
-                image: `quay.io/arkmq-org/activemq-artemis-broker-kubernetes:latest`,
+                image: `quay.io/arkmq-org/activemq-artemis-broker-kubernetes:artemis.2.52.0`,
                 command: ['/bin/sh', '-c', command],
                 env: [
                   {
