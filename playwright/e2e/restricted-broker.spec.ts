@@ -29,6 +29,10 @@ test.describe('Restricted Broker End-to-End', () => {
 
     // Create trust bundle and operator cert in test namespace
     await createE2ETrustBundleAndOperatorCert(testNamespace);
+
+    // Wait a few seconds to let console pick up new secrets
+    console.log('Waiting for console to sync with new namespace resources...');
+    await new Promise((resolve) => setTimeout(resolve, 5000));
   });
 
   test.afterAll(async () => {
@@ -38,14 +42,18 @@ test.describe('Restricted Broker End-to-End', () => {
   });
 
   test('creates restricted broker with pre-configured certificates', async ({
-    page,
+    browser,
   }) => {
+    // Create a fresh browser context for this test to avoid OAuth/session collisions
+    const context = await browser.newContext();
+    const page = await context.newPage();
+
     // At this point, we have:
     // - e2e-ca-issuer ClusterIssuer (ready to use)
     // - activemq-artemis-manager-ca trust bundle in our namespace
     // - activemq-artemis-manager-cert operator certificate in our namespace
 
-    // Login
+    // Login using the fresh page
     await login(page, username, password);
 
     // Navigate to the test namespace's brokers page
