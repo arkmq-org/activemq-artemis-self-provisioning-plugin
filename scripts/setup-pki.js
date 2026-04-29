@@ -141,6 +141,7 @@ spec:
 
   // Step 3: Create CA issuer
   console.log('📦 Step 3: Creating CA-signed ClusterIssuer...');
+  console.log(`rootSecret Details . ${resourceNames.rootSecret}`);
   const caIssuerYaml = `
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
@@ -149,7 +150,6 @@ metadata:
 spec:
   ca:
     secretName: ${resourceNames.rootSecret}
-    secretNamespace: cert-manager
 `;
   await applyYaml(caIssuerYaml);
   await waitForClusterIssuerReady(resourceNames.caIssuer);
