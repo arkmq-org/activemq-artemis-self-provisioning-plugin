@@ -18,9 +18,11 @@ test.describe('Broker Navigation and Discoverability', () => {
 
     await login(page, username, password);
 
-    // Navigate to the brokers list page
-    await page.goto('/k8s/all-namespaces/brokers');
-    await expect(page.locator('h1', { hasText: /Brokers/i })).toBeVisible();
+    // Navigate to the ActiveMQArtemis resources list page
+    await page.goto('/k8s/all-namespaces/activemqartemises');
+    await expect(
+      page.locator('h1', { hasText: /ActiveMQArtemis/i }),
+    ).toBeVisible({ timeout: 30000 });
 
     // Click the Create Broker button
     await page.getByRole('link', { name: 'Create Broker' }).click();
