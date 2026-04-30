@@ -77,8 +77,10 @@ test.describe('Broker Navigation and Discoverability', () => {
       `/search/ns/${namespace}?kind=broker.amq.io~v1beta1~ActiveMQArtemis`,
     );
 
-    // Click on the broker name in search results
-    await page.locator(`a:has-text("${brokerName}")`).click();
+    // Wait for the broker link to be visible and stable before clicking
+    const brokerLink = page.locator(`a:has-text("${brokerName}")`);
+    await brokerLink.waitFor({ state: 'visible', timeout: 600000 });
+    await brokerLink.click();
 
     // Verify we're on the broker details page
     await expect(page).toHaveURL(
@@ -150,7 +152,11 @@ test.describe('Broker Navigation and Discoverability', () => {
     await page.goto(
       `/search/ns/${namespace}?kind=broker.amq.io~v1beta1~ActiveMQArtemis`,
     );
-    await page.locator(`a:has-text("${brokerName}")`).click();
+
+    // Wait for the broker link to be visible and stable before clicking
+    const brokerLink = page.locator(`a:has-text("${brokerName}")`);
+    await brokerLink.waitFor({ state: 'visible', timeout: 600000 });
+    await brokerLink.click();
 
     // Click the YAML tab
     const yamlTab = page.locator('a, button').filter({ hasText: /^YAML$/i });
