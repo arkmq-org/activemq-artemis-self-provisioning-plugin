@@ -213,7 +213,11 @@ export const ConnectivityTester: FC<ConnectivityTesterProps> = ({ cr }) => {
   const jaasSecretName = `${brokerName}-jaas-config-bp`;
   const producerJobName = `${brokerName}-producer`;
   const consumerJobName = `${brokerName}-consumer`;
+  const brokerImage = cr.status?.version?.image || '';
   const brokerVersion = cr.status?.version?.brokerVersion || '';
+  const finalImage =
+    brokerImage ||
+    `quay.io/arkmq-org/activemq-artemis-broker-kubernetes:artemis.${brokerVersion}`;
   const detectedEndpoint =
     brokerName && namespace
       ? `${brokerName}-ss-0.${brokerName}-hdls-svc.${namespace}.svc.cluster.local`
@@ -510,7 +514,7 @@ export const ConnectivityTester: FC<ConnectivityTesterProps> = ({ cr }) => {
             containers: [
               {
                 name,
-                image: `quay.io/arkmq-org/activemq-artemis-broker-kubernetes:artemis.${brokerVersion}`,
+                image: finalImage,
                 command: ['/bin/sh', '-c', command],
                 env: [
                   {

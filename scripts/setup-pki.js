@@ -31,7 +31,7 @@ async function applyYaml(yaml) {
 /**
  * Wait for a ClusterIssuer to be Ready
  */
-async function waitForClusterIssuerReady(issuerName, timeoutMs = 60000) {
+async function waitForClusterIssuerReady(issuerName, timeoutMs = 300000) {
   console.log(`⏳ Waiting for ClusterIssuer ${issuerName} to be Ready...`);
   const startTime = Date.now();
 
@@ -135,7 +135,7 @@ spec:
     `⏳ Waiting for certificate ${resourceNames.rootCert} to be ready...`,
   );
   await execAsync(
-    `kubectl wait --for=condition=Ready certificate/${resourceNames.rootCert} -n cert-manager --timeout=60s`,
+    `kubectl wait --for=condition=Ready certificate/${resourceNames.rootCert} -n cert-manager --timeout=180s`,
   );
   console.log(`✓ Certificate ${resourceNames.rootCert} is Ready`);
 
@@ -162,7 +162,7 @@ spec:
  *
  * @param {string} rootSecretName - Name of the root CA secret (from createClusterInfrastructure)
  * @param {string} caIssuerName - Name of the CA issuer (from createClusterInfrastructure)
- * @param {string} operatorNamespace - Namespace where operator runs (default: "default")
+ * @param {string} operatorNamespace - Namespace where operator runs
  * @returns {Promise<object>} Resource names that were created
  */
 async function createTrustBundleAndOperatorCert(
@@ -200,7 +200,7 @@ spec:
   console.log(
     `⏳ Waiting for CA secret to be distributed to namespace ${operatorNamespace}...`,
   );
-  await waitForSecret(operatorNamespace, bundleName);
+  await waitForSecret(operatorNamespace, bundleName, 120000);
   console.log(`✓ CA secret available in namespace ${operatorNamespace}`);
 
   // Step 3: Create operator certificate
@@ -259,8 +259,6 @@ async function setupCompletePKI(prefix, operatorNamespace = 'default') {
   };
 }
 
-const OPERATOR_POD_LABEL = 'app.kubernetes.io/name=arkmq-org-broker-operator';
-
 /**
  * Auto-detect the namespace where the ActiveMQ Artemis operator is running
  * by querying for pods with the operator's well-known label.
@@ -269,6 +267,10 @@ const OPERATOR_POD_LABEL = 'app.kubernetes.io/name=arkmq-org-broker-operator';
  * @returns {Promise<string>} The detected operator namespace
  */
 async function detectOperatorNamespace(fallback = 'default') {
+  const OPERATOR_POD_LABEL =
+    process.env.OPERATOR_POD_LABEL ||
+    'app.kubernetes.io/name=arkmq-org-broker-operator';
+
   try {
     const { stdout } = await execAsync(
       `kubectl get pods -A -l ${OPERATOR_POD_LABEL} -o jsonpath='{.items[0].metadata.namespace}'`,

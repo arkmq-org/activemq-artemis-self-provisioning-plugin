@@ -19,7 +19,11 @@
  *   --help                Show this help message
  */
 
-const { setupCompletePKI, detectOperatorNamespace } = require('./setup-pki');
+const {
+  setupCompletePKI,
+  detectOperatorNamespace,
+  waitForSecret,
+} = require('./setup-pki');
 const { exec } = require('child_process');
 const { promisify } = require('util');
 
@@ -144,6 +148,23 @@ async function setup() {
   try {
     const createdResources = await setupCompletePKI(prefix, namespace);
 
+    // Wait for operator certificate secret
+    console.log('⏳ Waiting for operator certificate secret to exist...');
+    await waitForSecret(namespace, createdResources.operatorCert, 120000);
+    console.log('✓ Operator certificate secret is ready');
+
+    // Wait for trust bundle to sync
+    console.log('⏳ Waiting for trust bundle to report Synced=True...');
+    await execAsync(
+      `kubectl wait bundle ${createdResources.bundle} --for=condition=Synced=True --timeout=120s`,
+    );
+    console.log('✓ Trust bundle is synced');
+
+    // Wait for trust bundle secret
+    console.log('⏳ Waiting for trust bundle secret to be synced...');
+    await waitForSecret(namespace, createdResources.bundle, 120000);
+    console.log('✓ Trust bundle secret is synced');
+
     // Success summary
     console.log('\n✅ Chain of Trust Setup Complete!\n');
     console.log('Created resources:');
@@ -175,7 +196,7 @@ async function setup() {
     console.error('  - cert-manager installed in your cluster');
     console.error('  - trust-manager installed in your cluster');
     console.error(
-      '  - Appropriate permissions to create cluster-wide resources\n',
+      '- Appropriate permissions to create cluster-wide resources\n',
     );
     process.exit(1);
   }
