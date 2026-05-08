@@ -1,6 +1,9 @@
 import { Page } from '@playwright/test';
+import { isRemoteCluster } from './utils';
 
 export async function login(page: Page, username: string, password: string) {
+  console.log(`Logging in as user: ${username}`);
+
   // Set up console user settings before navigation
   await page.addInitScript(() => {
     window.localStorage.setItem(
@@ -12,21 +15,71 @@ export async function login(page: Page, username: string, password: string) {
   // Navigate to the application
   await page.goto('/');
 
-  // Handle the OAuth redirect
-  await page.waitForURL('https://oauth-openshift.apps-crc.testing/**', {
+  // Handle the OAuth redirect to console URL Or localhost
+  const consoleUrl = process.env.CONSOLE_URL || 'http://localhost:9000';
+  const urlMatch = consoleUrl.match(/apps\.([^/]+)/);
+  const clusterDomain = urlMatch ? `apps.${urlMatch[1]}` : 'apps-crc.testing';
+  const oauthPattern = `https://oauth-openshift.${clusterDomain}/**`;
+
+  console.log(`Waiting for OAuth redirect to: ${oauthPattern}`);
+
+  await page.waitForURL(oauthPattern, {
     timeout: 30000,
   });
+
+  console.log(`Current URL after OAuth redirect: ${page.url()}`);
+
+  // First, check if we need to select an identity provider (htpasswd)
+  try {
+    const identityProviderButton = page
+      .locator('a, button')
+      .filter({ hasText: /^htpasswd$/i })
+      .first();
+
+    await identityProviderButton.waitFor({ state: 'visible', timeout: 5000 });
+
+    console.log('Identity provider selection found, clicking on htpasswd...');
+    await identityProviderButton.click();
+    await page.waitForLoadState('domcontentloaded');
+  } catch (e) {
+    console.log(
+      'No identity provider selection found, proceeding directly to login form...',
+    );
+  }
+
+  // Wait for the login form to be visible
+  await page.waitForSelector('input#inputUsername', {
+    state: 'visible',
+    timeout: 30000,
+  });
+
+  console.log('Login form found, filling in credentials...');
 
   // Fill in login credentials
   await page.locator('input#inputUsername').clear();
   await page.locator('input#inputUsername').fill(username);
   await page.locator('input#inputPassword').fill(password);
 
-  // Click login button
-  await page.locator('button[type=submit]:has-text("Log in")').click();
+  console.log('Credentials filled, submitting login form...');
 
-  // Wait for redirect back to localhost
-  await page.waitForURL('http://localhost:9000/**', { timeout: 30000 });
+  // Click login button and wait for navigation
+  const loginButton = page.locator('button[type=submit]:has-text("Log in")');
+  await loginButton.click();
+
+  // Wait for redirect back to console URL Or localhost
+  const redirectPattern = isRemoteCluster()
+    ? `${consoleUrl}/**`
+    : 'http://localhost:9000/**';
+
+  console.log(`Waiting for redirect to: ${redirectPattern}`);
+
+  try {
+    await page.waitForURL(redirectPattern, { timeout: 60000 });
+    console.log(`Successfully redirected to: ${page.url()}`);
+  } catch (error) {
+    console.log(`Failed to redirect. Current URL: ${page.url()}`);
+    throw error;
+  }
 
   // Wait for the page to be fully loaded and interactive
   await page.waitForLoadState('networkidle');

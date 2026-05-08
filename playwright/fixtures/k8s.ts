@@ -61,7 +61,10 @@ export async function createE2EClusterInfrastructure(): Promise<void> {
 export async function createE2ETrustBundleAndOperatorCert(
   namespace: string,
 ): Promise<void> {
+  // Use OPERATOR_POD_LABEL to detect operator namespace
+  // Falls back to 'default' if detection fails
   const operatorNs = await detectOperatorNamespace('default');
+  console.log(`Using operator namespace: ${operatorNs}`);
 
   await createTrustBundleAndOperatorCert(
     'e2e-root-ca-secret',

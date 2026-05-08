@@ -1,13 +1,27 @@
 import { test, expect } from '@playwright/test';
 import { login } from '../fixtures/auth';
+import { isRemoteCluster } from '../fixtures/utils';
 
-const username = 'kubeadmin';
+const username = process.env.KUBEADMIN_USERNAME || 'kubeadmin';
 const password = process.env.KUBEADMIN_PASSWORD || 'kubeadmin';
 
 test.describe('Console login smoke', () => {
   test('logs in and lands on console', async ({ page }) => {
     await login(page, username, password);
-    await expect(page).toHaveURL(/localhost/, { timeout: 30000 });
+
+    // Check that we're on the console (either localhost or remote cluster)
+    if (isRemoteCluster()) {
+      // For remote clusters, check we are on the console domain
+      await expect(page).toHaveURL(/console-openshift-console\.apps\..*/, {
+        timeout: 30000,
+      });
+    } else {
+      // For localhost, check for localhost
+      await expect(page).toHaveURL(/localhost/, { timeout: 30000 });
+    }
+
+    // Verify we can see the console UI (dashboards or any console page)
+    await expect(page.locator('body')).toBeVisible();
   });
 });
 

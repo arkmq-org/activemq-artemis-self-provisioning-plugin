@@ -4,7 +4,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 
 const execAsync = promisify(exec);
-const username = 'kubeadmin';
+const username = process.env.KUBEADMIN_USERNAME || 'kubeadmin';
 const password = process.env.KUBEADMIN_PASSWORD || 'kubeadmin';
 
 test.describe('Broker Navigation and Discoverability', () => {
@@ -20,7 +20,9 @@ test.describe('Broker Navigation and Discoverability', () => {
 
     // Navigate to the brokers list page
     await page.goto('/k8s/all-namespaces/brokers');
-    await expect(page.locator('h1', { hasText: /Brokers/i })).toBeVisible();
+    await expect(page.locator('h1', { hasText: /Brokers/i })).toBeVisible({
+      timeout: 30000,
+    });
 
     // Click the Create Broker button
     await page.getByRole('link', { name: 'Create Broker' }).click();
@@ -75,8 +77,10 @@ test.describe('Broker Navigation and Discoverability', () => {
       `/search/ns/${namespace}?kind=broker.amq.io~v1beta1~ActiveMQArtemis`,
     );
 
-    // Click on the broker name in search results
-    await page.locator(`a:has-text("${brokerName}")`).click();
+    // Wait for the broker link to be visible and stable before clicking
+    const brokerLink = page.locator(`a:has-text("${brokerName}")`);
+    await brokerLink.waitFor({ state: 'visible', timeout: 600000 });
+    await brokerLink.click();
 
     // Verify we're on the broker details page
     await expect(page).toHaveURL(
@@ -148,7 +152,11 @@ test.describe('Broker Navigation and Discoverability', () => {
     await page.goto(
       `/search/ns/${namespace}?kind=broker.amq.io~v1beta1~ActiveMQArtemis`,
     );
-    await page.locator(`a:has-text("${brokerName}")`).click();
+
+    // Wait for the broker link to be visible and stable before clicking
+    const brokerLink = page.locator(`a:has-text("${brokerName}")`);
+    await brokerLink.waitFor({ state: 'visible', timeout: 600000 });
+    await brokerLink.click();
 
     // Click the YAML tab
     const yamlTab = page.locator('a, button').filter({ hasText: /^YAML$/i });
