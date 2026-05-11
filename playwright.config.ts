@@ -5,7 +5,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: 1,
   workers: 1,
-  reporter: 'list',
+  reporter: [['list'], ['html', { open: 'never' }]],
   timeout: 480000, // 8 minutes for broker startup
   use: {
     baseURL: process.env.CONSOLE_URL || 'http://localhost:9000',
