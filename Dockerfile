@@ -44,4 +44,4 @@ ENTRYPOINT ["nginx", "-g", "daemon off;"]
 LABEL name="arkmq-org/activemq-artemis-self-provisioning-plugin"
 LABEL description="ActiveMQ Artemis Self Provisioning Plugin"
 LABEL maintainer="ArkMQ <info@arkmq.org>"
-LABEL version="0.5.5"
+LABEL version="0.5.6"
